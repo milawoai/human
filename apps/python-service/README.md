@@ -27,7 +27,5 @@ curl http://localhost:12003/api/v1/asr/status
 
 ```bash
 AUDIO_MODEL_ROOT=/Users/zhou/Downloads/model/audio/onnx
-ASR_DEFAULT_MODEL=sherpa-onnx
 ASR_SAMPLE_RATE=16000
-ASR_DEVICE=cpu
 ```

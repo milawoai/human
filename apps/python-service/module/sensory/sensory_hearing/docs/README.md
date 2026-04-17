@@ -29,20 +29,16 @@
 
 ```
 ASRServiceCategory (base.py)
-├── FUNASR_NATIVE         # FunASR 原生服务
 ├── SHERPA_ONNX_FUNASR    # Sherpa-ONNX FunASR 系列
 ├── SHERPA_ONNX_WHISPER   # Sherpa-ONNX Whisper 系列
 ├── SHERPA_ONNX_SENSE_VOICE # Sherpa-ONNX SenseVoice 系列
-├── SHERPA_ONNX_PARAFORMER # Sherpa-ONNX Paraformer 系列
-└── QWEN3                 # Qwen3-ASR 服务
+└── SHERPA_ONNX_PARAFORMER # Sherpa-ONNX Paraformer 系列
 ```
 
 ### 服务实现
 
 | 文件 | 负责模型 |
 |------|---------|
-| `impl/funasr_service.py` | FunASR 原生（paraformer-zh-streaming） |
-| `impl/qwen3_service.py` | Qwen3-ASR |
 | `impl/sherpa_onnx_funasr_service.py` | Sherpa-ONNX FunASR-Nano、SenseVoice 等 |
 | `impl/sherpa_onnx_service.py` | 通用 Sherpa-ONNX 模型（备用） |
 
@@ -61,8 +57,6 @@ features/speech_recognition/
 ├── vad_recording_session.py  # VAD 录音会话
 └── impl/               # 服务实现
     ├── __init__.py
-    ├── funasr_service.py
-    ├── qwen3_service.py
     ├── sherpa_onnx_service.py
     └── sherpa_onnx_funasr_service.py
 ```

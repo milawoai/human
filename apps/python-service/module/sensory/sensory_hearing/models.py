@@ -15,11 +15,8 @@ class TranscriptionConfig(BaseModel):
     chunk_size: List[int] = Field(default=[5, 10, 5], description="分块大小配置")
     hotwords: Optional[str] = Field(default=None, description="热词JSON字符串")
     itn: bool = Field(default=True, description="是否启用逆文本归一化")
-    # 新增: 模型类型参数
-    model_type: str = Field(default="funasr", description="模型类型: funasr/qwen3")
+    model_type: str = Field(default="funasr", description="模型类型: funasr")
     model_path: Optional[str] = Field(default=None, description="模型路径 (可选)")
-    aligner_path: Optional[str] = Field(default=None, description="对齐器路径 (Qwen3专用)")
-    language: Optional[str] = Field(default=None, description="语言 (Qwen3专用, 自动检测)")
 
 
 class TranscriptionResult(BaseModel):
@@ -29,8 +26,6 @@ class TranscriptionResult(BaseModel):
     text: str = Field(..., description="识别的文本")
     is_final: bool = Field(default=False, description="是否为最终结果")
     timestamp: Optional[List[List[int]]] = Field(default=None, description="时间戳信息")
-    # 新增: 语言信息 (Qwen3 返回)
-    language: Optional[str] = Field(default=None, description="检测到的语言")
 
 
 class RecognitionStatus(BaseModel):
@@ -39,6 +34,5 @@ class RecognitionStatus(BaseModel):
     recognizing: bool = Field(default=False, description="是否正在识别")
     model_loaded: bool = Field(default=False, description="模型是否已加载")
     model_name: str = Field(default="", description="当前使用的模型")
-    # 新增: 模型类型
     model_type: str = Field(default="funasr", description="当前模型类型")
     active_sessions: int = Field(default=0, description="活动会话数")

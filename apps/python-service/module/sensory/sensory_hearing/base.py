@@ -12,20 +12,15 @@ from typing import Any, Dict, Optional
 class ASRModelType(str, Enum):
     """ASR 模型类型枚举"""
     FUNASR = "funasr"
-    QWEN3 = "qwen3"
 
 
 class ASRServiceCategory(str, Enum):
     """ASR 服务分类枚举 - 决定由哪个服务处理"""
-    # FunASR 原生服务 (Python)
-    FUNASR_NATIVE = "funasr-native"
     # Sherpa-ONNX 系列服务
     SHERPA_ONNX_FUNASR = "sherpa-onnx-funasr"
     SHERPA_ONNX_WHISPER = "sherpa-onnx-whisper"
     SHERPA_ONNX_SENSE_VOICE = "sherpa-onnx-sense-voice"
     SHERPA_ONNX_PARAFORMER = "sherpa-onnx-paraformer"
-    # Qwen3 服务
-    QWEN3 = "qwen3"
 
 
 @dataclass
@@ -34,11 +29,6 @@ class ASRModelConfig:
     model_type: ASRModelType = ASRModelType.FUNASR
     model_name: Optional[str] = None
     model_path: Optional[str] = None
-    # Qwen3 特有配置
-    aligner_path: Optional[str] = None
-    device: str = "cuda:0"
-    dtype: str = "bfloat16"
-    gpu_memory_utilization: float = 0.7
     # 通用配置
     sample_rate: int = 16000
     debug: bool = False
