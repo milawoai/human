@@ -1,0 +1,98 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "🚀 调试后端 (NestJS)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start:debug"],
+      "cwd": "${workspaceFolder}/apps/backend",
+      "restart": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    {
+      "name": "🖥️ 调试Electron主进程",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/body",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite",
+      "windows": {
+        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite.cmd"
+      },
+      "runtimeArgs": ["dev", "--inspect=5858", "--sourcemap"],
+      "env": {
+        "NODE_ENV": "development",
+        "REMOTE_DEBUGGING_PORT": "9222"
+      },
+      "sourceMaps": true,
+      "console": "integratedTerminal",
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/apps/body/**",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "name": "🎨 调试Electron渲染进程",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9222,
+      "webRoot": "${workspaceFolder}/apps/body/src/renderer",
+      "timeout": 60000,
+      "presentation": {
+        "hidden": true
+      }
+    },
+    {
+      "name": "🎯 启动所有服务 (开发模式)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/turbo",
+      "args": ["run", "dev", "--parallel"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    {
+      "name": "🐍 调试Python服务 (FastAPI)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["main:app", "--host", "0.0.0.0", "--port", "12003", "--reload"],
+      "cwd": "${workspaceFolder}/apps/python-service",
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/apps/python-service/.env",
+      "justMyCode": false,
+      "python": "${workspaceFolder}/apps/python-service/.venv/bin/python",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/apps/python-service"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "🔥 全栈调试模式",
+      "configurations": [
+        "🚀 调试后端 (NestJS)",
+        "🐍 调试Python服务 (FastAPI)",
+        "🖥️ 调试Electron主进程",
+        "🎨 调试Electron渲染进程"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "⚡ Electron完整调试",
+      "configurations": [
+        "🖥️ 调试Electron主进程",
+        "🎨 调试Electron渲染进程"
+      ],
+      "stopAll": true
+    }
+  ]
+}

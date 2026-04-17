@@ -1,0 +1,9 @@
+{
+  "name": "python-service",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "uv run uvicorn main:app --host 0.0.0.0 --port 12003 --reload",
+    "start": "uv run uvicorn main:app --host 0.0.0.0 --port 12003"
+  }
+}
