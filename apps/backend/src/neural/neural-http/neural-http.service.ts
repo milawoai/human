@@ -5,9 +5,12 @@
  * Controller 仅做路由转发。
  */
 import { Injectable, Logger } from '@nestjs/common';
+import axios from 'axios';
 import type { BusMessage, MessageKind } from '../interfaces';
 import { NeuralCoreService } from '../neural-core/neural-core.service';
 import { NeuralWsGateway } from '../neural-ws/neural-ws.gateway';
+
+const PYTHON_SERVICE_URL = 'http://localhost:12003';
 
 @Injectable()
 export class NeuralHttpService {
@@ -88,6 +91,17 @@ export class NeuralHttpService {
       success: true,
       data: this.coreService.getAllSubscriptions(),
     };
+  }
+
+  /** 中转：获取 Python ASR 模型列表 */
+  async listAsrModels() {
+    try {
+      const res = await axios.get(`${PYTHON_SERVICE_URL}/api/v1/asr/models`);
+      return res.data;
+    } catch (error) {
+      this.logger.error('获取 ASR 模型列表失败:', error.message);
+      return { success: false, error: 'Python 服务不可用', models: [] };
+    }
   }
 
   // ──────────────────────────────────────────────
