@@ -1,6 +1,9 @@
 """
 Speech Recognition Controllers (支持 Online 和 Segment 双模式)
 语音识别控制器 - VAD + Offline ASR 伪流式方案
+
+注意：VAD 服务端录音模式已迁移至 Neural Core 通信架构，
+不再通过 /asr/stream/vad 直连，改为通过 Neural Bus 收发消息。
 """
 import asyncio
 import base64
@@ -17,8 +20,9 @@ from pydantic import BaseModel, Field
 
 from .config import get_config
 from .impl.sherpa_onnx_funasr_service import SherpaOnnxFunasrService
+from .neural_adapter import NeuralAdapter
+from .neural_client import NeuralClient
 from .streaming_session import StreamingMode, StreamingSession
-from .vad_recording_session import VadRecordingSession, RecordingState
 
 logger = logging.getLogger(__name__)
 
@@ -70,17 +74,17 @@ class SpeechRecognitionController:
         # 初始化服务
         self.asr_service = SherpaOnnxFunasrService()
 
-        # 流式会话管理
+        # 流式会话管理（客户端推音频模式）
         self.streaming_sessions: dict[str, StreamingSession] = {}
         # 音频处理任务
         self.audio_tasks: dict[str, asyncio.Task] = {}
 
-        # VAD 录音会话管理
-        self.vad_recording_session: Optional[VadRecordingSession] = None
-        self.vad_recording_lock = asyncio.Lock()  # 防止同时开启多个录音
-
         # KWS 管理器（用于 ASR/KWS 麦克风协调）
         self.kws_manager = kws_manager
+
+        # Neural Core 客户端（VAD 录音模式通过 Neural Bus 通信）
+        self.neural_client: Optional[NeuralClient] = None
+        self.neural_adapter: Optional[NeuralAdapter] = None
 
         self.router = APIRouter(prefix="/asr", tags=["ASR 全局服务"])
         self._setup_routes()
@@ -329,210 +333,35 @@ class SpeechRecognitionController:
                     task = self.audio_tasks.pop(session_id)
                     task.cancel()
 
-        @self.router.websocket("/stream/vad")
-        async def websocket_vad_recording(
-            websocket: WebSocket,
-            model_id: str = Query(default="funasr-nano", description="使用的模型 ID"),
-            subtitle_mode: bool = Query(default=True, description="是否启用实时字幕（VAD模式），false为简单录音"),
-            save_dir: Optional[str] = Query(default=None, description="录音保存目录")
-        ):
-            """
-            服务端录音 + VAD 分段识别 WebSocket
+    # ──────────────────────────────────────────────
+    # Neural Core 连接管理
+    # ──────────────────────────────────────────────
 
-            流程:
-            1. 客户端开启长链
-            2. 服务端返回准备启动，并挂锁
-            3. 服务端返回加载模型成功
-            4. 服务端返回开始录音
-            5. VAD 检测开始说话 → 返回 vad_start + 文件开始时间
-            6. VAD 检测结束说话 → 返回 vad_end + 文件路径 + 时间范围
-            7. 服务端返回识别文本
-            8. 客户端发送关闭 → 服务端关闭录音，解锁
+    async def start_neural(self):
+        """启动 Neural Core 连接（应在 FastAPI startup 事件中调用）。"""
+        if self.neural_client is not None:
+            logger.warning("[Controller] Neural 客户端已存在")
+            return
 
-            消息协议:
-            - 服务端主动发送:
-              - {"type": "prepared", "message": "..."}  准备完成
-              - {"type": "error", "error": "...", "message": "..."}  错误
-              - {"type": "started", "session_id": "...", "sample_rate": 16000}  开始录音
-              - {"type": "vad_start", "segment_id": "...", "start_time": 0.0}  检测到说话
-              - {"type": "vad_end", "segment_id": "...", "segments_count": 1}  说话结束
-              - {"type": "segment_ready", "segment_id": "...", "file_path": "...", "start_time": 0.0, "end_time": 1.5, "duration": 1.5, "text": "..."}  片段识别完成
-              - {"type": "stopped", "segments_count": N, "full_recording": "/path/to/recording.wav"}  录音已停止
-              - {"type": "closed"}  连接已关闭
+        self.neural_client = NeuralClient()
+        self.neural_adapter = NeuralAdapter(self.neural_client, self.asr_service)
 
-            - 客户端发送:
-              - {"type": "prepare"}  准备（加载模型、初始化 VAD）
-              - {"type": "start", "save_audio": true}  开始录音（save_audio: 是否保存完整录音）
-              - {"type": "stop"}  停止录音
-              - {"type": "heartbeat"}  心跳保活（客户端每1秒发送，10秒无心跳自动停止）
-            """
-            await websocket.accept()
-            session_id = str(uuid.uuid4())
-            session: Optional[VadRecordingSession] = None
-            kws_was_paused_by_asr = False
+        # 将 adapter 的 handle_command 设置为 Neural 客户端的 command 回调
+        self.neural_client._on_command = self.neural_adapter.handle_command
 
-            print(f"[DEBUG] VAD WebSocket connection accepted: {session_id}")
+        success = await self.neural_client.connect()
+        if success:
+            logger.info("[Controller] Neural Core 连接成功，sensory-hearing Actor 已注册")
+        else:
+            logger.error("[Controller] Neural Core 连接失败")
 
-            # 心跳保活
-            HEARTBEAT_TIMEOUT = 10.0  # 10秒无心跳自动停止
-            # 连接后立即检查是否有录音会话在运行
-            print(f"[DEBUG] Checking existing session: {self.vad_recording_session}")
-            if self.vad_recording_session and self.vad_recording_session.state == RecordingState.RECORDING:
-                await websocket.send_json({
-                    "type": "error",
-                    "error": "busy",
-                    "message": "Another recording is in progress"
-                })
-                await websocket.close()
-                return
-
-            async def send_event(event: dict):
-                """发送事件给客户端"""
-                try:
-                    await websocket.send_json(event)
-                except Exception as e:
-                    logger.error(f"Error sending event: {e}")
-
-            async def cleanup_session():
-                """清理会话"""
-                if session:
-                    await session.stop()
-                    session.cleanup()
-                if self.vad_recording_session and self.vad_recording_session.session_id == session_id:
-                    self.vad_recording_session = None
-
-            try:
-                # 进入锁
-                print(f"[DEBUG] Waiting for vad_recording_lock: {session_id}")
-                async with self.vad_recording_lock:
-                    print(f"[DEBUG] Acquired vad_recording_lock: {session_id}")
-                    # 等待客户端指令
-                    while True:
-                        try:
-                            # 使用 asyncio.wait_for 实现心跳超时检测
-                            try:
-                                data = await asyncio.wait_for(
-                                    websocket.receive_text(),
-                                    timeout=HEARTBEAT_TIMEOUT
-                                )
-                                msg = json.loads(data)
-                            except asyncio.TimeoutError:
-                                # 心跳超时
-                                logger.warning(f"Heartbeat timeout for session {session_id}")
-                                await send_event({
-                                    "type": "error",
-                                    "error": "heartbeat_timeout",
-                                    "message": f"No heartbeat received for {HEARTBEAT_TIMEOUT} seconds"
-                                })
-                                await cleanup_session()
-                                break
-
-                        except WebSocketDisconnect:
-                            logger.info(f"VAD recording WebSocket disconnected: {session_id}")
-                            await cleanup_session()
-                            break
-
-                        msg_type = msg.get("type", "")
-
-                        if msg_type == "heartbeat":
-                            continue
-
-                        elif msg_type == "prepare":
-                            # 准备阶段：加载模型、初始化 VAD
-
-                            # 协调 KWS：如果 KWS 正在运行，先暂停它释放麦克风
-                            if self.kws_manager and self.kws_manager.is_running():
-                                try:
-                                    await self.kws_manager.pause("asr_recording")
-                                    kws_was_paused_by_asr = True
-                                    logger.info("ASR prepare: 已暂停 KWS 释放麦克风")
-                                except Exception as e:
-                                    logger.warning(f"ASR prepare: 暂停 KWS 失败: {e}")
-
-                            session = VadRecordingSession(session_id=session_id)
-
-                            # 将字符串参数转换为布尔值
-                            if isinstance(subtitle_mode, str):
-                                subtitle_mode = subtitle_mode.lower() == "true"
-
-                            # 保存最终目录（不覆盖 record_dir，segment 仍保存在临时目录）
-                            session.save_dir = save_dir
-
-                            success = await session.prepare(
-                                self.asr_service,
-                                send_event,
-                                subtitle_mode=subtitle_mode
-                            )
-                            if success:
-                                self.vad_recording_session = session
-                                print(f"[DEBUG] prepare success: session={session}, session_id={session_id}, subtitle_mode={subtitle_mode}")
-                                logger.info(f"VAD recording session prepared: {session_id}, subtitle_mode={subtitle_mode}")
-                            else:
-                                await websocket.close()
-                                return
-
-                        elif msg_type == "start":
-                            # 开始录音
-                            print(f"[DEBUG] start received: session={session}, session_id={session_id}")
-                            if not session:
-                                await send_event({
-                                    "type": "error",
-                                    "message": "Please send 'prepare' first"
-                                })
-                                continue
-
-                            # 设置是否保存完整录音
-                            save_audio = msg.get("save_audio", False)
-                            session.save_audio = save_audio
-
-                            await session.start()
-                            logger.info(f"VAD recording started: {session_id}, save_audio={save_audio}, subtitle_mode={subtitle_mode}")
-
-                        elif msg_type == "stop":
-                            # 停止录音
-                            if session:
-                                await session.stop()
-                                logger.info(f"VAD recording stopped: {session_id}")
-                            break
-
-                        else:
-                            await send_event({
-                                "type": "error",
-                                "message": f"Unknown message type: {msg_type}"
-                            })
-
-            except Exception as e:
-                print(f"[DEBUG] VAD recording WebSocket exception: {e}")
-                logger.error(f"VAD recording WebSocket error: {e}")
-                try:
-                    await send_event({
-                        "type": "error",
-                        "message": str(e)
-                    })
-                except Exception:
-                    pass
-            finally:
-                # 清理
-                if session:
-                    session.cleanup()
-                if self.vad_recording_session and self.vad_recording_session.session_id == session_id:
-                    self.vad_recording_session = None
-
-                # 恢复 KWS（如果 ASR 之前暂停了它）
-                if kws_was_paused_by_asr and self.kws_manager and self.kws_manager.is_paused():
-                    try:
-                        await self.kws_manager.resume()
-                        logger.info("ASR 结束，已自动恢复 KWS 监听")
-                    except Exception as e:
-                        logger.error(f"恢复 KWS 失败: {e}")
-
-                try:
-                    await websocket.send_json({"type": "closed"})
-                    await websocket.close()
-                except Exception:
-                    pass
-
-                logger.info(f"VAD recording session cleaned up: {session_id}")
+    async def stop_neural(self):
+        """停止 Neural Core 连接（应在 FastAPI shutdown 事件中调用）。"""
+        if self.neural_client:
+            await self.neural_client.disconnect()
+            self.neural_client = None
+            self.neural_adapter = None
+            logger.info("[Controller] Neural Core 已断开")
 
     def get_router(self) -> APIRouter:
         """获取路由器"""

@@ -28,6 +28,20 @@ speech_controller = SpeechRecognitionController(debug=False)
 app.include_router(speech_controller.get_router(), prefix="/api/v1")
 
 
+@app.on_event("startup")
+async def on_startup():
+    """应用启动时连接 Neural Core。"""
+    logger.info("[Main] 应用启动，正在初始化 Neural Core 连接...")
+    await speech_controller.start_neural()
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    """应用关闭时断开 Neural Core。"""
+    logger.info("[Main] 应用关闭，正在断开 Neural Core...")
+    await speech_controller.stop_neural()
+
+
 @app.post("/api/hello")
 async def hello() -> dict:
     """健康检查接口"""

@@ -17,7 +17,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Namespace, Socket } from 'socket.io';
 import type {
   ActorRef,
   BusMessage,
@@ -35,7 +35,7 @@ export class NeuralWsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-  server: Server;
+  server: Namespace;
 
   private readonly logger = new Logger(NeuralWsGateway.name);
 
@@ -243,7 +243,7 @@ export class NeuralWsGateway
    * 供 HTTP Controller / 其他 Service 调用
    */
   sendToConnection(connectionId: string, event: string, data: any): boolean {
-    const socket = this.server.sockets.sockets.get(connectionId);
+    const socket = this.server.sockets.get(connectionId);
     if (!socket) {
       this.logger.warn(`Socket 不存在: ${connectionId}`);
       return false;
@@ -280,7 +280,7 @@ export class NeuralWsGateway
     const state = this.coreService.getActorState(actorId);
     if (!state?.connectionId) return false;
 
-    const socket = this.server.sockets.sockets.get(state.connectionId);
+    const socket = this.server.sockets.get(state.connectionId);
     if (socket) {
       socket.disconnect(true);
     }
