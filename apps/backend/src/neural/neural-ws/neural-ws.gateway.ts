@@ -229,6 +229,8 @@ export class NeuralWsGateway
     }
 
     // 广播给订阅者
+    console.log(result)
+    console.log(result.subscribers.length)
     for (const sub of result.subscribers) {
       this.sendToConnection(sub.connectionId, 'message', data);
     }

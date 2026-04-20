@@ -154,7 +154,6 @@ class NeuralClient:
             """接收 Neural Core 路由过来的消息。"""
             kind = data.get("kind", "")
             topic = data.get("topic", "")
-            payload = data.get("payload", {})
 
             if kind in ("command", "control") and self._on_command:
                 logger.info("[Neural] 收到 command: topic=%s", topic)

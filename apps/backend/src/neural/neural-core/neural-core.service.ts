@@ -271,8 +271,9 @@ export class NeuralCoreService {
    * 4. stream → 按 event 处理（广播）
    */
   route(message: BusMessage): RouteResult {
-    this.logger.debug(`路由消息: kind=${message.kind}, topic=${message.topic}`);
-
+    if (message.topic === 'sensory.hearing.caption_stream.segment') {
+      this.logger.debug(`路由消息: kind=${message.kind}, topic=${message.topic}`);
+    }
     switch (message.kind) {
       case 'command':
       case 'control':
@@ -335,7 +336,14 @@ export class NeuralCoreService {
   /** 广播路由：event / stream */
   private routeBroadcast(message: BusMessage, kind: MessageKind): RouteResult {
     const subscribers = this.findSubscribers(message.topic, kind);
-    return { targets: [], subscribers };
+    // 按 connectionId 去重，防止同一连接因重复订阅收到多条相同消息
+    const seen = new Set<string>();
+    const deduped = subscribers.filter((s) => {
+      if (seen.has(s.connectionId)) return false;
+      seen.add(s.connectionId);
+      return true;
+    });
+    return { targets: [], subscribers: deduped };
   }
 
   /** 回源路由：response / error */

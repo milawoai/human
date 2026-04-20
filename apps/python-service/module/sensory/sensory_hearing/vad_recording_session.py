@@ -34,6 +34,16 @@ from .streaming_session import VadState
 
 logger = logging.getLogger(__name__)
 
+SILENCE_TOKENS = {"/sil", "<sil>", "[sil]", "sil"}
+
+
+def normalize_asr_text(text: str) -> str:
+    """Normalize ASR output for subtitle display."""
+    normalized = text.strip()
+    if normalized.lower() in SILENCE_TOKENS:
+        return ""
+    return normalized
+
 
 class RecordingState(str, Enum):
     """录音状态"""
@@ -531,7 +541,8 @@ class VadRecordingSession:
             self.offline_recognizer.decode_stream(stream)
             result = stream.result
 
-            text = result.text if hasattr(result, 'text') else ""
+            raw_text = result.text if hasattr(result, 'text') else ""
+            text = normalize_asr_text(raw_text)
             segment.text = text
             return text
 

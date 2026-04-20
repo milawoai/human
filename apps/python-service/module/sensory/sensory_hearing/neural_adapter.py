@@ -92,16 +92,24 @@ class NeuralAdapter:
     # 内部方法
     # ──────────────────────────────────────────────
 
+    async def _graceful_stop(self):
+        """安全关闭当前会话并等待完成。"""
+        if self._session is None:
+            return
+        try:
+            await self._session.stop()
+            self._session.cleanup()
+        except Exception as e:
+            logger.error("[Adapter] 关闭旧会话异常: %s", e)
+        finally:
+            self._session = None
+
     async def _handle_enable(self, payload: dict):
         """处理 enable command：准备 + 开始录音。"""
-        # 已在录音中，拒绝重复启动
+        # 有存活会话 → 先关闭再重启
         if self._session is not None:
-            logger.warning("[Adapter] 录音会话已在运行，忽略重复 enable")
-            await self.emit_event("error", {
-                "error": "busy",
-                "message": "录音会话已在运行中",
-            })
-            return
+            logger.warning("[Adapter] 存在存活会话，先关闭再重启")
+            await self._graceful_stop()
 
         import uuid
 
@@ -139,13 +147,7 @@ class NeuralAdapter:
 
     async def _handle_disable(self):
         """处理 disable command：停止录音。"""
-        if self._session is None:
-            logger.warning("[Adapter] 没有正在运行的录音会话")
-            return
-
-        await self._session.stop()
-        self._session.cleanup()
-        self._session = None
+        await self._graceful_stop()
         logger.info("[Adapter] 录音已停止")
 
     # ──────────────────────────────────────────────
