@@ -7,6 +7,13 @@ Neural Core WebSocket 客户端
 import logging
 import socketio
 
+from module.common.neural_topics import (
+    ACTORS,
+    CAPABILITIES,
+    SUBSCRIBE_TOPICS,
+    SUBSCRIBE_KINDS,
+)
+
 logger = logging.getLogger(__name__)
 
 # ──────────────────────────────────────────────
@@ -16,36 +23,7 @@ logger = logging.getLogger(__name__)
 NEURAL_WS_URL = "http://localhost:12002/neural"
 HEARTBEAT_INTERVAL = 30  # 秒
 
-BODY_ACTOR = {
-    "actorId": "sensory-hearing",
-    "runtime": "python",
-    "system": "sensory",
-    "module": "hearing",
-}
-
-CAPABILITIES = [
-    {
-        "id": "sensory.hearing.caption_stream",
-        "actor": BODY_ACTOR,
-        "topic": "sensory.hearing.caption_stream.enable",
-        "kinds": ["control"],
-        "mode": "stream",
-        "enabled": True,
-        "online": True,
-    },
-    {
-        "id": "sensory.hearing.caption_stream.stop",
-        "actor": BODY_ACTOR,
-        "topic": "sensory.hearing.caption_stream.disable",
-        "kinds": ["control"],
-        "mode": "once",
-        "enabled": True,
-        "online": True,
-    },
-]
-
-SUBSCRIBE_TOPICS = ["sensory.hearing.caption_stream.*"]
-SUBSCRIBE_KINDS = ["control"]
+BODY_ACTOR = ACTORS["SENSORY_HEARING"]
 
 
 # ──────────────────────────────────────────────

@@ -15,7 +15,8 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "neural-topics": ["../../packages/neural-topics/src/index.ts"]
     },
     "incremental": true,
     "skipLibCheck": true,

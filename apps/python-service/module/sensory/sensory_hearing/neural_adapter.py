@@ -8,24 +8,12 @@ Neural 适配层
 import logging
 from typing import Optional
 
+from module.common.neural_topics import EVENT_TOPIC_MAP
+
 from .neural_client import NeuralClient
 from .vad_recording_session import VadRecordingSession
 
 logger = logging.getLogger(__name__)
-
-# ──────────────────────────────────────────────
-# Topic 映射：原 WS event type → Neural topic
-# ──────────────────────────────────────────────
-
-EVENT_TOPIC_MAP = {
-    "prepared": "sensory.hearing.caption_stream.prepared",
-    "started": "sensory.hearing.caption_stream.started",
-    "vad_start": "sensory.hearing.caption_stream.vad_start",
-    "vad_end": "sensory.hearing.caption_stream.vad_end",
-    "segment_ready": "sensory.hearing.caption_stream.segment",
-    "stopped": "sensory.hearing.caption_stream.stopped",
-    "error": "sensory.hearing.caption_stream.error",
-}
 
 
 # ──────────────────────────────────────────────

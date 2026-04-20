@@ -1,0 +1,11 @@
+{
+  "name": "neural-topics",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Neural Core topic 常量统一管理（Single Source of Truth）",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "postinstall": "node scripts/sync-python.js"
+  }
+}

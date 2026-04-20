@@ -1,0 +1,41 @@
+{
+  "version": "1.0.0",
+  "topics": {
+    "sensory.hearing.caption_stream": {
+      "description": "听觉感知 — 字幕流控制与事件",
+      "actor": {
+        "actorId": "sensory-hearing",
+        "runtime": "python",
+        "system": "sensory",
+        "module": "hearing"
+      },
+      "capabilities": [
+        {
+          "id": "sensory.hearing.caption_stream",
+          "topic": "sensory.hearing.caption_stream.enable",
+          "kinds": ["control"],
+          "mode": "stream"
+        },
+        {
+          "id": "sensory.hearing.caption_stream.stop",
+          "topic": "sensory.hearing.caption_stream.disable",
+          "kinds": ["control"],
+          "mode": "once"
+        }
+      ],
+      "subscribeTopics": ["sensory.hearing.caption_stream.*"],
+      "subscribeKinds": ["control"],
+      "actions": {
+        "enable":    { "kind": "control", "direction": "body → python", "description": "启动字幕流" },
+        "disable":   { "kind": "control", "direction": "body → python", "description": "停止字幕流" },
+        "prepared":  { "kind": "event",   "direction": "python → subscribers", "description": "准备完成" },
+        "started":   { "kind": "event",   "direction": "python → subscribers", "description": "录音已开始" },
+        "vad_start": { "kind": "event",   "direction": "python → subscribers", "description": "VAD 检测到语音开始" },
+        "vad_end":   { "kind": "event",   "direction": "python → subscribers", "description": "VAD 检测到语音结束" },
+        "segment":   { "kind": "event",   "direction": "python → subscribers", "description": "字幕片段就绪" },
+        "stopped":   { "kind": "event",   "direction": "python → subscribers", "description": "录音已停止" },
+        "error":     { "kind": "event",   "direction": "python → subscribers", "description": "错误" }
+      }
+    }
+  }
+}
