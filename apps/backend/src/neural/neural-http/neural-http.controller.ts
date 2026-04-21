@@ -50,12 +50,6 @@ export class NeuralHttpController {
     return this.service.listSubscriptions();
   }
 
-  /** 中转：获取 Python ASR 模型列表 */
-  @Post('sensory/hearing/asr-models')
-  listAsrModels() {
-    return this.service.listAsrModels();
-  }
-
   // ──────────────────────────────────────────────
   // 管理类
   // ──────────────────────────────────────────────

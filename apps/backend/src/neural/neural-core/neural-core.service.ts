@@ -83,6 +83,31 @@ export class NeuralCoreService {
     return true;
   }
 
+  /**
+   * 注册内部 Actor（无需 WS 连接）。
+   * 适用于 runtime === 'nest' 的进程内服务（如 Brain）。
+   */
+  registerInternalActor(actor: ActorRef): boolean {
+    const existing = this.actors.get(actor.actorId);
+    if (existing) {
+      existing.connected = true;
+      existing.lastHeartbeatAt = Date.now();
+      this.setOnlineByActor(actor.actorId, true);
+      this.logger.log(`内部 Actor 重新注册: ${actor.actorId}`);
+      return false;
+    }
+
+    const state: ActorState = {
+      actor,
+      connected: true,
+      lastHeartbeatAt: Date.now(),
+      // 无 connectionId
+    };
+    this.actors.set(actor.actorId, state);
+    this.logger.log(`内部 Actor 注册: ${actor.actorId} (${actor.runtime}/${actor.system})`);
+    return true;
+  }
+
   /** 注销 Actor（断开连接时调用） */
   unregisterActor(actorId: string): void {
     const state = this.actors.get(actorId);

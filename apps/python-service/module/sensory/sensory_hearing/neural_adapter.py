@@ -40,6 +40,38 @@ class NeuralAdapter:
         self._session: Optional[VadRecordingSession] = None
 
     # ──────────────────────────────────────────────
+    # Query 分发
+    # ──────────────────────────────────────────────
+
+    async def handle_query(self, message: dict) -> dict:
+        """
+        处理 query 类型消息，根据 topic 路由到具体处理函数。
+
+        Args:
+            message: {topic: str, payload: dict}
+
+        Returns:
+            查询结果 dict
+        """
+        topic = message.get("topic", "")
+
+        if topic.endswith(".asr_models"):
+            return self._query_asr_models()
+        else:
+            logger.warning("[Adapter] 未知 query topic: %s", topic)
+            return {"success": False, "error": f"未知 query topic: {topic}"}
+
+    def _query_asr_models(self) -> dict:
+        """查询可用的 ASR 模型列表。"""
+        try:
+            from .factory import ASRServiceFactory
+            info = ASRServiceFactory.get_transcribers_info()
+            return {"success": True, "data": info}
+        except Exception as e:
+            logger.error("[Adapter] 查询 ASR 模型失败: %s", e)
+            return {"success": False, "error": str(e)}
+
+    # ──────────────────────────────────────────────
     # Command 分发
     # ──────────────────────────────────────────────
 
@@ -116,6 +148,7 @@ class NeuralAdapter:
         subtitle_mode = payload.get("subtitle_mode", True)
         save_audio = payload.get("save_audio", False)
         save_dir = payload.get("save_dir")
+        model_id = payload.get("model_id")
 
         session_id = str(uuid.uuid4())[:8]
         session = VadRecordingSession(session_id=session_id)
@@ -131,7 +164,7 @@ class NeuralAdapter:
             await self.emit_event(event_type, event_data)
 
         # 准备
-        success = await session.prepare(self._asr_service, on_event, subtitle_mode=subtitle_mode)
+        success = await session.prepare(self._asr_service, on_event, subtitle_mode=subtitle_mode, model_id=model_id)
         if not success:
             logger.error("[Adapter] 准备失败")
             return

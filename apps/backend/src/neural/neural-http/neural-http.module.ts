@@ -11,5 +11,6 @@ import { NeuralHttpService } from './neural-http.service';
   imports: [NeuralCoreModule, NeuralWsModule],
   controllers: [NeuralHttpController],
   providers: [NeuralHttpService],
+  exports: [NeuralHttpService],
 })
 export class NeuralHttpModule {}

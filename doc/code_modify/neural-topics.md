@@ -183,6 +183,104 @@ cd apps/backend && npm run build
 cd apps/python-service && uv run python -c "from module.common.neural_topics import TOPICS, ACTORS; print('OK')"
 ```
 
+## 添加 Query 类型 Capability
+
+Query 类型的 Capability 用于声明 Actor 可以处理查询类消息。与 control 不同，query 走 HTTP 同步调用，不走 WS。
+
+以添加 `sensory.hearing.caption_stream.asr_models` 为例：
+
+### 1. `topics.json` — capabilities 和 actions 中各新增一条
+
+```json
+"capabilities": [
+  // ... 已有 control capabilities ...
+  {
+    "id": "sensory.hearing.caption_stream.asr_models",
+    "topic": "sensory.hearing.caption_stream.asr_models",
+    "kinds": ["query"],
+    "mode": "once"
+  }
+],
+"actions": {
+  // ... 已有 actions ...
+  "asr_models": { "kind": "query", "direction": "body → nest → python (HTTP)", "description": "查询可用 ASR 模型列表" }
+}
+```
+
+### 2. `src/index.ts` — TOPIC 和 CAP 中新增
+
+```ts
+// Topics
+export const TOPIC = {
+  // ... 已有 topics ...
+  // query
+  SENSORY_HEARING_ASR_MODELS: 'sensory.hearing.caption_stream.asr_models',
+} as const
+
+// Capabilities
+export const CAP = {
+  // ... 已有 caps ...
+  SENSORY_HEARING_ASR_MODELS: {
+    id: 'sensory.hearing.caption_stream.asr_models',
+    actor: ACTOR.SENSORY_HEARING,
+    topic: TOPIC.SENSORY_HEARING_ASR_MODELS,
+    kinds: ['query'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+} as const
+```
+
+### 3. `python/neural_topics.py` — TOPICS 和 CAPABILITIES 中新增
+
+```python
+TOPICS = {
+    # ... 已有 topics ...
+    # query
+    "SENSORY_HEARING_ASR_MODELS": "sensory.hearing.caption_stream.asr_models",
+}
+
+CAPABILITIES = [
+    # ... 已有 capabilities ...
+    {
+        "id": "sensory.hearing.caption_stream.asr_models",
+        "actor": ACTORS["SENSORY_HEARING"],
+        "topic": TOPICS["SENSORY_HEARING_ASR_MODELS"],
+        "kinds": ["query"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+]
+```
+
+### 4. Python 端实现 query 处理
+
+在 `neural_adapter.py` 的 `handle_query()` 中新增 topic 路由分支：
+
+```python
+async def handle_query(self, message: dict) -> dict:
+    topic = message.get("topic", "")
+    if topic.endswith(".asr_models"):
+        return self._query_asr_models()
+    # ... 其他 topic ...
+```
+
+### 5. 调用方式
+
+```typescript
+// Electron 端通过 trigger 统一调用
+const result = await neuralTrigger({
+  kind: 'query',
+  topic: 'sensory.hearing.caption_stream.asr_models',
+  payload: {}
+})
+// result = { success: true, data: { ... } }
+```
+
+> **注意**：query 类型的 Capability 不需要出现在 `subscribeTopics` 或 `subscribeKinds` 中，因为它走 HTTP 中转而非 WS 广播。
+
 ## 修改已有 Topic
 
 流程与新增一致，只需在 `topics.json` + `src/index.ts` + `python/neural_topics.py` 三处同步修改，然后执行同步脚本。

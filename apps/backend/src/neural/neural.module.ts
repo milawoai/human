@@ -14,6 +14,6 @@ import { NeuralWsModule } from './neural-ws/neural-ws.module';
     NeuralWsModule,
     NeuralHttpModule,
   ],
-  exports: [NeuralCoreModule, NeuralWsModule],
+  exports: [NeuralCoreModule, NeuralWsModule, NeuralHttpModule],
 })
 export class NeuralModule {}

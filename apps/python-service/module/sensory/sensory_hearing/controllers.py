@@ -22,6 +22,7 @@ from .config import get_config
 from .impl.sherpa_onnx_funasr_service import SherpaOnnxFunasrService
 from .neural_adapter import NeuralAdapter
 from .neural_client import NeuralClient
+from .query_router import router as query_router, set_adapter as set_query_adapter
 from .streaming_session import StreamingMode, StreamingSession
 
 logger = logging.getLogger(__name__)
@@ -348,6 +349,9 @@ class SpeechRecognitionController:
 
         # 将 adapter 的 handle_command 设置为 Neural 客户端的 command 回调
         self.neural_client._on_command = self.neural_adapter.handle_command
+
+        # 注入 adapter 到 query_router，供 HTTP query 端点使用
+        set_query_adapter(self.neural_adapter)
 
         success = await self.neural_client.connect()
         if success:

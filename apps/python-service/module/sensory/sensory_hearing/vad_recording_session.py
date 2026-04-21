@@ -129,7 +129,7 @@ class VadRecordingSession:
         self.record_dir = tempfile.mkdtemp(prefix=f"vad_recording_{self.session_id}_")
         os.makedirs(self.record_dir, exist_ok=True)
 
-    async def prepare(self, asr_service, on_event: Callable[[Dict], None], subtitle_mode: bool = True) -> bool:
+    async def prepare(self, asr_service, on_event: Callable[[Dict], None], subtitle_mode: bool = True, model_id: Optional[str] = None) -> bool:
         """
         准备阶段：加载模型、初始化 VAD
 
@@ -137,6 +137,7 @@ class VadRecordingSession:
             asr_service: ASR 服务实例
             on_event: 事件回调函数
             subtitle_mode: 是否启用实时字幕（VAD模式），false 为简单录音模式
+            model_id: 指定加载的模型 ID，None 则使用当前已加载模型或默认模型
 
         Returns:
             是否成功
@@ -149,14 +150,17 @@ class VadRecordingSession:
         try:
             if subtitle_mode:
                 # VAD 模式：需要加载模型和 VAD
+                # 确定 model_id：优先使用传入的参数，否则使用当前已加载模型，最后回退到默认
+                _model_id = model_id or self.asr_service.current_model_id or "funasr-nano"
+
                 # 确保模型已加载
                 if not self.asr_service.current_model_id:
-                    await self.asr_service.load_model("funasr-nano")
+                    await self.asr_service.load_model(_model_id)
 
                 # 获取 offline recognizer
                 self.offline_recognizer = self.asr_service.offline_recognizer
                 if not self.offline_recognizer:
-                    await self.asr_service.load_model("funasr-nano")
+                    await self.asr_service.load_model(_model_id)
                     self.offline_recognizer = self.asr_service.offline_recognizer
 
                 # 初始化 VAD

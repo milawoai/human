@@ -80,7 +80,7 @@ interface BusMessage<T = any> {
 | Kind | 语义 | 路由策略 |
 |------|------|----------|
 | `command` | 执行一次动作 | 定向（Capability） |
-| `query` | 查询 | 定向（Capability） |
+| `query` | 查询并返回数据 | 定向（Capability），python runtime 走 HTTP 中转 |
 | `control` | 控制能力状态（启动/停止） | 定向（Capability） |
 | `event` | 事实广播 | 广播（Subscription） |
 | `response` | 成功返回 | 回源（target/correlationId） |
@@ -151,12 +151,18 @@ route(message: BusMessage) → RouteResult { targets, subscribers }
 ### 4.2 三种路由策略
 
 ```
-                    ┌─ command/control/query
+                    ┌─ command/control
                     │   → routeDirected()
                     │     查 Capability Registry
-                    │     精确匹配优先，定向发送
+                    │     精确匹配优先，WS 定向发送
                     │
-BusMessage ─→ route ─┼─ event
+BusMessage ─→ route ─┼─ query
+                    │   → routeDirected()
+                    │     查 Capability Registry
+                    │     若 target.runtime === 'python' → HTTP 中转到 /neural/query
+                    │     否则 WS 定向发送
+                    │
+                    ├─ event
                     │   → routeBroadcast()
                     │     查 Subscription
                     │     按 connectionId 去重，广播
@@ -165,6 +171,8 @@ BusMessage ─→ route ─┼─ event
                         → routeReply()
                           根据 target/correlationId 回源
 ```
+
+> **query 的 HTTP 中转**：对于 `kind: 'query'` 且目标 actor 的 `runtime === 'python'`，Nest 的 `trigger()` 会跳过 WS 发送，直接 HTTP 调用 Python 的 `/neural/query` 端点，利用 HTTP 的请求-响应特性同步拿到结果，避免在 WS 链路上做 correlationId 追踪。
 
 ### 4.3 Topic 匹配规则
 
@@ -201,9 +209,11 @@ BusMessage ─→ route ─┼─ event
 
 ### 5.2 HTTP 接口（触发/查询/管理）
 
+**Nest 端 (Neural Core)**
+
 | 端点 | 用途 |
 |------|------|
-| `POST /neural/trigger` | 触发消息（构造 BusMessage 后路由） |
+| `POST /neural/trigger` | 触发消息（构造 BusMessage 后路由；query 类型自动 HTTP 中转） |
 | `POST /neural/actors/list` | 列出所有 Actor |
 | `POST /neural/capabilities/list` | 查询能力注册 |
 | `POST /neural/subscriptions/list` | 查询订阅 |
@@ -211,6 +221,12 @@ BusMessage ─→ route ─┼─ event
 | `POST /neural/admin/disconnect` | 强制断开 Actor |
 | `POST /neural/debug/publish` | 调试发布消息 |
 | `POST /neural/debug/status` | 调试状态 |
+
+**Python 端 (Sensory Service)**
+
+| 端点 | 用途 |
+|------|------|
+| `POST /neural/query` | 统一 query 入口（接收 `{topic, payload}`，返回业务数据） |
 
 ### 5.3 通信分层原则
 
@@ -266,7 +282,8 @@ socket.on('message', data)
 | 模块 | 功能 |
 |------|------|
 | `neural_client.py` | WS 客户端（连接、注册、心跳、消息收发） |
-| `neural_adapter.py` | 业务适配层（桥接 Neural 消息 ↔ VadRecordingSession） |
+| `neural_adapter.py` | 业务适配层（桥接 Neural 消息 ↔ VadRecordingSession；query 路由分发） |
+| `query_router.py` | HTTP query 入口（`/neural/query`，转发给 adapter） |
 
 **Topic 定义**：`apps/python-service/module/common/neural_topics.py`
 
@@ -333,7 +350,48 @@ Renderer (Vue)
 
 ---
 
-## 八、Actor 生命周期
+## 八、典型调用链 — Query 查询（ASR 模型列表）
+
+```
+Body (Electron)
+  │
+  │  ① HTTP: POST /neural/trigger
+  │     { kind: "query", topic: "sensory.hearing.caption_stream.asr_models" }
+  │
+  ▼
+Neural Core (Nest)
+  │
+  │  ② trigger() → kind === 'query'
+  │     findCapabilities() → 匹配到 sensory-hearing (runtime: python)
+  │     → queryViaHttp(): HTTP POST /neural/query
+  │
+  ▼
+Sensory (Python)
+  │
+  │  ③ query_router → adapter.handle_query()
+  │     topic 匹配 .asr_models → _query_asr_models()
+  │     → ASRServiceFactory.get_transcribers_info()
+  │
+  │  ④ HTTP 200 { success: true, data: { ... } }
+  │
+  ▼
+Neural Core (Nest)
+  │
+  │  ⑤ 返回 { success: true, data: { ... } }
+  │
+  ▼
+Body (Electron)
+  │
+  │  ⑥ 拿到 ASR 模型列表
+```
+
+**与 control 链路的区别**：
+- control/command → 通过 WS 发送到 Python，Python 异步执行，不返回结果
+- query → Nest 通过 HTTP 中转，同步调用 Python 的 `/neural/query`，直接拿到响应数据返回给调用方
+
+---
+
+## 九、Actor 生命周期
 
 ```
            ┌──────────┐
@@ -371,7 +429,7 @@ Renderer (Vue)
 
 ---
 
-## 九、设计原则
+## 十、设计原则
 
 ### 1. 不允许系统直连
 
@@ -403,7 +461,7 @@ started         (event)     → 广播事实
 
 ---
 
-## 十、已实现功能清单
+## 十一、已实现功能清单
 
 ### Nest 后端
 
@@ -415,6 +473,7 @@ started         (event)     → 广播事实
 - [x] 广播按 connectionId 去重
 - [x] WebSocket Gateway（register / heartbeat / subscribe / message）
 - [x] HTTP Controller（trigger / list / admin / debug）
+- [x] Query HTTP 中转（trigger 中 kind=query + runtime=python → HTTP 调用 Python /neural/query）
 - [x] 失活 Actor 自动清理
 
 ### Electron 客户端
@@ -432,6 +491,8 @@ started         (event)     → 广播事实
 - [x] 自动注册链（actor → capabilities → subscribe → heartbeat）
 - [x] 事件发送（send_event）
 - [x] 控制消息接收（handle_command）
+- [x] Query 消息处理（handle_query，根据 topic 路由到具体处理函数）
+- [x] Query HTTP 入口（/neural/query，FastAPI 路由）
 - [x] NeuralAdapter 适配层（桥接业务逻辑）
 - [x] 会话安全重启（graceful_stop 防止并行监听）
 
@@ -441,7 +502,7 @@ started         (event)     → 广播事实
 
 ---
 
-## 十一、Topic 命名规范
+## 十二、Topic 命名规范
 
 ```
 <system>.<module>.<entity>.<verb>
@@ -452,6 +513,7 @@ started         (event)     → 广播事实
 ```
 sensory.hearing.caption_stream.enable           # 控制：启动
 sensory.hearing.caption_stream.disable          # 控制：停止
+sensory.hearing.caption_stream.asr_models       # 查询：ASR 模型列表
 sensory.hearing.caption_stream.started          # 事件：已启动
 sensory.hearing.caption_stream.segment          # 事件：字幕片段
 sensory.hearing.caption_stream.vad_start        # 事件：VAD 检测到语音
@@ -462,7 +524,7 @@ sensory.hearing.caption_stream.error            # 事件：错误
 
 ---
 
-## 十二、文件索引
+## 十三、文件索引
 
 ### Nest 后端
 
@@ -497,5 +559,6 @@ apps/python-service/module/
 │   └── neural_topics.py              # Topic / Actor / Capability 定义
 └── sensory/sensory_hearing/
     ├── neural_client.py              # WebSocket 客户端
-    └── neural_adapter.py             # 业务适配层
+    ├── neural_adapter.py             # 业务适配层（command + query 分发）
+    └── query_router.py               # HTTP query 入口（/neural/query）
 ```

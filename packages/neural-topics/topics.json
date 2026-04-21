@@ -21,13 +21,20 @@
           "topic": "sensory.hearing.caption_stream.disable",
           "kinds": ["control"],
           "mode": "once"
+        },
+        {
+          "id": "sensory.hearing.caption_stream.asr_models",
+          "topic": "sensory.hearing.caption_stream.asr_models",
+          "kinds": ["query"],
+          "mode": "once"
         }
       ],
       "subscribeTopics": ["sensory.hearing.caption_stream.*"],
       "subscribeKinds": ["control"],
       "actions": {
-        "enable":    { "kind": "control", "direction": "body → python", "description": "启动字幕流" },
-        "disable":   { "kind": "control", "direction": "body → python", "description": "停止字幕流" },
+        "enable":     { "kind": "control", "direction": "body → python", "description": "启动字幕流" },
+        "disable":    { "kind": "control", "direction": "body → python", "description": "停止字幕流" },
+        "asr_models": { "kind": "query",   "direction": "body → nest → python (HTTP)", "description": "查询可用 ASR 模型列表" },
         "prepared":  { "kind": "event",   "direction": "python → subscribers", "description": "准备完成" },
         "started":   { "kind": "event",   "direction": "python → subscribers", "description": "录音已开始" },
         "vad_start": { "kind": "event",   "direction": "python → subscribers", "description": "VAD 检测到语音开始" },
@@ -35,6 +42,30 @@
         "segment":   { "kind": "event",   "direction": "python → subscribers", "description": "字幕片段就绪" },
         "stopped":   { "kind": "event",   "direction": "python → subscribers", "description": "录音已停止" },
         "error":     { "kind": "event",   "direction": "python → subscribers", "description": "错误" }
+      }
+    },
+    "brain.init": {
+      "description": "脑系统 — 系统初始化与健康检查",
+      "actor": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "init"
+      },
+      "capabilities": [
+        {
+          "id": "brain.init",
+          "topic": "brain.init.execute",
+          "kinds": ["command"],
+          "mode": "once"
+        }
+      ],
+      "subscribeTopics": [],
+      "subscribeKinds": [],
+      "actions": {
+        "execute":    { "kind": "command", "direction": "body → nest", "description": "执行系统初始化（检测/创建配置目录、检查依赖）" },
+        "init_done":  { "kind": "event",   "direction": "nest → subscribers", "description": "初始化完成，返回检测结果" },
+        "init_error": { "kind": "event",   "direction": "nest → subscribers", "description": "初始化失败" }
       }
     }
   }

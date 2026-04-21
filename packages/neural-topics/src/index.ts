@@ -11,6 +11,7 @@
 
 export const NS = {
   SENSORY_HEARING: 'sensory.hearing.caption_stream',
+  BRAIN_INIT: 'brain.init',
 } as const
 
 // ──────────────────────────────────────────────
@@ -21,6 +22,8 @@ export const TOPIC = {
   // control
   SENSORY_HEARING_ENABLE: 'sensory.hearing.caption_stream.enable',
   SENSORY_HEARING_DISABLE: 'sensory.hearing.caption_stream.disable',
+  // query
+  SENSORY_HEARING_ASR_MODELS: 'sensory.hearing.caption_stream.asr_models',
   // event
   SENSORY_HEARING_PREPARED: 'sensory.hearing.caption_stream.prepared',
   SENSORY_HEARING_STARTED: 'sensory.hearing.caption_stream.started',
@@ -29,6 +32,10 @@ export const TOPIC = {
   SENSORY_HEARING_SEGMENT: 'sensory.hearing.caption_stream.segment',
   SENSORY_HEARING_STOPPED: 'sensory.hearing.caption_stream.stopped',
   SENSORY_HEARING_ERROR: 'sensory.hearing.caption_stream.error',
+  // brain.init — command & event
+  BRAIN_INIT_EXECUTE: 'brain.init.execute',
+  BRAIN_INIT_DONE: 'brain.init.init_done',
+  BRAIN_INIT_ERROR: 'brain.init.init_error',
 } as const
 
 // ──────────────────────────────────────────────
@@ -49,6 +56,12 @@ export const ACTOR = {
     runtime: 'python' as const,
     system: 'sensory' as const,
     module: 'hearing',
+  },
+  BRAIN: {
+    actorId: 'brain-main',
+    runtime: 'nest' as const,
+    system: 'brain' as const,
+    module: 'init',
   },
 } as const
 
@@ -71,6 +84,24 @@ export const CAP = {
     actor: ACTOR.SENSORY_HEARING,
     topic: TOPIC.SENSORY_HEARING_DISABLE,
     kinds: ['control'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  SENSORY_HEARING_ASR_MODELS: {
+    id: 'sensory.hearing.caption_stream.asr_models',
+    actor: ACTOR.SENSORY_HEARING,
+    topic: TOPIC.SENSORY_HEARING_ASR_MODELS,
+    kinds: ['query'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_INIT: {
+    id: 'brain.init',
+    actor: ACTOR.BRAIN,
+    topic: TOPIC.BRAIN_INIT_EXECUTE,
+    kinds: ['command'] as const,
     mode: 'once' as const,
     enabled: true,
     online: true,

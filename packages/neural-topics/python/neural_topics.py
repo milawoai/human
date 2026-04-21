@@ -11,6 +11,7 @@ Neural Topics — Python 常量导出
 
 NS = {
     "SENSORY_HEARING": "sensory.hearing.caption_stream",
+    "BRAIN_INIT": "brain.init",
 }
 
 # ──────────────────────────────────────────────
@@ -21,6 +22,8 @@ TOPICS = {
     # control
     "SENSORY_HEARING_ENABLE": "sensory.hearing.caption_stream.enable",
     "SENSORY_HEARING_DISABLE": "sensory.hearing.caption_stream.disable",
+    # query
+    "SENSORY_HEARING_ASR_MODELS": "sensory.hearing.caption_stream.asr_models",
     # event
     "SENSORY_HEARING_PREPARED": "sensory.hearing.caption_stream.prepared",
     "SENSORY_HEARING_STARTED": "sensory.hearing.caption_stream.started",
@@ -29,6 +32,10 @@ TOPICS = {
     "SENSORY_HEARING_SEGMENT": "sensory.hearing.caption_stream.segment",
     "SENSORY_HEARING_STOPPED": "sensory.hearing.caption_stream.stopped",
     "SENSORY_HEARING_ERROR": "sensory.hearing.caption_stream.error",
+    # brain.init — command & event
+    "BRAIN_INIT_EXECUTE": "brain.init.execute",
+    "BRAIN_INIT_DONE": "brain.init.init_done",
+    "BRAIN_INIT_ERROR": "brain.init.init_error",
 }
 
 # ──────────────────────────────────────────────
@@ -49,6 +56,12 @@ ACTORS = {
         "runtime": "python",
         "system": "sensory",
         "module": "hearing",
+    },
+    "BRAIN": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "init",
     },
 }
 
@@ -71,6 +84,24 @@ CAPABILITIES = [
         "actor": ACTORS["SENSORY_HEARING"],
         "topic": TOPICS["SENSORY_HEARING_DISABLE"],
         "kinds": ["control"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "sensory.hearing.caption_stream.asr_models",
+        "actor": ACTORS["SENSORY_HEARING"],
+        "topic": TOPICS["SENSORY_HEARING_ASR_MODELS"],
+        "kinds": ["query"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.init",
+        "actor": ACTORS["BRAIN"],
+        "topic": TOPICS["BRAIN_INIT_EXECUTE"],
+        "kinds": ["command"],
         "mode": "once",
         "enabled": True,
         "online": True,

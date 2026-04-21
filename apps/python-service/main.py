@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from module.sensory.sensory_hearing.controllers import SpeechRecognitionController
+from module.sensory.sensory_hearing.query_router import router as query_router
 
 load_dotenv()
 
@@ -26,6 +27,9 @@ app.add_middleware(
 
 speech_controller = SpeechRecognitionController(debug=False)
 app.include_router(speech_controller.get_router(), prefix="/api/v1")
+
+# Neural query 路由（供 Nest HTTP 中转调用）
+app.include_router(query_router)
 
 
 @app.on_event("startup")
