@@ -3,6 +3,8 @@ import {
   CreateAutomationSetDto,
   DeleteActionsDto,
   DeleteAutomationSetDto,
+  ExportAutomationDto,
+  GetActionsDto,
   ImportAutomationDto,
   InputTextDto,
   InsertActionsDto,
@@ -13,7 +15,7 @@ import {
   WorkAutomationDto,
 } from './automation.dto';
 import { AutomationService } from './automation.service';
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 
 @Controller('automation')
 export class AutomationController {
@@ -69,9 +71,9 @@ export class AutomationController {
   /**
    * 获取集合的所有操作
    */
-  @Get('actions/:setId')
-  async getActions(@Param('setId') setId: number) {
-    return await this.automationService.getActions(setId);
+  @Post('actions/list')
+  async getActions(@Body() dto: GetActionsDto) {
+    return await this.automationService.getActions(dto.setId);
   }
 
   /**
@@ -111,9 +113,9 @@ export class AutomationController {
   /**
    * 导出自动化配置为JSON
    */
-  @Get('export/:setId')
-  async exportAutomation(@Param('setId') setId: number) {
-    return await this.automationService.exportAutomation(setId);
+  @Post('export')
+  async exportAutomation(@Body() dto: ExportAutomationDto) {
+    return await this.automationService.exportAutomation(dto.setId);
   }
 
   /**

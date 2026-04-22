@@ -5,27 +5,23 @@ import { BaseEntity } from './base.entity';
 export class ButtonAction extends BaseEntity {
   @Column({
     name: 'set_id',
-    type: 'bigint',
-    unsigned: true,
     comment: '所属自动化集合ID',
   })
   setId: number;
 
-  @Column({ name: 'step_index', type: 'int', comment: '步骤索引(执行顺序)' })
+  @Column({ name: 'step_index', type: 'integer', comment: '步骤索引(执行顺序)' })
   stepIndex: number;
 
   @Column({
     name: 'button_type',
-    type: 'varchar',
-    length: 50,
+    type: 'text',
     comment: '按钮类型(Enter/Space/Escape/Tab/Arrow等)',
   })
   buttonType: string;
 
   @Column({
     name: 'key_combination',
-    type: 'varchar',
-    length: 100,
+    type: 'text',
     default: '',
     comment: '组合键(Ctrl+C/Alt+Tab等)',
   })
@@ -33,7 +29,7 @@ export class ButtonAction extends BaseEntity {
 
   @Column({
     name: 'wait_time',
-    type: 'int',
+    type: 'integer',
     default: 0,
     comment: '执行后等待时间(毫秒)',
   })
@@ -41,8 +37,7 @@ export class ButtonAction extends BaseEntity {
 
   @Column({
     name: 'label',
-    type: 'varchar',
-    length: 255,
+    type: 'text',
     default: '',
     comment: '操作标签',
   })
@@ -50,8 +45,7 @@ export class ButtonAction extends BaseEntity {
 
   @Column({
     name: 'screenshot_path',
-    type: 'varchar',
-    length: 500,
+    type: 'text',
     nullable: true,
     comment: '截图路径',
   })
@@ -59,7 +53,7 @@ export class ButtonAction extends BaseEntity {
 
   @Column({
     name: 'extra_data',
-    type: 'json',
+    type: 'simple-json',
     nullable: true,
     comment: '扩展数据(JSON格式)',
   })

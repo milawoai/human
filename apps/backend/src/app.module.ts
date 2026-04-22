@@ -3,9 +3,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { NeuralModule } from './neural/neural.module';
 import { BrainModule } from './brain/brain.module';
+import { DatabaseModule } from './database/database.module';
+import { MotorModule } from './motor/motor.module';
 
 @Module({
-  imports: [NeuralModule, BrainModule],
+  imports: [DatabaseModule, NeuralModule, BrainModule, MotorModule],
   controllers: [AppController],
   providers: [AppService],
 })
