@@ -12,6 +12,8 @@ Neural Topics — Python 常量导出
 NS = {
     "SENSORY_HEARING": "sensory.hearing.caption_stream",
     "BRAIN_INIT": "brain.init",
+    "BRAIN_CORTEX_CHAT": "brain.cortex.chat",
+    "BRAIN_LANGUAGE_MODELS": "brain.language.models",
 }
 
 # ──────────────────────────────────────────────
@@ -36,6 +38,13 @@ TOPICS = {
     "BRAIN_INIT_EXECUTE": "brain.init.execute",
     "BRAIN_INIT_DONE": "brain.init.init_done",
     "BRAIN_INIT_ERROR": "brain.init.init_error",
+    # brain.cortex.chat — command
+    "BRAIN_CORTEX_CHAT_COMPLETE": "brain.cortex.chat.complete",
+    "BRAIN_CORTEX_CHAT_STREAM": "brain.cortex.chat.stream",
+    # brain.language.models — query/control
+    "BRAIN_LANGUAGE_MODELS_LIST": "brain.language.models.list",
+    "BRAIN_LANGUAGE_MODELS_VALIDATE": "brain.language.models.validate",
+    "BRAIN_LANGUAGE_MODEL_SWITCH": "brain.language.model.switch",
 }
 
 # ──────────────────────────────────────────────
@@ -62,6 +71,18 @@ ACTORS = {
         "runtime": "nest",
         "system": "brain",
         "module": "init",
+    },
+    "BRAIN_CORTEX": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "cortex",
+    },
+    "BRAIN_LANGUAGE": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "language-center",
     },
 }
 

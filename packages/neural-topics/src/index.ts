@@ -12,6 +12,8 @@
 export const NS = {
   SENSORY_HEARING: 'sensory.hearing.caption_stream',
   BRAIN_INIT: 'brain.init',
+  BRAIN_CORTEX_CHAT: 'brain.cortex.chat',
+  BRAIN_LANGUAGE_MODELS: 'brain.language.models',
 } as const
 
 // ──────────────────────────────────────────────
@@ -36,6 +38,13 @@ export const TOPIC = {
   BRAIN_INIT_EXECUTE: 'brain.init.execute',
   BRAIN_INIT_DONE: 'brain.init.init_done',
   BRAIN_INIT_ERROR: 'brain.init.init_error',
+  // brain.cortex.chat — command
+  BRAIN_CORTEX_CHAT_COMPLETE: 'brain.cortex.chat.complete',
+  BRAIN_CORTEX_CHAT_STREAM: 'brain.cortex.chat.stream',
+  // brain.language.models — query/control
+  BRAIN_LANGUAGE_MODELS_LIST: 'brain.language.models.list',
+  BRAIN_LANGUAGE_MODELS_VALIDATE: 'brain.language.models.validate',
+  BRAIN_LANGUAGE_MODEL_SWITCH: 'brain.language.model.switch',
 } as const
 
 // ──────────────────────────────────────────────
@@ -62,6 +71,18 @@ export const ACTOR = {
     runtime: 'nest' as const,
     system: 'brain' as const,
     module: 'init',
+  },
+  BRAIN_CORTEX: {
+    actorId: 'brain-main',
+    runtime: 'nest' as const,
+    system: 'brain' as const,
+    module: 'cortex',
+  },
+  BRAIN_LANGUAGE: {
+    actorId: 'brain-main',
+    runtime: 'nest' as const,
+    system: 'brain' as const,
+    module: 'language-center',
   },
 } as const
 
@@ -102,6 +123,51 @@ export const CAP = {
     actor: ACTOR.BRAIN,
     topic: TOPIC.BRAIN_INIT_EXECUTE,
     kinds: ['command'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_CORTEX_CHAT_COMPLETE: {
+    id: 'brain.cortex.chat.complete',
+    actor: ACTOR.BRAIN_CORTEX,
+    topic: TOPIC.BRAIN_CORTEX_CHAT_COMPLETE,
+    kinds: ['command'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_CORTEX_CHAT_STREAM: {
+    id: 'brain.cortex.chat.stream',
+    actor: ACTOR.BRAIN_CORTEX,
+    topic: TOPIC.BRAIN_CORTEX_CHAT_STREAM,
+    kinds: ['command'] as const,
+    mode: 'stream' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_LANGUAGE_MODELS_LIST: {
+    id: 'brain.language.models.list',
+    actor: ACTOR.BRAIN_LANGUAGE,
+    topic: TOPIC.BRAIN_LANGUAGE_MODELS_LIST,
+    kinds: ['query'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_LANGUAGE_MODELS_VALIDATE: {
+    id: 'brain.language.models.validate',
+    actor: ACTOR.BRAIN_LANGUAGE,
+    topic: TOPIC.BRAIN_LANGUAGE_MODELS_VALIDATE,
+    kinds: ['query'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_LANGUAGE_MODEL_SWITCH: {
+    id: 'brain.language.model.switch',
+    actor: ACTOR.BRAIN_LANGUAGE,
+    topic: TOPIC.BRAIN_LANGUAGE_MODEL_SWITCH,
+    kinds: ['control'] as const,
     mode: 'once' as const,
     enabled: true,
     online: true,

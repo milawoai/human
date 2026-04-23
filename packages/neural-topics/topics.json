@@ -67,6 +67,71 @@
         "init_done":  { "kind": "event",   "direction": "nest → subscribers", "description": "初始化完成，返回检测结果" },
         "init_error": { "kind": "event",   "direction": "nest → subscribers", "description": "初始化失败" }
       }
+    },
+    "brain.cortex.chat": {
+      "description": "脑系统 — 对话与响应生成",
+      "actor": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "cortex"
+      },
+      "capabilities": [
+        {
+          "id": "brain.cortex.chat.complete",
+          "topic": "brain.cortex.chat.complete",
+          "kinds": ["command"],
+          "mode": "once"
+        },
+        {
+          "id": "brain.cortex.chat.stream",
+          "topic": "brain.cortex.chat.stream",
+          "kinds": ["command"],
+          "mode": "stream"
+        }
+      ],
+      "subscribeTopics": [],
+      "subscribeKinds": [],
+      "actions": {
+        "complete": { "kind": "command", "direction": "body → nest", "description": "一次性生成对话响应" },
+        "stream":   { "kind": "command", "direction": "body → nest", "description": "流式生成对话响应" }
+      }
+    },
+    "brain.language.models": {
+      "description": "脑系统 — 模型配置查询、校验与切换",
+      "actor": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "language-center"
+      },
+      "capabilities": [
+        {
+          "id": "brain.language.models.list",
+          "topic": "brain.language.models.list",
+          "kinds": ["query"],
+          "mode": "once"
+        },
+        {
+          "id": "brain.language.models.validate",
+          "topic": "brain.language.models.validate",
+          "kinds": ["query"],
+          "mode": "once"
+        },
+        {
+          "id": "brain.language.model.switch",
+          "topic": "brain.language.model.switch",
+          "kinds": ["control"],
+          "mode": "once"
+        }
+      ],
+      "subscribeTopics": [],
+      "subscribeKinds": [],
+      "actions": {
+        "list":     { "kind": "query", "direction": "body → nest", "description": "查询可用模型配置" },
+        "validate": { "kind": "query", "direction": "body → nest", "description": "校验模型配置与环境依赖" },
+        "switch":   { "kind": "control", "direction": "body → nest", "description": "切换当前生效模型 profile" }
+      }
     }
   }
 }

@@ -12,10 +12,12 @@
 import { Module } from '@nestjs/common';
 import { NeuralModule } from '../neural/neural.module';
 import { BrainInitService } from './init/brain-init.service';
+import { BrainLanguageCenterModule } from './language-center/language-center.module';
+import { BrainCortexService } from './cortex/brain-cortex.service';
 
 @Module({
-  imports: [NeuralModule],
-  providers: [BrainInitService],
-  exports: [BrainInitService],
+  imports: [NeuralModule, BrainLanguageCenterModule],
+  providers: [BrainInitService, BrainCortexService],
+  exports: [BrainInitService, BrainCortexService],
 })
 export class BrainModule {}
