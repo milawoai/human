@@ -3,9 +3,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { NeuralModule } from './neural/neural.module';
 import { BrainModule } from './brain/brain.module';
+import { MotorToolRunnerModule } from './motor/motor-tool-runner/motor-tool-runner.module';
 
 @Module({
-  imports: [NeuralModule, BrainModule],
+  imports: [NeuralModule, BrainModule, MotorToolRunnerModule],
   controllers: [AppController],
   providers: [AppService],
 })

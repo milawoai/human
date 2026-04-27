@@ -9,13 +9,15 @@
  * - NeuralWsModule（推送事件给 WS 订阅者）
  * - NeuralHttpModule（注册自身为命令处理器）
  */
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { NeuralModule } from '../neural/neural.module';
 import { BrainInitService } from './init/brain-init.service';
+import { ToolConfigService } from './tool-config/tool-config.service';
 
+@Global()
 @Module({
   imports: [NeuralModule],
-  providers: [BrainInitService],
-  exports: [BrainInitService],
+  providers: [BrainInitService, ToolConfigService],
+  exports: [BrainInitService, ToolConfigService],
 })
 export class BrainModule {}

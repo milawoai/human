@@ -15,6 +15,7 @@ import { NeuralCoreService } from '../../neural/neural-core/neural-core.service'
 import { NeuralWsGateway } from '../../neural/neural-ws/neural-ws.gateway';
 import type { InternalCommandHandler } from '../../neural/neural-http/neural-http.service';
 import { NeuralHttpService } from '../../neural/neural-http/neural-http.service';
+import { ToolConfigService } from '../tool-config/tool-config.service';
 
 /** Brain Actor 定义 */
 const BRAIN_ACTOR = {
@@ -43,6 +44,7 @@ export class BrainInitService implements OnModuleInit, InternalCommandHandler {
     private readonly coreService: NeuralCoreService,
     private readonly wsGateway: NeuralWsGateway,
     private readonly httpService: NeuralHttpService,
+    private readonly toolConfigService: ToolConfigService,
   ) {}
 
   async onModuleInit() {
@@ -59,6 +61,10 @@ export class BrainInitService implements OnModuleInit, InternalCommandHandler {
     // 3. 注册自身为内部命令处理器
     this.httpService.registerCommandHandler(this);
     this.logger.log('③ InternalCommandHandler 已注册到 NeuralHttpService');
+
+    // 4. 初始化工具配置目录
+    await this.toolConfigService.initialize();
+    this.logger.log('④ 工具配置目录已初始化');
 
     this.logger.log('── BrainInitService onModuleInit 完成 ──');
   }
