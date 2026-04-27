@@ -15,11 +15,14 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "typecheck": "tsc --noEmit",
     "verify:brain-language": "ts-node scripts/brain-language-smoke.ts",
+    "verify:brain-init-config": "ts-node scripts/brain-init-config-smoke.ts",
     "clean": "rm -rf dist",
     "test": "jest"
   },
   "dependencies": {
+    "@mariozechner/pi-agent-core": "^0.70.2",
     "@mariozechner/pi-ai": "^0.69.0",
+    "@mariozechner/pi-coding-agent": "^0.70.2",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",

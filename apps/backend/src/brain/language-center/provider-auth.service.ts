@@ -16,6 +16,16 @@ const PI_AI_OAUTH_MODULE = '@mariozechner/pi-ai/oauth';
 const dynamicImport = <T = unknown>(specifier: string): Promise<T> =>
   new Function('s', 'return import(s)')(specifier) as Promise<T>;
 
+interface OAuthLoginResult {
+  provider: string;
+  authPath: string;
+  authInfo?: {
+    url: string;
+    instructions?: string;
+  };
+  progress: string[];
+}
+
 @Injectable()
 export class ProviderAuthService {
   private readonly authPath = path.join(
@@ -29,17 +39,18 @@ export class ProviderAuthService {
   }
 
   async resolveApiKey(profileName: string, profile: BrainModelProfileConfig): Promise<string | undefined> {
-    if (profile.provider === 'openai-codex') {
+    const oauthProvider = this.resolveOAuthProvider(profile);
+    if (oauthProvider) {
       const { getOAuthApiKey } = await this.getOAuthModule();
       const credentials = this.readOAuthStore();
-      const result = await getOAuthApiKey('openai-codex', credentials);
+      const result = await getOAuthApiKey(oauthProvider, credentials);
       if (!result) {
         throw new Error(
-          `profile "${profileName}" requires openai-codex OAuth credentials at ${this.authPath}`,
+          `profile "${profileName}" requires OAuth credentials for "${oauthProvider}" at ${this.authPath}`,
         );
       }
       if (result.newCredentials) {
-        credentials['openai-codex'] = result.newCredentials;
+        credentials[oauthProvider] = result.newCredentials;
         this.writeOAuthStore(credentials);
       }
       return result.apiKey;
@@ -61,21 +72,90 @@ export class ProviderAuthService {
     );
   }
 
+  async listOAuthProviders(): Promise<
+    Array<{ id: string; name: string; usesCallbackServer: boolean }>
+  > {
+    const { getOAuthProviders } = await this.getOAuthModule();
+    return getOAuthProviders().map((provider) => ({
+      id: provider.id,
+      name: provider.name,
+      usesCallbackServer: Boolean(provider.usesCallbackServer),
+    }));
+  }
+
+  async loginOAuth(params: {
+    provider: string;
+    manualCode?: string;
+  }): Promise<OAuthLoginResult> {
+    const providerId = params.provider?.trim();
+    if (!providerId) {
+      throw new Error('payload.provider is required');
+    }
+
+    const { getOAuthProvider } = await this.getOAuthModule();
+    const oauthProvider = getOAuthProvider(providerId);
+    if (!oauthProvider) {
+      const providers = await this.listOAuthProviders();
+      throw new Error(
+        `OAuth provider "${providerId}" is not registered. Available: ${providers.map((p) => p.id).join(', ')}`,
+      );
+    }
+
+    const progress: string[] = [];
+    let authInfo: OAuthLoginResult['authInfo'];
+    const manualCode = params.manualCode?.trim();
+    let credentials: OAuthCredentials;
+    try {
+      credentials = await oauthProvider.login({
+        onAuth: (info) => {
+          authInfo = info;
+        },
+        onProgress: (message) => {
+          progress.push(message);
+        },
+        onPrompt: async (prompt) => {
+          if (manualCode) return manualCode;
+          throw new Error(
+            `OAuth login for "${providerId}" requires manual input: ${prompt.message}`,
+          );
+        },
+        ...(manualCode
+          ? {
+              onManualCodeInput: async () => manualCode,
+            }
+          : {}),
+      });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      const authHint = authInfo?.url ? ` auth_url=${authInfo.url}` : '';
+      const progressHint = progress.length > 0 ? ` progress=${progress.join(' | ')}` : '';
+      throw new Error(
+        `OAuth login failed for "${providerId}": ${msg}.${authHint}${progressHint}`,
+      );
+    }
+
+    const store = this.readOAuthStore();
+    store[providerId] = credentials;
+    this.writeOAuthStore(store);
+
+    return {
+      provider: providerId,
+      authPath: this.authPath,
+      authInfo,
+      progress,
+    };
+  }
+
   async validateProfile(profileName: string, profile: BrainModelProfileConfig): Promise<AuthValidation> {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    if (profile.provider === 'openai-codex') {
-      if (!profile.auth || profile.auth.type !== 'oauth') {
-        errors.push(
-          `profile "${profileName}" provider=openai-codex must configure auth.type=oauth`,
-        );
-        return { valid: false, errors, warnings };
-      }
+    const oauthProvider = this.resolveOAuthProvider(profile);
+    if (oauthProvider) {
 
       if (!fs.existsSync(this.authPath)) {
         errors.push(
-          `profile "${profileName}" missing OAuth credential file: ${this.authPath}`,
+          `profile "${profileName}" missing OAuth credential file: ${this.authPath} (provider=${oauthProvider})`,
         );
         return { valid: false, errors, warnings };
       }
@@ -101,6 +181,15 @@ export class ProviderAuthService {
     }
 
     return { valid: errors.length === 0, errors, warnings };
+  }
+
+  private resolveOAuthProvider(
+    profile: BrainModelProfileConfig,
+  ): string | undefined {
+    if (profile.auth?.type === 'oauth' && profile.auth.provider?.trim()) {
+      return profile.auth.provider.trim();
+    }
+    return undefined;
   }
 
   private readOAuthStore(): OAuthCredentialStore {

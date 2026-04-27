@@ -14,10 +14,12 @@ import { NeuralModule } from '../neural/neural.module';
 import { BrainInitService } from './init/brain-init.service';
 import { BrainLanguageCenterModule } from './language-center/language-center.module';
 import { BrainCortexService } from './cortex/brain-cortex.service';
+import { BrainAgentService } from './agent/brain-agent.service';
+import { AgentSessionStore } from './agent/agent-session.store';
 
 @Module({
   imports: [NeuralModule, BrainLanguageCenterModule],
-  providers: [BrainInitService, BrainCortexService],
-  exports: [BrainInitService, BrainCortexService],
+  providers: [BrainInitService, BrainCortexService, BrainAgentService, AgentSessionStore],
+  exports: [BrainInitService, BrainCortexService, BrainAgentService],
 })
 export class BrainModule {}

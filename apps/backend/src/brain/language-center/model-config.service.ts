@@ -10,12 +10,14 @@ import {
 @Injectable()
 export class ModelConfigService {
   private readonly logger = new Logger(ModelConfigService.name);
+  private readonly secretDir = path.join(os.homedir(), '.ai_secretary');
   private readonly configPath = path.join(
-    os.homedir(),
-    '.ai_secretary',
+    this.secretDir,
     'config.json',
   );
+  private readonly secretsEnvPath = path.join(this.secretDir, 'secrets.env');
   private cachedConfig: SecretaryConfig | null = null;
+  private secretsLoaded = false;
 
   getConfigPath(): string {
     return this.configPath;
@@ -29,6 +31,7 @@ export class ModelConfigService {
       return this.cachedConfig;
     }
 
+    this.loadSecretsEnvIfPresent();
     const config = this.loadConfigFromDisk();
     const validation = this.validateConfig(config, { strictEnv });
     if (!validation.valid) {
@@ -50,6 +53,7 @@ export class ModelConfigService {
 
   getDefaultProfile(options?: { forceReload?: boolean; strictEnv?: boolean }) {
     const config = this.getConfig(options);
+    if (!config.brain.defaultProfile) return undefined;
     return config.brain.profiles[config.brain.defaultProfile];
   }
 
@@ -59,6 +63,11 @@ export class ModelConfigService {
   ) {
     const config = this.getConfig(options);
     const resolvedName = profileName ?? config.brain.defaultProfile;
+    if (!resolvedName) {
+      throw new Error(
+        `No profile resolved: brain.defaultProfile is empty in ${this.configPath}`,
+      );
+    }
     const profile = config.brain.profiles[resolvedName];
     if (!profile) {
       throw new Error(`Profile "${resolvedName}" not found in ${this.configPath}`);
@@ -98,8 +107,8 @@ export class ModelConfigService {
       return { valid: false, errors, warnings };
     }
 
-    if (typeof raw.brain.defaultProfile !== 'string' || !raw.brain.defaultProfile.trim()) {
-      errors.push('brain.defaultProfile must be a non-empty string');
+    if (typeof raw.brain.defaultProfile !== 'string') {
+      errors.push('brain.defaultProfile must be a string');
     }
 
     if (!this.isObject(raw.brain.profiles)) {
@@ -109,7 +118,12 @@ export class ModelConfigService {
 
     const profileEntries = Object.entries(raw.brain.profiles);
     if (profileEntries.length === 0) {
-      errors.push('brain.profiles must contain at least one profile');
+      warnings.push('brain.profiles is empty (no model profile configured yet)');
+      if (raw.brain.defaultProfile.trim()) {
+        errors.push('brain.defaultProfile must be empty when brain.profiles is empty');
+      }
+    } else if (!raw.brain.defaultProfile.trim()) {
+      errors.push('brain.defaultProfile must be non-empty when brain.profiles is not empty');
     }
 
     for (const [profileName, profile] of profileEntries) {
@@ -152,6 +166,7 @@ export class ModelConfigService {
     const defaultProfile = raw.brain.defaultProfile;
     if (
       typeof defaultProfile === 'string' &&
+      defaultProfile.trim() &&
       this.isObject(raw.brain.profiles) &&
       !Object.prototype.hasOwnProperty.call(raw.brain.profiles, defaultProfile)
     ) {
@@ -192,6 +207,49 @@ export class ModelConfigService {
     }
 
     return parsed as SecretaryConfig;
+  }
+
+  private loadSecretsEnvIfPresent(): void {
+    if (this.secretsLoaded) return;
+    this.secretsLoaded = true;
+
+    if (!fs.existsSync(this.secretsEnvPath)) return;
+
+    const text = fs.readFileSync(this.secretsEnvPath, 'utf-8');
+    const lines = text.split(/\r?\n/);
+    let loadedCount = 0;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx <= 0) continue;
+
+      const key = trimmed.slice(0, eqIdx).trim();
+      if (!/^[A-Z_][A-Z0-9_]*$/.test(key)) continue;
+
+      if (process.env[key] !== undefined) {
+        continue;
+      }
+
+      let value = trimmed.slice(eqIdx + 1).trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+
+      process.env[key] = value;
+      loadedCount += 1;
+    }
+
+    if (loadedCount > 0) {
+      this.logger.log(
+        `Loaded ${loadedCount} env keys from ${this.secretsEnvPath}`,
+      );
+    }
   }
 
   private isObject(value: unknown): value is Record<string, any> {

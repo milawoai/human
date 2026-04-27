@@ -1,6 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import type { Context } from '@mariozechner/pi-ai';
-import { TOPIC } from 'neural-topics';
 import type { BusMessage, Capability } from '../../neural/interfaces';
 import type { InternalCommandHandler } from '../../neural/neural-http/neural-http.service';
 import { NeuralHttpService } from '../../neural/neural-http/neural-http.service';
@@ -16,6 +15,15 @@ const BRAIN_CORTEX_ACTOR = {
   system: 'brain' as const,
   module: 'cortex',
 };
+
+const TOPIC = {
+  BRAIN_CORTEX_CHAT_COMPLETE: 'brain.cortex.chat.complete',
+  BRAIN_CORTEX_CHAT_STREAM: 'brain.cortex.chat.stream',
+  BRAIN_LANGUAGE_MODELS_LIST: 'brain.language.models.list',
+  BRAIN_LANGUAGE_MODELS_VALIDATE: 'brain.language.models.validate',
+  BRAIN_LANGUAGE_OAUTH_PROVIDERS: 'brain.language.oauth.providers',
+  BRAIN_LANGUAGE_OAUTH_LOGIN: 'brain.language.oauth.login',
+} as const;
 
 const CORTEX_CAPABILITIES: Capability[] = [
   {
@@ -54,6 +62,24 @@ const CORTEX_CAPABILITIES: Capability[] = [
     enabled: true,
     online: true,
   },
+  {
+    id: 'brain.language.oauth.providers',
+    actor: BRAIN_CORTEX_ACTOR,
+    topic: TOPIC.BRAIN_LANGUAGE_OAUTH_PROVIDERS,
+    kinds: ['query'],
+    mode: 'once',
+    enabled: true,
+    online: true,
+  },
+  {
+    id: 'brain.language.oauth.login',
+    actor: BRAIN_CORTEX_ACTOR,
+    topic: TOPIC.BRAIN_LANGUAGE_OAUTH_LOGIN,
+    kinds: ['command'],
+    mode: 'once',
+    enabled: true,
+    online: true,
+  },
 ];
 
 @Injectable()
@@ -79,7 +105,8 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
   canHandle(topic: string): boolean {
     return (
       topic.startsWith('brain.cortex.chat') ||
-      topic.startsWith('brain.language.models')
+      topic.startsWith('brain.language.models') ||
+      topic.startsWith('brain.language.oauth')
     );
   }
 
@@ -96,6 +123,10 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
           return this.handleModelsList();
         case TOPIC.BRAIN_LANGUAGE_MODELS_VALIDATE:
           return this.handleModelsValidate(message);
+        case TOPIC.BRAIN_LANGUAGE_OAUTH_PROVIDERS:
+          return await this.handleOAuthProviders();
+        case TOPIC.BRAIN_LANGUAGE_OAUTH_LOGIN:
+          return await this.handleOAuthLogin(message);
         default:
           return { success: false, msg: `BrainCortex 无法处理 topic: ${message.topic}` };
       }
@@ -109,26 +140,30 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
 
   private async handleChatComplete(message: BusMessage) {
     const payload = this.ensureObject(message.payload);
+    const { providerOptions, stripThinking } = this.parseChatOptions(payload);
     const response = await this.llmService.complete({
       profileName: this.readString(payload.profileName),
       context: this.resolveContext(payload),
-      options: this.ensureObject(payload.options),
+      options: providerOptions,
       timeoutMs: this.readNumber(payload.timeoutMs),
       retryAttempts: this.readNumber(payload.retryAttempts),
     });
 
     return {
       success: true,
-      data: response,
+      data: stripThinking
+        ? this.stripThinkingFromAssistantMessage(response)
+        : response,
     };
   }
 
   private async handleChatStream(message: BusMessage) {
     const payload = this.ensureObject(message.payload);
+    const { providerOptions, stripThinking } = this.parseChatOptions(payload);
     const stream = await this.llmService.stream({
       profileName: this.readString(payload.profileName),
       context: this.resolveContext(payload),
-      options: this.ensureObject(payload.options),
+      options: providerOptions,
       timeoutMs: this.readNumber(payload.timeoutMs),
     });
 
@@ -144,7 +179,9 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
       success: true,
       data: {
         requestId: message.id,
-        message: finalMessage,
+        message: stripThinking
+          ? this.stripThinkingFromAssistantMessage(finalMessage)
+          : finalMessage,
       },
     };
   }
@@ -190,6 +227,32 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
         errors: [...validation.errors, ...authErrors, ...modelInitErrors],
         warnings: [...validation.warnings, ...authWarnings],
       },
+    };
+  }
+
+  private async handleOAuthProviders() {
+    const providers = await this.providerAuthService.listOAuthProviders();
+    return {
+      success: true,
+      data: providers,
+    };
+  }
+
+  private async handleOAuthLogin(message: BusMessage) {
+    const payload = this.ensureObject(message.payload);
+    const provider = this.readString(payload.provider);
+    if (!provider) {
+      throw new Error('payload.provider is required');
+    }
+
+    const result = await this.providerAuthService.loginOAuth({
+      provider,
+      manualCode: this.readString(payload.manualCode),
+    });
+
+    return {
+      success: true,
+      data: result,
     };
   }
 
@@ -253,5 +316,76 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
   private readNumber(value: unknown): number | undefined {
     if (typeof value === 'number' && Number.isFinite(value)) return value;
     return undefined;
+  }
+
+  private readBoolean(value: unknown): boolean | undefined {
+    if (typeof value === 'boolean') return value;
+    return undefined;
+  }
+
+  private parseChatOptions(payload: Record<string, any>): {
+    providerOptions: Record<string, any>;
+    stripThinking: boolean;
+  } {
+    const rawOptions = this.ensureObject(payload.options);
+    const providerOptions = { ...rawOptions };
+    delete providerOptions.stripThinking;
+    delete providerOptions.thinkingVisibility;
+
+    let stripThinking =
+      this.readBoolean(rawOptions.stripThinking) ??
+      this.readBoolean(payload.stripThinking) ??
+      false;
+
+    const thinkingVisibility =
+      this.readString(rawOptions.thinkingVisibility) ??
+      this.readString(payload.thinkingVisibility);
+    if (thinkingVisibility === 'hidden') stripThinking = true;
+    if (thinkingVisibility === 'raw') stripThinking = false;
+
+    return { providerOptions, stripThinking };
+  }
+
+  private stripThinkingFromAssistantMessage<T extends Record<string, any>>(
+    message: T,
+  ): T {
+    const content = Array.isArray(message.content) ? message.content : [];
+    if (content.length === 0) return message;
+
+    let changed = false;
+    const nextContent: any[] = [];
+
+    for (const part of content) {
+      if (
+        typeof part !== 'object' ||
+        part === null ||
+        part.type !== 'text' ||
+        typeof part.text !== 'string'
+      ) {
+        nextContent.push(part);
+        continue;
+      }
+
+      const cleanedText = this.stripThinkingTags(part.text);
+      if (cleanedText !== part.text) changed = true;
+      if (cleanedText.trim().length === 0) {
+        continue;
+      }
+      nextContent.push({
+        ...part,
+        text: cleanedText,
+      });
+    }
+
+    if (!changed) return message;
+    return {
+      ...message,
+      content: nextContent,
+    };
+  }
+
+  private stripThinkingTags(text: string): string {
+    const withoutThink = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+    return withoutThink.replace(/\n{3,}/g, '\n\n').trim();
   }
 }

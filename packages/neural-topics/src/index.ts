@@ -14,6 +14,8 @@ export const NS = {
   BRAIN_INIT: 'brain.init',
   BRAIN_CORTEX_CHAT: 'brain.cortex.chat',
   BRAIN_LANGUAGE_MODELS: 'brain.language.models',
+  BRAIN_LANGUAGE_OAUTH: 'brain.language.oauth',
+  BRAIN_AGENT: 'brain.agent',
 } as const
 
 // ──────────────────────────────────────────────
@@ -45,6 +47,15 @@ export const TOPIC = {
   BRAIN_LANGUAGE_MODELS_LIST: 'brain.language.models.list',
   BRAIN_LANGUAGE_MODELS_VALIDATE: 'brain.language.models.validate',
   BRAIN_LANGUAGE_MODEL_SWITCH: 'brain.language.model.switch',
+  // brain.language.oauth — query/command
+  BRAIN_LANGUAGE_OAUTH_PROVIDERS: 'brain.language.oauth.providers',
+  BRAIN_LANGUAGE_OAUTH_LOGIN: 'brain.language.oauth.login',
+  // brain.agent — command/query/event
+  BRAIN_AGENT_RUN: 'brain.agent.run',
+  BRAIN_AGENT_CODING_RUN: 'brain.agent.coding.run',
+  BRAIN_AGENT_RUN_EVENT: 'brain.agent.run.event',
+  BRAIN_AGENT_SESSION_GET: 'brain.agent.session.get',
+  BRAIN_AGENT_SESSION_LIST: 'brain.agent.session.list',
 } as const
 
 // ──────────────────────────────────────────────
@@ -83,6 +94,12 @@ export const ACTOR = {
     runtime: 'nest' as const,
     system: 'brain' as const,
     module: 'language-center',
+  },
+  BRAIN_AGENT: {
+    actorId: 'brain-main',
+    runtime: 'nest' as const,
+    system: 'brain' as const,
+    module: 'agent',
   },
 } as const
 
@@ -168,6 +185,60 @@ export const CAP = {
     actor: ACTOR.BRAIN_LANGUAGE,
     topic: TOPIC.BRAIN_LANGUAGE_MODEL_SWITCH,
     kinds: ['control'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_LANGUAGE_OAUTH_PROVIDERS: {
+    id: 'brain.language.oauth.providers',
+    actor: ACTOR.BRAIN_CORTEX,
+    topic: TOPIC.BRAIN_LANGUAGE_OAUTH_PROVIDERS,
+    kinds: ['query'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_LANGUAGE_OAUTH_LOGIN: {
+    id: 'brain.language.oauth.login',
+    actor: ACTOR.BRAIN_CORTEX,
+    topic: TOPIC.BRAIN_LANGUAGE_OAUTH_LOGIN,
+    kinds: ['command'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_AGENT_RUN: {
+    id: 'brain.agent.run',
+    actor: ACTOR.BRAIN_AGENT,
+    topic: TOPIC.BRAIN_AGENT_RUN,
+    kinds: ['command'] as const,
+    mode: 'stream' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_AGENT_CODING_RUN: {
+    id: 'brain.agent.coding.run',
+    actor: ACTOR.BRAIN_AGENT,
+    topic: TOPIC.BRAIN_AGENT_CODING_RUN,
+    kinds: ['command'] as const,
+    mode: 'stream' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_AGENT_SESSION_GET: {
+    id: 'brain.agent.session.get',
+    actor: ACTOR.BRAIN_AGENT,
+    topic: TOPIC.BRAIN_AGENT_SESSION_GET,
+    kinds: ['query'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_AGENT_SESSION_LIST: {
+    id: 'brain.agent.session.list',
+    actor: ACTOR.BRAIN_AGENT,
+    topic: TOPIC.BRAIN_AGENT_SESSION_LIST,
+    kinds: ['query'] as const,
     mode: 'once' as const,
     enabled: true,
     online: true,
