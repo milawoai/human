@@ -44,6 +44,28 @@
         "error":     { "kind": "event",   "direction": "python → subscribers", "description": "错误" }
       }
     },
+    "motor.animation.focused_app": {
+      "description": "执行系统 — 向当前焦点应用输入文本",
+      "actor": {
+        "actorId": "motor-animation",
+        "runtime": "nest",
+        "system": "motor",
+        "module": "animation"
+      },
+      "capabilities": [
+        {
+          "id": "motor.animation.focused_app.input_text",
+          "topic": "motor.animation.focused_app.input_text",
+          "kinds": ["command"],
+          "mode": "once"
+        }
+      ],
+      "subscribeTopics": [],
+      "subscribeKinds": [],
+      "actions": {
+        "input_text": { "kind": "command", "direction": "body → nest", "description": "向当前焦点窗口输入文本" }
+      }
+    },
     "brain.init": {
       "description": "脑系统 — 系统初始化与健康检查",
       "actor": {

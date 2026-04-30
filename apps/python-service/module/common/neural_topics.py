@@ -11,6 +11,7 @@ Neural Topics — Python 常量导出
 
 NS = {
     "SENSORY_HEARING": "sensory.hearing.caption_stream",
+    "MOTOR_ANIMATION": "motor.animation.focused_app",
     "BRAIN_INIT": "brain.init",
     "BRAIN_CORTEX_CHAT": "brain.cortex.chat",
     "BRAIN_LANGUAGE_MODELS": "brain.language.models",
@@ -36,6 +37,8 @@ TOPICS = {
     "SENSORY_HEARING_SEGMENT": "sensory.hearing.caption_stream.segment",
     "SENSORY_HEARING_STOPPED": "sensory.hearing.caption_stream.stopped",
     "SENSORY_HEARING_ERROR": "sensory.hearing.caption_stream.error",
+    # motor.animation.focused_app — command
+    "MOTOR_ANIMATION_INPUT_TEXT_TO_FOCUSED_APP": "motor.animation.focused_app.input_text",
     # brain.init — command & event
     "BRAIN_INIT_EXECUTE": "brain.init.execute",
     "BRAIN_INIT_DONE": "brain.init.init_done",
@@ -76,6 +79,12 @@ ACTORS = {
         "runtime": "python",
         "system": "sensory",
         "module": "hearing",
+    },
+    "MOTOR_ANIMATION": {
+        "actorId": "motor-animation",
+        "runtime": "nest",
+        "system": "motor",
+        "module": "animation",
     },
     "BRAIN": {
         "actorId": "brain-main",
@@ -139,6 +148,15 @@ CAPABILITIES = [
         "id": "brain.init",
         "actor": ACTORS["BRAIN"],
         "topic": TOPICS["BRAIN_INIT_EXECUTE"],
+        "kinds": ["command"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "motor.animation.focused_app.input_text",
+        "actor": ACTORS["MOTOR_ANIMATION"],
+        "topic": TOPICS["MOTOR_ANIMATION_INPUT_TEXT_TO_FOCUSED_APP"],
         "kinds": ["command"],
         "mode": "once",
         "enabled": True,

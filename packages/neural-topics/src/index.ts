@@ -11,6 +11,7 @@
 
 export const NS = {
   SENSORY_HEARING: 'sensory.hearing.caption_stream',
+  MOTOR_ANIMATION: 'motor.animation.focused_app',
   BRAIN_INIT: 'brain.init',
   BRAIN_CORTEX_CHAT: 'brain.cortex.chat',
   BRAIN_LANGUAGE_MODELS: 'brain.language.models',
@@ -36,6 +37,8 @@ export const TOPIC = {
   SENSORY_HEARING_SEGMENT: 'sensory.hearing.caption_stream.segment',
   SENSORY_HEARING_STOPPED: 'sensory.hearing.caption_stream.stopped',
   SENSORY_HEARING_ERROR: 'sensory.hearing.caption_stream.error',
+  // motor.animation.focused_app — command
+  MOTOR_ANIMATION_INPUT_TEXT_TO_FOCUSED_APP: 'motor.animation.focused_app.input_text',
   // brain.init — command & event
   BRAIN_INIT_EXECUTE: 'brain.init.execute',
   BRAIN_INIT_DONE: 'brain.init.init_done',
@@ -76,6 +79,12 @@ export const ACTOR = {
     runtime: 'python' as const,
     system: 'sensory' as const,
     module: 'hearing',
+  },
+  MOTOR_ANIMATION: {
+    actorId: 'motor-animation',
+    runtime: 'nest' as const,
+    system: 'motor' as const,
+    module: 'animation',
   },
   BRAIN: {
     actorId: 'brain-main',
@@ -131,6 +140,15 @@ export const CAP = {
     actor: ACTOR.SENSORY_HEARING,
     topic: TOPIC.SENSORY_HEARING_ASR_MODELS,
     kinds: ['query'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  MOTOR_ANIMATION_INPUT_TEXT_TO_FOCUSED_APP: {
+    id: 'motor.animation.focused_app.input_text',
+    actor: ACTOR.MOTOR_ANIMATION,
+    topic: TOPIC.MOTOR_ANIMATION_INPUT_TEXT_TO_FOCUSED_APP,
+    kinds: ['command'] as const,
     mode: 'once' as const,
     enabled: true,
     online: true,
