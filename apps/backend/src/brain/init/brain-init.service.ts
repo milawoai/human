@@ -36,6 +36,24 @@ const BRAIN_INIT_CAPABILITY: Capability = {
   online: true,
 };
 
+const DEFAULT_CONFIG = {
+  version: 1,
+  brain: {
+    defaultProfile: '',
+    profiles: {},
+  },
+} as const;
+
+const DEFAULT_SECRETS_ENV_EXAMPLE = `# AI Secretary secret keys (example)
+# Copy this file to ~/.ai_secretary/secrets.env and fill real values.
+# Do NOT commit secrets.env to git.
+
+ZAI_API_KEY=
+KIMI_API_KEY=
+MINIMAX_API_KEY=
+OPENROUTER_API_KEY=
+`;
+
 @Injectable()
 export class BrainInitService implements OnModuleInit, InternalCommandHandler {
   private readonly logger = new Logger(BrainInitService.name);
@@ -110,6 +128,8 @@ export class BrainInitService implements OnModuleInit, InternalCommandHandler {
 
       const secretDir = path.join(projectRoot, '.ai_secretary');
       const sqliteDir = path.join(secretDir, 'sqlite');
+      const configPath = path.join(secretDir, 'config.json');
+      const secretsExamplePath = path.join(secretDir, 'secrets.env.example');
 
       // 创建目录
       const secretExisted = fs.existsSync(secretDir);
@@ -128,12 +148,32 @@ export class BrainInitService implements OnModuleInit, InternalCommandHandler {
         this.logger.log(`[executeInit] SQLite 目录已存在: ${sqliteDir}`);
       }
 
+      const configExisted = fs.existsSync(configPath);
+      if (!configExisted) {
+        fs.writeFileSync(configPath, JSON.stringify(DEFAULT_CONFIG, null, 2) + '\n', 'utf-8');
+        this.logger.log(`[executeInit] ✓ 创建默认配置文件: ${configPath}`);
+      } else {
+        this.logger.log(`[executeInit] 配置文件已存在: ${configPath}`);
+      }
+
+      const secretsExampleExisted = fs.existsSync(secretsExamplePath);
+      if (!secretsExampleExisted) {
+        fs.writeFileSync(secretsExamplePath, DEFAULT_SECRETS_ENV_EXAMPLE, 'utf-8');
+        this.logger.log(`[executeInit] ✓ 创建 secrets 模板: ${secretsExamplePath}`);
+      } else {
+        this.logger.log(`[executeInit] secrets 模板已存在: ${secretsExamplePath}`);
+      }
+
       const result = {
         projectRoot,
         secretDir,
         sqliteDir,
+        configPath,
+        secretsExamplePath,
         secretExisted,
         sqliteExisted,
+        configExisted,
+        secretsExampleExisted,
       };
 
       // 推送 init_done 事件

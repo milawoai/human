@@ -5,26 +5,23 @@ import { BaseEntity } from './base.entity';
 export class ScrollAction extends BaseEntity {
   @Column({
     name: 'set_id',
-    type: 'bigint',
-    unsigned: true,
     comment: '所属自动化集合ID',
   })
   setId: number;
 
-  @Column({ name: 'step_index', type: 'int', comment: '步骤索引(执行顺序)' })
+  @Column({ name: 'step_index', type: 'integer', comment: '步骤索引(执行顺序)' })
   stepIndex: number;
 
   @Column({
     name: 'direction',
-    type: 'varchar',
-    length: 20,
+    type: 'text',
     comment: '滚动方向(up/down/left/right)',
   })
   direction: string;
 
   @Column({
     name: 'distance',
-    type: 'int',
+    type: 'integer',
     default: 0,
     comment: '滚动距离(像素)',
   })
@@ -32,7 +29,7 @@ export class ScrollAction extends BaseEntity {
 
   @Column({
     name: 'duration',
-    type: 'int',
+    type: 'integer',
     default: 0,
     comment: '滚动持续时间(毫秒)',
   })
@@ -40,7 +37,7 @@ export class ScrollAction extends BaseEntity {
 
   @Column({
     name: 'wait_time',
-    type: 'int',
+    type: 'integer',
     default: 0,
     comment: '执行后等待时间(毫秒)',
   })
@@ -48,8 +45,7 @@ export class ScrollAction extends BaseEntity {
 
   @Column({
     name: 'label',
-    type: 'varchar',
-    length: 255,
+    type: 'text',
     default: '',
     comment: '操作标签',
   })
@@ -57,8 +53,7 @@ export class ScrollAction extends BaseEntity {
 
   @Column({
     name: 'screenshot_path',
-    type: 'varchar',
-    length: 500,
+    type: 'text',
     nullable: true,
     comment: '截图路径',
   })
@@ -66,7 +61,7 @@ export class ScrollAction extends BaseEntity {
 
   @Column({
     name: 'extra_data',
-    type: 'json',
+    type: 'simple-json',
     nullable: true,
     comment: '扩展数据(JSON格式)',
   })

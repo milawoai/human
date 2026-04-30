@@ -5,25 +5,22 @@ import { BaseEntity } from './base.entity';
 export class CoordinateAction extends BaseEntity {
   @Column({
     name: 'set_id',
-    type: 'bigint',
-    unsigned: true,
     comment: '所属自动化集合ID',
   })
   setId: number;
 
-  @Column({ name: 'step_index', type: 'int', comment: '步骤索引(执行顺序)' })
+  @Column({ name: 'step_index', type: 'integer', comment: '步骤索引(执行顺序)' })
   stepIndex: number;
 
-  @Column({ name: 'x', type: 'int', comment: 'X坐标' })
+  @Column({ name: 'x', type: 'integer', comment: 'X坐标' })
   x: number;
 
-  @Column({ name: 'y', type: 'int', comment: 'Y坐标' })
+  @Column({ name: 'y', type: 'integer', comment: 'Y坐标' })
   y: number;
 
   @Column({
     name: 'action_type',
-    type: 'varchar',
-    length: 50,
+    type: 'text',
     default: 'click',
     comment: '操作类型(click/doubleClick/longPress/rightClick等)',
   })
@@ -31,7 +28,7 @@ export class CoordinateAction extends BaseEntity {
 
   @Column({
     name: 'wait_time',
-    type: 'int',
+    type: 'integer',
     default: 0,
     comment: '执行后等待时间(毫秒)',
   })
@@ -39,8 +36,7 @@ export class CoordinateAction extends BaseEntity {
 
   @Column({
     name: 'label',
-    type: 'varchar',
-    length: 255,
+    type: 'text',
     default: '',
     comment: '操作标签',
   })
@@ -48,8 +44,7 @@ export class CoordinateAction extends BaseEntity {
 
   @Column({
     name: 'screenshot_path',
-    type: 'varchar',
-    length: 500,
+    type: 'text',
     nullable: true,
     comment: '截图路径',
   })
@@ -57,7 +52,7 @@ export class CoordinateAction extends BaseEntity {
 
   @Column({
     name: 'extra_data',
-    type: 'json',
+    type: 'simple-json',
     nullable: true,
     comment: '扩展数据(JSON格式)',
   })

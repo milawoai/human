@@ -13,6 +13,10 @@ NS = {
     "SENSORY_HEARING": "sensory.hearing.caption_stream",
     "SENSORY_SPEAKING": "sensory.speaking.voice",
     "BRAIN_INIT": "brain.init",
+    "BRAIN_CORTEX_CHAT": "brain.cortex.chat",
+    "BRAIN_LANGUAGE_MODELS": "brain.language.models",
+    "BRAIN_LANGUAGE_OAUTH": "brain.language.oauth",
+    "BRAIN_AGENT": "brain.agent",
 }
 
 # ──────────────────────────────────────────────
@@ -50,6 +54,22 @@ TOPICS = {
     "BRAIN_INIT_EXECUTE": "brain.init.execute",
     "BRAIN_INIT_DONE": "brain.init.init_done",
     "BRAIN_INIT_ERROR": "brain.init.init_error",
+    # brain.cortex.chat — command
+    "BRAIN_CORTEX_CHAT_COMPLETE": "brain.cortex.chat.complete",
+    "BRAIN_CORTEX_CHAT_STREAM": "brain.cortex.chat.stream",
+    # brain.language.models — query/control
+    "BRAIN_LANGUAGE_MODELS_LIST": "brain.language.models.list",
+    "BRAIN_LANGUAGE_MODELS_VALIDATE": "brain.language.models.validate",
+    "BRAIN_LANGUAGE_MODEL_SWITCH": "brain.language.model.switch",
+    # brain.language.oauth — query/command
+    "BRAIN_LANGUAGE_OAUTH_PROVIDERS": "brain.language.oauth.providers",
+    "BRAIN_LANGUAGE_OAUTH_LOGIN": "brain.language.oauth.login",
+    # brain.agent — command/query/event
+    "BRAIN_AGENT_RUN": "brain.agent.run",
+    "BRAIN_AGENT_CODING_RUN": "brain.agent.coding.run",
+    "BRAIN_AGENT_RUN_EVENT": "brain.agent.run.event",
+    "BRAIN_AGENT_SESSION_GET": "brain.agent.session.get",
+    "BRAIN_AGENT_SESSION_LIST": "brain.agent.session.list",
 }
 
 # ──────────────────────────────────────────────
@@ -83,6 +103,24 @@ ACTORS = {
         "runtime": "nest",
         "system": "brain",
         "module": "init",
+    },
+    "BRAIN_CORTEX": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "cortex",
+    },
+    "BRAIN_LANGUAGE": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "language-center",
+    },
+    "BRAIN_AGENT": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "agent",
     },
 }
 
@@ -168,6 +206,60 @@ CAPABILITIES = [
         "actor": ACTORS["BRAIN"],
         "topic": TOPICS["BRAIN_INIT_EXECUTE"],
         "kinds": ["command"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.language.oauth.providers",
+        "actor": ACTORS["BRAIN_CORTEX"],
+        "topic": TOPICS["BRAIN_LANGUAGE_OAUTH_PROVIDERS"],
+        "kinds": ["query"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.language.oauth.login",
+        "actor": ACTORS["BRAIN_CORTEX"],
+        "topic": TOPICS["BRAIN_LANGUAGE_OAUTH_LOGIN"],
+        "kinds": ["command"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.agent.run",
+        "actor": ACTORS["BRAIN_AGENT"],
+        "topic": TOPICS["BRAIN_AGENT_RUN"],
+        "kinds": ["command"],
+        "mode": "stream",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.agent.coding.run",
+        "actor": ACTORS["BRAIN_AGENT"],
+        "topic": TOPICS["BRAIN_AGENT_CODING_RUN"],
+        "kinds": ["command"],
+        "mode": "stream",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.agent.session.get",
+        "actor": ACTORS["BRAIN_AGENT"],
+        "topic": TOPICS["BRAIN_AGENT_SESSION_GET"],
+        "kinds": ["query"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.agent.session.list",
+        "actor": ACTORS["BRAIN_AGENT"],
+        "topic": TOPICS["BRAIN_AGENT_SESSION_LIST"],
+        "kinds": ["query"],
         "mode": "once",
         "enabled": True,
         "online": True,

@@ -13,11 +13,16 @@ import { Global, Module } from '@nestjs/common';
 import { NeuralModule } from '../neural/neural.module';
 import { BrainInitService } from './init/brain-init.service';
 import { ToolConfigService } from './tool-config/tool-config.service';
+import { BrainLanguageCenterModule } from './language-center/language-center.module';
+import { BrainCortexService } from './cortex/brain-cortex.service';
+import { BrainAgentService } from './agent/brain-agent.service';
+import { AgentSessionStore } from './agent/agent-session.store';
+
 
 @Global()
 @Module({
-  imports: [NeuralModule],
-  providers: [BrainInitService, ToolConfigService],
-  exports: [BrainInitService, ToolConfigService],
+  imports: [NeuralModule, BrainLanguageCenterModule],
+  providers: [BrainInitService, BrainCortexService, BrainAgentService, AgentSessionStore, ToolConfigService],
+  exports: [BrainInitService, BrainCortexService, BrainAgentService, ToolConfigService],
 })
 export class BrainModule {}

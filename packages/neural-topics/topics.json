@@ -128,6 +128,144 @@
         "init_done":  { "kind": "event",   "direction": "nest → subscribers", "description": "初始化完成，返回检测结果" },
         "init_error": { "kind": "event",   "direction": "nest → subscribers", "description": "初始化失败" }
       }
+    },
+    "brain.cortex.chat": {
+      "description": "脑系统 — 对话与响应生成",
+      "actor": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "cortex"
+      },
+      "capabilities": [
+        {
+          "id": "brain.cortex.chat.complete",
+          "topic": "brain.cortex.chat.complete",
+          "kinds": ["command"],
+          "mode": "once"
+        },
+        {
+          "id": "brain.cortex.chat.stream",
+          "topic": "brain.cortex.chat.stream",
+          "kinds": ["command"],
+          "mode": "stream"
+        }
+      ],
+      "subscribeTopics": [],
+      "subscribeKinds": [],
+      "actions": {
+        "complete": { "kind": "command", "direction": "body → nest", "description": "一次性生成对话响应" },
+        "stream":   { "kind": "command", "direction": "body → nest", "description": "流式生成对话响应" }
+      }
+    },
+    "brain.language.models": {
+      "description": "脑系统 — 模型配置查询、校验与切换",
+      "actor": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "language-center"
+      },
+      "capabilities": [
+        {
+          "id": "brain.language.models.list",
+          "topic": "brain.language.models.list",
+          "kinds": ["query"],
+          "mode": "once"
+        },
+        {
+          "id": "brain.language.models.validate",
+          "topic": "brain.language.models.validate",
+          "kinds": ["query"],
+          "mode": "once"
+        },
+        {
+          "id": "brain.language.model.switch",
+          "topic": "brain.language.model.switch",
+          "kinds": ["control"],
+          "mode": "once"
+        }
+      ],
+      "subscribeTopics": [],
+      "subscribeKinds": [],
+      "actions": {
+        "list":     { "kind": "query", "direction": "body → nest", "description": "查询可用模型配置" },
+        "validate": { "kind": "query", "direction": "body → nest", "description": "校验模型配置与环境依赖" },
+        "switch":   { "kind": "control", "direction": "body → nest", "description": "切换当前生效模型 profile" }
+      }
+    },
+    "brain.language.oauth": {
+      "description": "脑系统 — OAuth Provider 查询与登录",
+      "actor": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "cortex"
+      },
+      "capabilities": [
+        {
+          "id": "brain.language.oauth.providers",
+          "topic": "brain.language.oauth.providers",
+          "kinds": ["query"],
+          "mode": "once"
+        },
+        {
+          "id": "brain.language.oauth.login",
+          "topic": "brain.language.oauth.login",
+          "kinds": ["command"],
+          "mode": "once"
+        }
+      ],
+      "subscribeTopics": [],
+      "subscribeKinds": [],
+      "actions": {
+        "providers": { "kind": "query", "direction": "body → nest", "description": "查询可用 OAuth provider 列表" },
+        "login":     { "kind": "command", "direction": "body → nest", "description": "触发指定 provider 的 OAuth 登录流程" }
+      }
+    },
+    "brain.agent": {
+      "description": "脑系统 — Agent 执行与会话管理",
+      "actor": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "agent"
+      },
+      "capabilities": [
+        {
+          "id": "brain.agent.run",
+          "topic": "brain.agent.run",
+          "kinds": ["command"],
+          "mode": "stream"
+        },
+        {
+          "id": "brain.agent.coding.run",
+          "topic": "brain.agent.coding.run",
+          "kinds": ["command"],
+          "mode": "stream"
+        },
+        {
+          "id": "brain.agent.session.get",
+          "topic": "brain.agent.session.get",
+          "kinds": ["query"],
+          "mode": "once"
+        },
+        {
+          "id": "brain.agent.session.list",
+          "topic": "brain.agent.session.list",
+          "kinds": ["query"],
+          "mode": "once"
+        }
+      ],
+      "subscribeTopics": [],
+      "subscribeKinds": [],
+      "actions": {
+        "run":          { "kind": "command", "direction": "body → nest", "description": "执行 Agent 一轮推理与工具调用" },
+        "coding_run":   { "kind": "command", "direction": "body → nest", "description": "执行 Coding Agent 工具链（read/bash/edit/write）" },
+        "run_event":    { "kind": "event",   "direction": "nest → subscribers", "description": "Agent 运行过程事件流" },
+        "session_get":  { "kind": "query",   "direction": "body → nest", "description": "读取指定会话详情" },
+        "session_list": { "kind": "query",   "direction": "body → nest", "description": "读取会话列表" }
+      }
     }
   }
 }

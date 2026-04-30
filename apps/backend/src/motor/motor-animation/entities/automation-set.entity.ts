@@ -5,8 +5,7 @@ import { BaseEntity } from './base.entity';
 export class AutomationSet extends BaseEntity {
   @Column({
     name: 'name',
-    type: 'varchar',
-    length: 255,
+    type: 'text',
     default: '',
     comment: '自动化集合名称',
   })
@@ -22,7 +21,7 @@ export class AutomationSet extends BaseEntity {
 
   @Column({
     name: 'platform',
-    type: 'tinyint',
+    type: 'integer',
     default: 0,
     comment: '平台标识: 0=Mac, 1=Windows, 2=Linux',
   })

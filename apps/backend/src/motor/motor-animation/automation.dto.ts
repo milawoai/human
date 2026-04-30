@@ -70,6 +70,20 @@ export class WorkAutomationDto {
 }
 
 // ========== 操作管理 DTOs ==========
+export class GetActionsDto {
+  @Transform(toNumber)
+  @IsNumber()
+  @IsNotEmpty()
+  setId: number;
+}
+
+export class ExportAutomationDto {
+  @Transform(toNumber)
+  @IsNumber()
+  @IsNotEmpty()
+  setId: number;
+}
+
 export class ActionDataDto {
   // 坐标操作
   @Transform(toNumber)
