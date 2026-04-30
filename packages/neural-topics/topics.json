@@ -43,68 +43,7 @@
         "stopped":   { "kind": "event",   "direction": "python → subscribers", "description": "录音已停止" },
         "error":     { "kind": "event",   "direction": "python → subscribers", "description": "错误" }
       }
-    },
-    "sensory.speaking.voice": {
-      "description": "语音合成 — 文字转语音控制与事件",
-      "actor": {
-        "actorId": "sensory-speaking",
-        "runtime": "python",
-        "system": "sensory",
-        "module": "speaking"
-      },
-      "capabilities": [
-        {
-          "id": "sensory.speaking.voice",
-          "topic": "sensory.speaking.voice.speak",
-          "kinds": ["control"],
-          "mode": "stream"
-        },
-        {
-          "id": "sensory.speaking.voice.cancel",
-          "topic": "sensory.speaking.voice.cancel",
-          "kinds": ["control"],
-          "mode": "once"
-        },
-        {
-          "id": "sensory.speaking.voice.pause",
-          "topic": "sensory.speaking.voice.pause",
-          "kinds": ["control"],
-          "mode": "once"
-        },
-        {
-          "id": "sensory.speaking.voice.resume",
-          "topic": "sensory.speaking.voice.resume",
-          "kinds": ["control"],
-          "mode": "once"
-        },
-        {
-          "id": "sensory.speaking.voice.models",
-          "topic": "sensory.speaking.voice.models",
-          "kinds": ["query"],
-          "mode": "once"
-        },
-        {
-          "id": "sensory.speaking.voice.status",
-          "topic": "sensory.speaking.voice.status",
-          "kinds": ["query"],
-          "mode": "once"
-        }
-      ],
-      "subscribeTopics": ["sensory.speaking.voice.*"],
-      "subscribeKinds": ["control"],
-      "actions": {
-        "speak":     { "kind": "control", "direction": "body → python", "description": "触发语音合成" },
-        "cancel":    { "kind": "control", "direction": "body → python", "description": "取消播放" },
-        "pause":     { "kind": "control", "direction": "body → python", "description": "暂停播放" },
-        "resume":    { "kind": "control", "direction": "body → python", "description": "恢复播放" },
-        "models":    { "kind": "query",   "direction": "body → nest → python (HTTP)", "description": "获取可用音色列表" },
-        "status":    { "kind": "query",   "direction": "body → nest → python (HTTP)", "description": "获取 TTS 状态" },
-        "started":   { "kind": "event",   "direction": "python → subscribers", "description": "开始播放" },
-        "progress":  { "kind": "event",   "direction": "python → subscribers", "description": "播放进度" },
-        "completed": { "kind": "event",   "direction": "python → subscribers", "description": "播放完成" },
-        "error":     { "kind": "event",   "direction": "python → subscribers", "description": "错误" }
-      }
-    },   
+    }, 
     "motor.animation.focused_app": {
       "description": "执行系统 — 向当前焦点应用输入文本",
       "actor": {
