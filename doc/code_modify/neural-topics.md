@@ -2,9 +2,9 @@
 
 ## 概述
 
-`packages/neural-topics` 是 Neural Core 所有 topic 字符串的 **唯一来源（Single Source of Truth）**。
+`packages/neural-topics` 是 Neural Core topic 常量的**规范主来源**，用于三端统一引用，减少硬编码。
 
-三端统一引用，消除硬编码：
+> 注意：当前仓库不是从 `topics.json` 自动生成 `src/index.ts / python/neural_topics.py`，仍需手工三处同步。
 
 | 端 | 引入方式 | 文件 |
 |----|----------|------|
@@ -14,19 +14,19 @@
 
 ## 目录结构
 
-```
+```text
 packages/neural-topics/
 ├── package.json              # workspace 包声明（含 postinstall 同步脚本）
-├── topics.json               # [唯一来源] topic 注册表
+├── topics.json               # 规范主来源（文档/注册表）
 ├── src/
-│   └── index.ts              # TS 常量导出
+│   └── index.ts              # TS 常量导出（手工维护）
 ├── python/
-│   └── neural_topics.py      # Python 常量导出
+│   └── neural_topics.py      # Python 常量导出（手工维护）
 └── scripts/
     └── sync-python.js        # postinstall 自动同步 Python 文件
 
 apps/python-service/module/common/
-└── neural_topics.py          # [自动生成] 由 sync-python.js 同步，勿手动编辑
+└── neural_topics.py          # 由 sync-python.js 同步，勿手动编辑
 ```
 
 ## 添加新的 Namespace
@@ -35,7 +35,7 @@ apps/python-service/module/common/
 
 ### 1. 编辑 `topics.json`
 
-在 `topics.topics` 下新增条目：
+在 `topics` 下新增条目：
 
 ```json
 {
@@ -87,7 +87,7 @@ apps/python-service/module/common/
 // Namespaces
 export const NS = {
   SENSORY_HEARING: 'sensory.hearing.caption_stream',
-  SENSORY_VISION: 'sensory.vision.camera_stream',        // ← 新增
+  SENSORY_VISION: 'sensory.vision.camera_stream',
 } as const
 
 // Topics
@@ -106,13 +106,13 @@ export const TOPIC = {
 // Subscribe patterns
 export const SUB = {
   SENSORY_HEARING_ALL: 'sensory.hearing.caption_stream.*',
-  SENSORY_VISION_ALL: 'sensory.vision.camera_stream.*',  // ← 新增
+  SENSORY_VISION_ALL: 'sensory.vision.camera_stream.*',
 } as const
 
 // Actor definitions
 export const ACTOR = {
   SENSORY_HEARING: { ... },
-  SENSORY_VISION: {                                         // ← 新增
+  SENSORY_VISION: {
     actorId: 'sensory-vision',
     runtime: 'python' as const,
     system: 'sensory' as const,
@@ -123,23 +123,23 @@ export const ACTOR = {
 // Capabilities
 export const CAP = {
   // ... hearing caps ...
-  SENSORY_VISION_STREAM: { ... },   // ← 新增
-  SENSORY_VISION_STOP: { ... },     // ← 新增
+  SENSORY_VISION_STREAM: { ... },
+  SENSORY_VISION_STOP: { ... },
 } as const
 
-// Event type → topic 映射（如果该 namespace 有 event）
+// Event type → topic 映射（如有）
 export const EVENT_TOPIC: Record<string, string> = {
   // ... hearing events ...
   vision_started: TOPIC.SENSORY_VISION_STARTED,
-  vision_frame:   TOPIC.SENSORY_VISION_FRAME,
+  vision_frame: TOPIC.SENSORY_VISION_FRAME,
   vision_stopped: TOPIC.SENSORY_VISION_STOPPED,
-  vision_error:   TOPIC.SENSORY_VISION_ERROR,
+  vision_error: TOPIC.SENSORY_VISION_ERROR,
 }
 ```
 
 ### 3. 更新 `python/neural_topics.py`
 
-在对应 section 追加同样的常量：
+在对应 section 追加同样常量：
 
 ```python
 # Namespaces
@@ -162,7 +162,7 @@ TOPICS = {
 # ... 其余 section 同理追加 ...
 ```
 
-### 4. 同步 Python 文件
+### 4. 同步 Python 副本
 
 ```bash
 node packages/neural-topics/scripts/sync-python.js
@@ -170,14 +170,27 @@ node packages/neural-topics/scripts/sync-python.js
 
 > 也可执行 `yarn install` 触发 postinstall 自动同步。
 
-### 5. 验证
+### 5. 在执行端落地能力（必须）
+
+只修改 `neural-topics` 常量并不会让能力自动可用。
+
+还必须在实际执行端注册并实现：
+
+- Backend/Nest internal actor：注册 `Capability` + 实现 `InternalCommandHandler`
+- 或 Python actor：注册 capability + 实现对应 topic 处理
+- 或 Electron side（如仅客户端行为）
+
+否则 Neural Core 路由时会出现“无可用能力处理”。
+
+### 6. 验证
 
 ```bash
-# TS 类型检查
-cd apps/body && npm run typecheck:node
+# Electron typecheck
+yarn workspace electron_with_serve typecheck
 
-# NestJS 构建
-cd apps/backend && npm run build
+# Backend typecheck / build
+yarn workspace backend typecheck
+yarn workspace backend build
 
 # Python 导入验证
 cd apps/python-service && uv run python -c "from module.common.neural_topics import TOPICS, ACTORS; print('OK')"
@@ -185,7 +198,11 @@ cd apps/python-service && uv run python -c "from module.common.neural_topics imp
 
 ## 添加 Query 类型 Capability
 
-Query 类型的 Capability 用于声明 Actor 可以处理查询类消息。与 control 不同，query 走 HTTP 同步调用，不走 WS。
+Query 类型用于查询类消息。当前 backend 实现里，query 路径由目标 actor runtime 决定：
+
+- `runtime=python`：`NeuralHttpService` 通过 HTTP 中转 Python
+- `runtime=nest`：走 `InternalCommandHandler` 进程内调用
+- 其他情况：按默认路由逻辑分发
 
 以添加 `sensory.hearing.caption_stream.asr_models` 为例：
 
@@ -193,7 +210,6 @@ Query 类型的 Capability 用于声明 Actor 可以处理查询类消息。与 
 
 ```json
 "capabilities": [
-  // ... 已有 control capabilities ...
   {
     "id": "sensory.hearing.caption_stream.asr_models",
     "topic": "sensory.hearing.caption_stream.asr_models",
@@ -202,7 +218,6 @@ Query 类型的 Capability 用于声明 Actor 可以处理查询类消息。与 
   }
 ],
 "actions": {
-  // ... 已有 actions ...
   "asr_models": { "kind": "query", "direction": "body → nest → python (HTTP)", "description": "查询可用 ASR 模型列表" }
 }
 ```
@@ -210,16 +225,11 @@ Query 类型的 Capability 用于声明 Actor 可以处理查询类消息。与 
 ### 2. `src/index.ts` — TOPIC 和 CAP 中新增
 
 ```ts
-// Topics
 export const TOPIC = {
-  // ... 已有 topics ...
-  // query
   SENSORY_HEARING_ASR_MODELS: 'sensory.hearing.caption_stream.asr_models',
 } as const
 
-// Capabilities
 export const CAP = {
-  // ... 已有 caps ...
   SENSORY_HEARING_ASR_MODELS: {
     id: 'sensory.hearing.caption_stream.asr_models',
     actor: ACTOR.SENSORY_HEARING,
@@ -236,13 +246,10 @@ export const CAP = {
 
 ```python
 TOPICS = {
-    # ... 已有 topics ...
-    # query
     "SENSORY_HEARING_ASR_MODELS": "sensory.hearing.caption_stream.asr_models",
 }
 
 CAPABILITIES = [
-    # ... 已有 capabilities ...
     {
         "id": "sensory.hearing.caption_stream.asr_models",
         "actor": ACTORS["SENSORY_HEARING"],
@@ -257,37 +264,44 @@ CAPABILITIES = [
 
 ### 4. Python 端实现 query 处理
 
-在 `neural_adapter.py` 的 `handle_query()` 中新增 topic 路由分支：
+在 Python 的 neural adapter/query handler 里新增 topic 分支：
 
 ```python
 async def handle_query(self, message: dict) -> dict:
     topic = message.get("topic", "")
     if topic.endswith(".asr_models"):
         return self._query_asr_models()
-    # ... 其他 topic ...
 ```
 
 ### 5. 调用方式
 
-```typescript
-// Electron 端通过 trigger 统一调用
+```ts
 const result = await neuralTrigger({
   kind: 'query',
   topic: 'sensory.hearing.caption_stream.asr_models',
   payload: {}
 })
-// result = { success: true, data: { ... } }
 ```
-
-> **注意**：query 类型的 Capability 不需要出现在 `subscribeTopics` 或 `subscribeKinds` 中，因为它走 HTTP 中转而非 WS 广播。
 
 ## 修改已有 Topic
 
-流程与新增一致，只需在 `topics.json` + `src/index.ts` + `python/neural_topics.py` 三处同步修改，然后执行同步脚本。
+流程与新增一致：同步修改
 
-**注意事项：**
-- `apps/python-service/module/common/neural_topics.py` 是自动同步的副本，**勿手动编辑**
-- 修改后务必三端验证（TS typecheck + NestJS build + Python import）
+- `topics.json`
+- `src/index.ts`
+- `python/neural_topics.py`
+
+然后执行同步脚本：
+
+```bash
+node packages/neural-topics/scripts/sync-python.js
+```
+
+## 注意事项
+
+- `apps/python-service/module/common/neural_topics.py` 是自动同步副本，勿手动编辑
+- 修改后务必做三端验证（Electron typecheck + Backend typecheck/build + Python import）
+- 若 topic 属于新能力，记得补执行端 capability 注册与 handler
 
 ## 常量命名规范
 
