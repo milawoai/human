@@ -14,3 +14,17 @@
 {"id":"int-c67ba798","kind":"field_change","created_at":"2026-04-27T07:28:42.753492Z","actor":"zhou","issue_id":"human-t1l.10","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"已完成 ESM 迁移预检与影响面清单（含风险矩阵与执行顺序）"}}
 {"id":"int-bc8f5185","kind":"field_change","created_at":"2026-04-27T09:11:32.367472Z","actor":"zhou","issue_id":"human-t1l.11","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"取消：当前不接受 ESM 迁移方案，后续不再执行"}}
 {"id":"int-19dd0c0f","kind":"field_change","created_at":"2026-04-27T09:25:13.617675Z","actor":"zhou","issue_id":"human-dbf","extra":{"field":"status","new_value":"open","old_value":"in_progress"}}
+{"id":"int-2a883275","kind":"field_change","created_at":"2026-04-30T06:54:01.777486Z","actor":"zhou","issue_id":"human-apr","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-2e6a8964","kind":"field_change","created_at":"2026-04-30T06:54:26.46156Z","actor":"zhou","issue_id":"human-apr","extra":{"field":"status","new_value":"closed","old_value":"in_progress"}}
+{"id":"int-fd1eeb51","kind":"field_change","created_at":"2026-04-30T06:54:37.943137Z","actor":"zhou","issue_id":"human-6aq","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-f7105c3c","kind":"field_change","created_at":"2026-04-30T06:54:38.608508Z","actor":"zhou","issue_id":"human-0rm","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-cf502841","kind":"field_change","created_at":"2026-04-30T06:54:39.258264Z","actor":"zhou","issue_id":"human-8h2","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-ba6c3157","kind":"field_change","created_at":"2026-04-30T06:55:51.592669Z","actor":"zhou","issue_id":"human-6aq","extra":{"field":"status","new_value":"closed","old_value":"in_progress"}}
+{"id":"int-398e3930","kind":"field_change","created_at":"2026-04-30T06:57:02.774827Z","actor":"zhou","issue_id":"human-0rm","extra":{"field":"status","new_value":"closed","old_value":"in_progress"}}
+{"id":"int-b5ab417c","kind":"field_change","created_at":"2026-04-30T06:58:40.099068Z","actor":"zhou","issue_id":"human-8h2","extra":{"field":"status","new_value":"closed","old_value":"in_progress"}}
+{"id":"int-57a9044a","kind":"field_change","created_at":"2026-04-30T06:59:26.309551Z","actor":"zhou","issue_id":"human-b2u","extra":{"field":"status","new_value":"closed","old_value":"open"}}
+{"id":"int-7a7693b1","kind":"field_change","created_at":"2026-04-30T07:02:06.347607Z","actor":"zhou","issue_id":"human-6pc","extra":{"field":"status","new_value":"closed","old_value":"open"}}
+{"id":"int-c62e8aa3","kind":"field_change","created_at":"2026-04-30T07:09:47.535689Z","actor":"zhou","issue_id":"human-rf8","extra":{"field":"status","new_value":"closed","old_value":"open"}}
+{"id":"int-0d853d33","kind":"field_change","created_at":"2026-04-30T07:10:09.060069Z","actor":"zhou","issue_id":"human-qae","extra":{"field":"status","new_value":"closed","old_value":"open"}}
+{"id":"int-03153571","kind":"field_change","created_at":"2026-04-30T07:12:02.896296Z","actor":"zhou","issue_id":"human-6lr","extra":{"field":"status","new_value":"closed","old_value":"open"}}
+{"id":"int-89a2b020","kind":"field_change","created_at":"2026-04-30T07:12:09.571972Z","actor":"zhou","issue_id":"human-w0a","extra":{"field":"status","new_value":"closed","old_value":"open"}}

@@ -6,6 +6,9 @@
 import { ActorRef } from '@/neural/interfaces';
 import { ToolContext } from './tool-context';
 
+// Re-export ToolContext for external use
+export type { ToolContext } from './tool-context';
+
 /** 工具类型 */
 export type ToolType = 'builtin' | 'process' | 'service' | 'shell';
 
@@ -93,7 +96,7 @@ export interface ToolDescriptor {
   /** 描述 */
   description?: string;
   /** 工具可执行文件/脚本路径 */
-  path?: string;
+  filePath?: string;
   /** 生命周期命令 */
   lifecycle?: ToolLifecycleCommands;
   /** 支持的能力列表 */
@@ -120,8 +123,8 @@ export interface ToolMetadata {
   description?: string;
   /** 类型 */
   type: ToolType;
-  /** 路径 */
-  path?: string;
+  /** 工具可执行文件/脚本路径 */
+  filePath?: string;
   /** 提供的功能列表（能力名称） */
   capabilities: string[];
   /** 暴露的接口列表 */

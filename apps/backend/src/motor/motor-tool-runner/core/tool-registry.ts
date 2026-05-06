@@ -182,6 +182,13 @@ export class ToolRegistry {
   }
 
   /**
+   * 获取所有工具实例（用于 AgentTool 转换）
+   */
+  getAllInstances(): ToolInstance[] {
+    return Array.from(this.tools.values());
+  }
+
+  /**
    * 启动工具进程
    */
   async startTool(toolId: string): Promise<boolean> {
@@ -266,7 +273,7 @@ export class ToolRegistry {
       version: tool.descriptor.version,
       description: tool.descriptor.description,
       type: tool.descriptor.type,
-      path: tool.descriptor.path,
+      filePath: tool.descriptor.filePath,
       capabilities: tool.descriptor.capabilities.map((c) => c.name),
       interfaces: tool.descriptor.interfaces || [],
       startCommand: lifecycle?.start,

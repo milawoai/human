@@ -11,6 +11,7 @@
  */
 import { Global, Module } from '@nestjs/common';
 import { NeuralModule } from '../neural/neural.module';
+import { MotorToolRunnerModule } from '../motor/motor-tool-runner/motor-tool-runner.module';
 import { BrainInitService } from './init/brain-init.service';
 import { ToolConfigService } from './tool-config/tool-config.service';
 import { BrainLanguageCenterModule } from './language-center/language-center.module';
@@ -21,7 +22,7 @@ import { AgentSessionStore } from './agent/agent-session.store';
 
 @Global()
 @Module({
-  imports: [NeuralModule, BrainLanguageCenterModule],
+  imports: [NeuralModule, BrainLanguageCenterModule, MotorToolRunnerModule],
   providers: [BrainInitService, BrainCortexService, BrainAgentService, AgentSessionStore, ToolConfigService],
   exports: [BrainInitService, BrainCortexService, BrainAgentService, ToolConfigService],
 })

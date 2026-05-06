@@ -30,6 +30,7 @@
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.19",
     "@nut-tree-fork/nut-js": "^4.2.6",
+    "@sinclair/typebox": "^0.34.49",
     "better-sqlite3": "^12.9.0",
     "neural-topics": "1.0.0",
     "reflect-metadata": "^0.2.2",
