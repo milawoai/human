@@ -5,6 +5,9 @@
  * 配置在每次获取时重新加载（无缓存）
  */
 import { Injectable, Logger } from '@nestjs/common';
+import { spawn } from 'child_process';
+import * as http from 'http';
+import * as https from 'https';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -255,14 +258,111 @@ export class ToolConfigService {
       maxRetries: config.healthCheck.maxRetries,
     } : undefined;
 
+    // 根据工具类型实现 execute
+    const toolType = config.type as ToolType;
+    let executeImpl: ToolInstance['execute'];
+
+    switch (toolType) {
+      case 'shell':
+        // Shell 类型：执行配置中的 command 模板
+        executeImpl = async (capability, params) => {
+          const commandTemplate = (config as any).command;
+          if (!commandTemplate) {
+            return {
+              success: false,
+              error: {
+                code: 'NO_SHELL_COMMAND',
+                message: `工具 ${config.id} 未配置 shell command`,
+              },
+            };
+          }
+          // 替换模板变量 {{paramName}} 为实际参数
+          let command = commandTemplate;
+          for (const [key, value] of Object.entries(params)) {
+            command = command.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(value));
+          }
+          return new Promise((resolve) => {
+            const child = spawn(command, { shell: true });
+            let stdout = '';
+            let stderr = '';
+            child.stdout.on('data', (data) => { stdout += data.toString(); });
+            child.stderr.on('data', (data) => { stderr += data.toString(); });
+            child.on('close', (code) => {
+              resolve({
+                success: code === 0,
+                data: stdout.trim() || undefined,
+                error: code !== 0 ? {
+                  code: 'SHELL_ERROR',
+                  message: stderr.trim() || `命令退出码: ${code}`,
+                } : undefined,
+              });
+            });
+            child.on('error', (err) => {
+              resolve({
+                success: false,
+                error: { code: 'SHELL_ERROR', message: err.message },
+              });
+            });
+          });
+        };
+        break;
+
+      case 'process':
+        // Process 类型：通过接口调用
+        executeImpl = async (capability, params) => {
+          // 找到 capability 对应的接口
+          const capabilityConfig = config.capabilities.find(c => c.name === capability);
+          const interfaceName = capabilityConfig?.interface;
+          const iface = config.interfaces?.find(i => i.name === interfaceName);
+
+          if (!iface) {
+            return {
+              success: false,
+              error: {
+                code: 'INTERFACE_NOT_FOUND',
+                message: `能力 ${capability} 未找到对应的接口配置`,
+              },
+            };
+          }
+
+          // 根据接口类型调用
+          switch (iface.type) {
+            case 'http':
+              return this.callHttpInterface(iface, params, capability);
+            case 'stdin':
+              return this.callStdinInterface(iface, params, capability);
+            default:
+              return {
+                success: false,
+                error: {
+                  code: 'UNSUPPORTED_INTERFACE',
+                  message: `接口类型 ${iface.type} 暂不支持`,
+                },
+              };
+          }
+        };
+        break;
+
+      case 'builtin':
+      default:
+        executeImpl = async () => ({
+          success: false,
+          error: {
+            code: 'NOT_IMPLEMENTED',
+            message: `工具 ${config.id} 未实现 execute 方法`,
+          },
+        });
+        break;
+    }
+
     return {
       descriptor: {
         id: config.id,
         name: config.name,
         version: config.version,
         description: config.description,
-        type: config.type as ToolType,
-        path: config.path,
+        type: toolType,
+        filePath: config.path,
         lifecycle,
         capabilities,
         interfaces,
@@ -271,16 +371,7 @@ export class ToolConfigService {
       },
       status: 'idle' as ToolStatus,
       initialize: undefined,
-      execute: async (capability, params, context) => {
-        // 默认实现，实际由具体工具覆盖
-        return {
-          success: false,
-          error: {
-            code: 'NOT_IMPLEMENTED',
-            message: `工具 ${config.id} 未实现 execute 方法，请使用 process/service 模式`,
-          },
-        };
-      },
+      execute: executeImpl,
       destroy: undefined,
     };
   }
@@ -319,5 +410,113 @@ export class ToolConfigService {
         this.logger.log(`创建示例工具配置: ${config.id}`);
       }
     }
+  }
+
+  /**
+   * 调用 HTTP 接口
+   */
+  private async callHttpInterface(
+    iface: ToolInterfaceConfig,
+    params: Record<string, unknown>,
+    capability: string,
+  ): Promise<{ success: boolean; data?: unknown; error?: { code: string; message: string } }> {
+    return new Promise((resolve) => {
+      const endpoint = iface.endpoint;
+      if (!endpoint) {
+        resolve({
+          success: false,
+          error: { code: 'NO_ENDPOINT', message: 'HTTP 接口未配置 endpoint' },
+        });
+        return;
+      }
+
+      const url = new URL(endpoint);
+      const client = url.protocol === 'https:' ? require('https') : require('http');
+
+      const postData = JSON.stringify(params);
+      const options: http.RequestOptions = {
+        hostname: url.hostname,
+        port: url.port || (url.protocol === 'https:' ? 443 : 80),
+        path: url.pathname + url.search,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData),
+        },
+      };
+
+      // 添加认证头
+      if (iface.auth === 'bearer' && (iface as any).token) {
+        options.headers!['Authorization'] = `Bearer ${(iface as any).token}`;
+      } else if (iface.auth === 'basic' && (iface as any).username) {
+        const credentials = Buffer.from(`${(iface as any).username}:${(iface as any).password || ''}`).toString('base64');
+        options.headers!['Authorization'] = `Basic ${credentials}`;
+      }
+
+      const req = client.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(data);
+            resolve({
+              success: res.statusCode !== undefined && res.statusCode < 400,
+              data: parsed,
+              error: res.statusCode !== undefined && res.statusCode >= 400
+                ? { code: 'HTTP_ERROR', message: `HTTP ${res.statusCode}: ${data}` }
+                : undefined,
+            });
+          } catch {
+            resolve({
+              success: res.statusCode !== undefined && res.statusCode < 400,
+              data: data,
+              error: res.statusCode !== undefined && res.statusCode >= 400
+                ? { code: 'HTTP_ERROR', message: `HTTP ${res.statusCode}: ${data}` }
+                : undefined,
+            });
+          }
+        });
+      });
+
+      req.on('error', (err) => {
+        resolve({
+          success: false,
+          error: { code: 'HTTP_ERROR', message: err.message },
+        });
+      });
+
+      req.setTimeout(30000, () => {
+        req.destroy();
+        resolve({
+          success: false,
+          error: { code: 'TIMEOUT', message: 'HTTP 请求超时' },
+        });
+      });
+
+      req.write(postData);
+      req.end();
+    });
+  }
+
+  /**
+   * 调用 stdin 接口（用于 Motor 启动的本地进程）
+   */
+  private async callStdinInterface(
+    iface: ToolInterfaceConfig,
+    params: Record<string, unknown>,
+    capability: string,
+  ): Promise<{ success: boolean; data?: unknown; error?: { code: string; message: string } }> {
+    return new Promise((resolve) => {
+      // stdin 接口需要进程已通过 lifecycle 启动
+      // 目前通过 tool-registry 获取运行中的进程
+      // 简化实现：直接返回错误，提示需要通过 process 类型工具的 lifecycle 管理进程
+      resolve({
+        success: false,
+        error: {
+          code: 'STDIN_NOT_IMPLEMENTED',
+          message: 'stdin 接口调用需要在 tool-registry 中实现进程管理，当前请使用 HTTP 接口',
+        },
+      });
+    });
   }
 }

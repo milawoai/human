@@ -60,6 +60,9 @@ export class ToolRegistry {
     // 启动健康检测（如果配置了）
     if (tool.descriptor.healthCheck) {
       this.startHealthCheck(tool);
+    } else {
+      // 无健康检测的工具（如 builtin/shell），直接标记为 ready
+      tool.status = 'ready';
     }
 
     this.logger.log(`工具注册: ${id} (${tool.descriptor.type}), 能力: ${tool.descriptor.capabilities.map(c => c.name).join(', ')}`);

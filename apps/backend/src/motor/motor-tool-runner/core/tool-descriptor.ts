@@ -10,7 +10,7 @@ import { ToolContext } from './tool-context';
 export type { ToolContext } from './tool-context';
 
 /** 工具类型 */
-export type ToolType = 'builtin' | 'process' | 'service' | 'shell';
+export type ToolType = 'builtin' | 'process' | 'shell';
 
 /** 工具状态 */
 export type ToolStatus =

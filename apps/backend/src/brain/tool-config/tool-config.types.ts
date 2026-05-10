@@ -5,7 +5,7 @@
  */
 
 /** 工具类型 */
-export type ToolConfigType = 'builtin' | 'process' | 'service' | 'shell';
+export type ToolConfigType = 'builtin' | 'process' | 'shell';
 
 /** 工具接口类型 */
 export type ToolInterfaceType = 'http' | 'websocket' | 'grpc' | 'stdin' | 'file' | 'process';
