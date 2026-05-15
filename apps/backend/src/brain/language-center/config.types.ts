@@ -24,9 +24,24 @@ export interface BrainSectionConfig {
   profiles: Record<string, BrainModelProfileConfig>;
 }
 
+export interface MemoryChunkConfig {
+  minChars: number;
+  maxChars: number;
+  overlapChars: number;
+}
+
+export interface MemorySectionConfig {
+  dbPath?: string;
+  obsidianVaultPath?: string;
+  ignoreDirs?: string[];
+  includeExts?: string[];
+  chunk?: Partial<MemoryChunkConfig>;
+}
+
 export interface SecretaryConfig {
   version: number;
   brain: BrainSectionConfig;
+  memory?: MemorySectionConfig;
 }
 
 export interface ConfigValidationResult {

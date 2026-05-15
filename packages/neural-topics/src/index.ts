@@ -17,6 +17,7 @@ export const NS = {
   BRAIN_LANGUAGE_MODELS: 'brain.language.models',
   BRAIN_LANGUAGE_OAUTH: 'brain.language.oauth',
   BRAIN_AGENT: 'brain.agent',
+  BRAIN_HIPPOCAMPUS_MEMORY: 'brain.hippocampus.memory',
 } as const
 
 // ──────────────────────────────────────────────
@@ -59,6 +60,12 @@ export const TOPIC = {
   BRAIN_AGENT_RUN_EVENT: 'brain.agent.run.event',
   BRAIN_AGENT_SESSION_GET: 'brain.agent.session.get',
   BRAIN_AGENT_SESSION_LIST: 'brain.agent.session.list',
+  // brain.hippocampus.memory — command/query
+  BRAIN_HIPPOCAMPUS_MEMORY_WRITE: 'brain.hippocampus.memory.write',
+  BRAIN_HIPPOCAMPUS_MEMORY_SEARCH: 'brain.hippocampus.memory.search',
+  BRAIN_HIPPOCAMPUS_MEMORY_DOCUMENT_GET: 'brain.hippocampus.memory.document.get',
+  BRAIN_HIPPOCAMPUS_MEMORY_CHUNK_GET: 'brain.hippocampus.memory.chunk.get',
+  BRAIN_HIPPOCAMPUS_MEMORY_REINDEX: 'brain.hippocampus.memory.reindex',
 } as const
 
 // ──────────────────────────────────────────────
@@ -109,6 +116,12 @@ export const ACTOR = {
     runtime: 'nest' as const,
     system: 'brain' as const,
     module: 'agent',
+  },
+  BRAIN_HIPPOCAMPUS: {
+    actorId: 'brain-main',
+    runtime: 'nest' as const,
+    system: 'brain' as const,
+    module: 'hippocampus',
   },
 } as const
 
@@ -257,6 +270,51 @@ export const CAP = {
     actor: ACTOR.BRAIN_AGENT,
     topic: TOPIC.BRAIN_AGENT_SESSION_LIST,
     kinds: ['query'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_HIPPOCAMPUS_MEMORY_WRITE: {
+    id: 'brain.hippocampus.memory.write',
+    actor: ACTOR.BRAIN_HIPPOCAMPUS,
+    topic: TOPIC.BRAIN_HIPPOCAMPUS_MEMORY_WRITE,
+    kinds: ['command'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_HIPPOCAMPUS_MEMORY_SEARCH: {
+    id: 'brain.hippocampus.memory.search',
+    actor: ACTOR.BRAIN_HIPPOCAMPUS,
+    topic: TOPIC.BRAIN_HIPPOCAMPUS_MEMORY_SEARCH,
+    kinds: ['query'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_HIPPOCAMPUS_MEMORY_DOCUMENT_GET: {
+    id: 'brain.hippocampus.memory.document.get',
+    actor: ACTOR.BRAIN_HIPPOCAMPUS,
+    topic: TOPIC.BRAIN_HIPPOCAMPUS_MEMORY_DOCUMENT_GET,
+    kinds: ['query'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_HIPPOCAMPUS_MEMORY_CHUNK_GET: {
+    id: 'brain.hippocampus.memory.chunk.get',
+    actor: ACTOR.BRAIN_HIPPOCAMPUS,
+    topic: TOPIC.BRAIN_HIPPOCAMPUS_MEMORY_CHUNK_GET,
+    kinds: ['query'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_HIPPOCAMPUS_MEMORY_REINDEX: {
+    id: 'brain.hippocampus.memory.reindex',
+    actor: ACTOR.BRAIN_HIPPOCAMPUS,
+    topic: TOPIC.BRAIN_HIPPOCAMPUS_MEMORY_REINDEX,
+    kinds: ['command'] as const,
     mode: 'once' as const,
     enabled: true,
     online: true,

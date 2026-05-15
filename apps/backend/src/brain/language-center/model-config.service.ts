@@ -188,6 +188,67 @@ export class ModelConfigService {
       }
     }
 
+    if (raw.memory !== undefined) {
+      if (!this.isObject(raw.memory)) {
+        errors.push('memory must be an object when provided');
+      } else {
+        if (
+          raw.memory.dbPath !== undefined &&
+          (typeof raw.memory.dbPath !== 'string' || !raw.memory.dbPath.trim())
+        ) {
+          errors.push('memory.dbPath must be a non-empty string when provided');
+        }
+
+        if (
+          raw.memory.obsidianVaultPath !== undefined &&
+          (typeof raw.memory.obsidianVaultPath !== 'string' ||
+            !raw.memory.obsidianVaultPath.trim())
+        ) {
+          errors.push('memory.obsidianVaultPath must be a non-empty string when provided');
+        }
+
+        if (
+          raw.memory.ignoreDirs !== undefined &&
+          (!Array.isArray(raw.memory.ignoreDirs) ||
+            raw.memory.ignoreDirs.some(
+              (item) => typeof item !== 'string' || !item.trim(),
+            ))
+        ) {
+          errors.push('memory.ignoreDirs must be a string array when provided');
+        }
+
+        if (
+          raw.memory.includeExts !== undefined &&
+          (!Array.isArray(raw.memory.includeExts) ||
+            raw.memory.includeExts.some(
+              (item) => typeof item !== 'string' || !item.trim(),
+            ))
+        ) {
+          errors.push('memory.includeExts must be a string array when provided');
+        }
+
+        if (raw.memory.chunk !== undefined) {
+          if (!this.isObject(raw.memory.chunk)) {
+            errors.push('memory.chunk must be an object when provided');
+          } else {
+            const { minChars, maxChars, overlapChars } = raw.memory.chunk;
+            if (minChars !== undefined && (!Number.isInteger(minChars) || minChars < 1)) {
+              errors.push('memory.chunk.minChars must be an integer >= 1 when provided');
+            }
+            if (maxChars !== undefined && (!Number.isInteger(maxChars) || maxChars < 1)) {
+              errors.push('memory.chunk.maxChars must be an integer >= 1 when provided');
+            }
+            if (
+              overlapChars !== undefined &&
+              (!Number.isInteger(overlapChars) || overlapChars < 0)
+            ) {
+              errors.push('memory.chunk.overlapChars must be an integer >= 0 when provided');
+            }
+          }
+        }
+      }
+    }
+
     return { valid: errors.length === 0, errors, warnings };
   }
 

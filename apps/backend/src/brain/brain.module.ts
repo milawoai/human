@@ -16,9 +16,10 @@ import { BrainLanguageCenterModule } from './language-center/language-center.mod
 import { BrainCortexService } from './cortex/brain-cortex.service';
 import { BrainAgentService } from './agent/brain-agent.service';
 import { AgentSessionStore } from './agent/agent-session.store';
+import { MemoryModule } from './hippocampus/memory.module';
 
 @Module({
-  imports: [NeuralModule, BrainLanguageCenterModule],
+  imports: [NeuralModule, BrainLanguageCenterModule, MemoryModule],
   providers: [BrainInitService, BrainCortexService, BrainAgentService, AgentSessionStore],
   exports: [BrainInitService, BrainCortexService, BrainAgentService],
 })

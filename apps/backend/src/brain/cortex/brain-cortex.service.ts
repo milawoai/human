@@ -8,6 +8,7 @@ import { NeuralWsGateway } from '../../neural/neural-ws/neural-ws.gateway';
 import { LlmService } from '../language-center/llm.service';
 import { ModelConfigService } from '../language-center/model-config.service';
 import { ProviderAuthService } from '../language-center/provider-auth.service';
+import { MemoryService } from '../hippocampus/memory.service';
 
 const BRAIN_CORTEX_ACTOR = {
   actorId: 'brain-main',
@@ -93,6 +94,7 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
     private readonly llmService: LlmService,
     private readonly modelConfigService: ModelConfigService,
     private readonly providerAuthService: ProviderAuthService,
+    private readonly memoryService: MemoryService,
   ) {}
 
   onModuleInit() {
@@ -143,7 +145,7 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
     const { providerOptions, stripThinking } = this.parseChatOptions(payload);
     const response = await this.llmService.complete({
       profileName: this.readString(payload.profileName),
-      context: this.resolveContext(payload),
+      context: await this.resolveContext(payload),
       options: providerOptions,
       timeoutMs: this.readNumber(payload.timeoutMs),
       retryAttempts: this.readNumber(payload.retryAttempts),
@@ -162,7 +164,7 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
     const { providerOptions, stripThinking } = this.parseChatOptions(payload);
     const stream = await this.llmService.stream({
       profileName: this.readString(payload.profileName),
-      context: this.resolveContext(payload),
+      context: await this.resolveContext(payload),
       options: providerOptions,
       timeoutMs: this.readNumber(payload.timeoutMs),
     });
@@ -256,24 +258,24 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
     };
   }
 
-  private resolveContext(payload: Record<string, any>): Context {
+  private async resolveContext(payload: Record<string, any>): Promise<Context> {
     if (payload.context && this.ensureObject(payload.context).messages) {
-      return payload.context as Context;
+      return await this.attachMemoryContext(payload.context as Context, payload);
     }
 
     const messages = Array.isArray(payload.messages) ? payload.messages : [];
     if (messages.length > 0) {
-      return {
+      return await this.attachMemoryContext({
         systemPrompt: this.readString(payload.systemPrompt),
         messages,
-      };
+      }, payload);
     }
 
     const userText = this.readString(payload.userText);
     if (!userText) {
       throw new Error('payload.userText or payload.messages/context is required');
     }
-    return {
+    return await this.attachMemoryContext({
       systemPrompt: this.readString(payload.systemPrompt),
       messages: [
         {
@@ -282,6 +284,43 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
           timestamp: Date.now(),
         },
       ],
+    }, payload);
+  }
+
+  private async attachMemoryContext(
+    context: Context,
+    payload: Record<string, any>,
+  ): Promise<Context> {
+    const useMemory = this.readBoolean(payload.useMemory) ?? false;
+    const memoryQuery =
+      this.readString(payload.memoryQuery) ??
+      this.readString(payload.userText);
+    if (!useMemory || !memoryQuery) {
+      return context;
+    }
+
+    const memoryResults = this.memoryService.search({
+      query: memoryQuery,
+      limit: this.readNumber(payload.memoryLimit) ?? 5,
+    });
+    if (memoryResults.length === 0) {
+      return context;
+    }
+
+    const memoryPrompt = [
+      'Memory references (use when relevant and cite sourceUri/sourcePath):',
+      ...memoryResults.map((item, idx) => {
+        const source = item.sourcePath ?? item.sourceUri;
+        return `${idx + 1}. [${source}] ${item.snippet || item.content}`;
+      }),
+    ].join('\n');
+
+    const basePrompt = context.systemPrompt?.trim();
+    return {
+      ...context,
+      systemPrompt: basePrompt
+        ? `${basePrompt}\n\n${memoryPrompt}`
+        : memoryPrompt,
     };
   }
 

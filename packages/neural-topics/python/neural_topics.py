@@ -17,6 +17,7 @@ NS = {
     "BRAIN_LANGUAGE_MODELS": "brain.language.models",
     "BRAIN_LANGUAGE_OAUTH": "brain.language.oauth",
     "BRAIN_AGENT": "brain.agent",
+    "BRAIN_HIPPOCAMPUS_MEMORY": "brain.hippocampus.memory",
 }
 
 # ──────────────────────────────────────────────
@@ -59,6 +60,12 @@ TOPICS = {
     "BRAIN_AGENT_RUN_EVENT": "brain.agent.run.event",
     "BRAIN_AGENT_SESSION_GET": "brain.agent.session.get",
     "BRAIN_AGENT_SESSION_LIST": "brain.agent.session.list",
+    # brain.hippocampus.memory — command/query
+    "BRAIN_HIPPOCAMPUS_MEMORY_WRITE": "brain.hippocampus.memory.write",
+    "BRAIN_HIPPOCAMPUS_MEMORY_SEARCH": "brain.hippocampus.memory.search",
+    "BRAIN_HIPPOCAMPUS_MEMORY_DOCUMENT_GET": "brain.hippocampus.memory.document.get",
+    "BRAIN_HIPPOCAMPUS_MEMORY_CHUNK_GET": "brain.hippocampus.memory.chunk.get",
+    "BRAIN_HIPPOCAMPUS_MEMORY_REINDEX": "brain.hippocampus.memory.reindex",
 }
 
 # ──────────────────────────────────────────────
@@ -109,6 +116,12 @@ ACTORS = {
         "runtime": "nest",
         "system": "brain",
         "module": "agent",
+    },
+    "BRAIN_HIPPOCAMPUS": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "hippocampus",
     },
 }
 
@@ -212,6 +225,51 @@ CAPABILITIES = [
         "actor": ACTORS["BRAIN_AGENT"],
         "topic": TOPICS["BRAIN_AGENT_SESSION_LIST"],
         "kinds": ["query"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.hippocampus.memory.write",
+        "actor": ACTORS["BRAIN_HIPPOCAMPUS"],
+        "topic": TOPICS["BRAIN_HIPPOCAMPUS_MEMORY_WRITE"],
+        "kinds": ["command"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.hippocampus.memory.search",
+        "actor": ACTORS["BRAIN_HIPPOCAMPUS"],
+        "topic": TOPICS["BRAIN_HIPPOCAMPUS_MEMORY_SEARCH"],
+        "kinds": ["query"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.hippocampus.memory.document.get",
+        "actor": ACTORS["BRAIN_HIPPOCAMPUS"],
+        "topic": TOPICS["BRAIN_HIPPOCAMPUS_MEMORY_DOCUMENT_GET"],
+        "kinds": ["query"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.hippocampus.memory.chunk.get",
+        "actor": ACTORS["BRAIN_HIPPOCAMPUS"],
+        "topic": TOPICS["BRAIN_HIPPOCAMPUS_MEMORY_CHUNK_GET"],
+        "kinds": ["query"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.hippocampus.memory.reindex",
+        "actor": ACTORS["BRAIN_HIPPOCAMPUS"],
+        "topic": TOPICS["BRAIN_HIPPOCAMPUS_MEMORY_REINDEX"],
+        "kinds": ["command"],
         "mode": "once",
         "enabled": True,
         "online": True,

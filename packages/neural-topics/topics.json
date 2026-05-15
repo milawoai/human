@@ -227,6 +227,56 @@
         "session_get":  { "kind": "query",   "direction": "body → nest", "description": "读取指定会话详情" },
         "session_list": { "kind": "query",   "direction": "body → nest", "description": "读取会话列表" }
       }
+    },
+    "brain.hippocampus.memory": {
+      "description": "脑系统 — Memory Store 写入、检索与重建",
+      "actor": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "hippocampus"
+      },
+      "capabilities": [
+        {
+          "id": "brain.hippocampus.memory.write",
+          "topic": "brain.hippocampus.memory.write",
+          "kinds": ["command"],
+          "mode": "once"
+        },
+        {
+          "id": "brain.hippocampus.memory.search",
+          "topic": "brain.hippocampus.memory.search",
+          "kinds": ["query"],
+          "mode": "once"
+        },
+        {
+          "id": "brain.hippocampus.memory.document.get",
+          "topic": "brain.hippocampus.memory.document.get",
+          "kinds": ["query"],
+          "mode": "once"
+        },
+        {
+          "id": "brain.hippocampus.memory.chunk.get",
+          "topic": "brain.hippocampus.memory.chunk.get",
+          "kinds": ["query"],
+          "mode": "once"
+        },
+        {
+          "id": "brain.hippocampus.memory.reindex",
+          "topic": "brain.hippocampus.memory.reindex",
+          "kinds": ["command"],
+          "mode": "once"
+        }
+      ],
+      "subscribeTopics": [],
+      "subscribeKinds": [],
+      "actions": {
+        "write":        { "kind": "command", "direction": "body → nest", "description": "写入单篇或批量文档并建立索引" },
+        "search":       { "kind": "query",   "direction": "body → nest", "description": "按关键词检索 memory chunk" },
+        "document_get": { "kind": "query",   "direction": "body → nest", "description": "按 document_id 获取文档详情" },
+        "chunk_get":    { "kind": "query",   "direction": "body → nest", "description": "按 chunk_id 获取 chunk 详情" },
+        "reindex":      { "kind": "command", "direction": "body → nest", "description": "触发 Obsidian 增量重建" }
+      }
     }
   }
 }

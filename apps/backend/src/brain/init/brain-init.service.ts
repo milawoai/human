@@ -41,6 +41,17 @@ const DEFAULT_CONFIG = {
     defaultProfile: '',
     profiles: {},
   },
+  memory: {
+    dbPath: '~/.ai_secretary/sqlite/memory.db',
+    obsidianVaultPath: '',
+    ignoreDirs: ['.obsidian', 'attachments', '.trash'],
+    includeExts: ['.md'],
+    chunk: {
+      minChars: 400,
+      maxChars: 1600,
+      overlapChars: 100,
+    },
+  },
 } as const;
 
 const DEFAULT_SECRETS_ENV_EXAMPLE = `# AI Secretary secret keys (example)

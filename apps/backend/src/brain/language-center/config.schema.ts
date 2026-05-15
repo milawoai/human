@@ -24,5 +24,29 @@ export const CONFIG_SCHEMA = {
         },
       },
     },
+    memory: {
+      type: 'object',
+      required: ['obsidianVaultPath'],
+      properties: {
+        dbPath: { type: 'string', minLength: 1 },
+        obsidianVaultPath: { type: 'string', minLength: 1 },
+        ignoreDirs: {
+          type: 'array',
+          items: { type: 'string', minLength: 1 },
+        },
+        includeExts: {
+          type: 'array',
+          items: { type: 'string', minLength: 1 },
+        },
+        chunk: {
+          type: 'object',
+          properties: {
+            minChars: { type: 'integer', minimum: 1 },
+            maxChars: { type: 'integer', minimum: 1 },
+            overlapChars: { type: 'integer', minimum: 0 },
+          },
+        },
+      },
+    },
   },
 } as const;
