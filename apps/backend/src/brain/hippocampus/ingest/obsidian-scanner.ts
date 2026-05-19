@@ -12,6 +12,8 @@ export interface ScannedVaultFile {
 
 @Injectable()
 export class ObsidianScanner {
+  private static readonly ARCHIVE_NAME_PATTERNS = [/archive/i, /封存/];
+
   scan(config: MemoryConfig): ScannedVaultFile[] {
     const root = config.obsidianVaultPath;
     if (!root || !fs.existsSync(root)) {
@@ -36,7 +38,7 @@ export class ObsidianScanner {
       const relPath = path.relative(root, absPath);
 
       if (entry.isDirectory()) {
-        if (config.ignoreDirs.includes(entry.name)) {
+        if (config.ignoreDirs.includes(entry.name) || this.shouldIgnoreByName(entry.name)) {
           continue;
         }
         this.walk(root, absPath, config, results);
@@ -44,6 +46,9 @@ export class ObsidianScanner {
       }
 
       if (!entry.isFile()) {
+        continue;
+      }
+      if (this.shouldIgnoreByName(entry.name)) {
         continue;
       }
 
@@ -61,5 +66,9 @@ export class ObsidianScanner {
         content,
       });
     }
+  }
+
+  private shouldIgnoreByName(name: string): boolean {
+    return ObsidianScanner.ARCHIVE_NAME_PATTERNS.some((pattern) => pattern.test(name));
   }
 }
