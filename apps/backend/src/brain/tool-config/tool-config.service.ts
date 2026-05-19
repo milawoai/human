@@ -19,7 +19,17 @@ import {
   ToolInterfaceConfig,
   DEFAULT_TOOLS_DIR,
 } from './tool-config.types';
-import type { ToolInstance, ToolCapability, ToolInterface, ToolStatus, ToolType, HealthCheckConfig, ToolLifecycleCommands } from '@/motor/motor-tool-runner/core/tool-descriptor';
+import type {
+  ToolInstance,
+  ToolCapability,
+  ToolInterface,
+  ToolStatus,
+  ToolType,
+  HealthCheckConfig,
+  ToolLifecycleCommands,
+  BuiltinToolProvider,
+  ToolDescriptor,
+} from '@/motor/motor-tool-runner/core/tool-descriptor';
 import type { ToolContext } from '@/motor/motor-tool-runner/core/tool-context';
 
 @Injectable()
@@ -83,8 +93,9 @@ export class ToolConfigService {
 
   /**
    * 重新加载所有工具配置
+   * @param builtinProviders 内置工具提供者
    */
-  async reload(): Promise<ToolInstance[]> {
+  async reload(builtinProviders: BuiltinToolProvider[] = []): Promise<ToolInstance[]> {
     const index = this.loadIndex();
     const tools: ToolInstance[] = [];
 
@@ -96,7 +107,7 @@ export class ToolConfigService {
 
       const config = this.loadToolConfig(item.configFile);
       if (config) {
-        const instance = this.toToolInstance(config);
+        const instance = this.toToolInstance(config, builtinProviders);
         tools.push(instance);
       }
     }
@@ -224,7 +235,7 @@ export class ToolConfigService {
   /**
    * 将 ToolConfig 转换为 ToolInstance
    */
-  private toToolInstance(config: ToolConfig): ToolInstance {
+  private toToolInstance(config: ToolConfig, builtinProviders: BuiltinToolProvider[] = []): ToolInstance {
     const capabilities: ToolCapability[] = config.capabilities.map(cap => ({
       name: cap.name,
       description: cap.description,
@@ -258,8 +269,32 @@ export class ToolConfigService {
       maxRetries: config.healthCheck.maxRetries,
     } : undefined;
 
-    // 根据工具类型实现 execute
-    const toolType = config.type as ToolType;
+    // 基础描述符
+    const descriptor: ToolDescriptor = {
+      id: config.id,
+      name: config.name,
+      version: config.version,
+      description: config.description,
+      type: config.type as ToolType,
+      filePath: config.path,
+      lifecycle,
+      capabilities,
+      interfaces,
+      config: config.config || {},
+      healthCheck,
+    };
+
+    // 如果是 builtin 类型，尝试使用 provider
+    if (descriptor.type === 'builtin') {
+      const provider = builtinProviders.find(p => p.providerId === descriptor.id);
+      if (provider) {
+        this.logger.debug(`为工具 ${descriptor.id} 匹配到内置 Provider`);
+        return provider.createInstance(descriptor);
+      }
+    }
+
+    // 根据工具类型实现默认 execute (shell/process/builtin-fallback)
+    const toolType = descriptor.type;
     let executeImpl: ToolInstance['execute'];
 
     switch (toolType) {
@@ -349,26 +384,14 @@ export class ToolConfigService {
           success: false,
           error: {
             code: 'NOT_IMPLEMENTED',
-            message: `工具 ${config.id} 未实现 execute 方法`,
+            message: `工具 ${config.id} 未实现 execute 方法 (Builtin Provider 未匹配)`,
           },
         });
         break;
     }
 
     return {
-      descriptor: {
-        id: config.id,
-        name: config.name,
-        version: config.version,
-        description: config.description,
-        type: toolType,
-        filePath: config.path,
-        lifecycle,
-        capabilities,
-        interfaces,
-        config: config.config || {},
-        healthCheck,
-      },
+      descriptor,
       status: 'idle' as ToolStatus,
       initialize: undefined,
       execute: executeImpl,
@@ -394,6 +417,43 @@ export class ToolConfigService {
             description: '打招呼',
             parameters: {
               name: { type: 'string', required: false, default: 'World', description: '被问候的名字' },
+            },
+          },
+        ],
+      },
+      {
+        id: 'pi-coding-tools',
+        name: 'System Coding Tools',
+        version: '1.0.0',
+        description: 'pi-coding-agent 提供的代码能力 (read/bash/edit/ls 等)',
+        type: 'builtin',
+        enabled: true,
+        capabilities: [
+          { name: 'read', description: 'Read file content' },
+          { name: 'bash', description: 'Execute shell commands' },
+          { name: 'edit', description: 'Edit file content with search/replace' },
+          { name: 'write', description: 'Write or overwrite file content' },
+          { name: 'ls', description: 'List files and directories' },
+          { name: 'grep', description: 'Search for text patterns in files' },
+          { name: 'find', description: 'Find files by name' },
+        ],
+        config: {
+          cwd: process.cwd(),
+        },
+      },
+      {
+        id: 'system-session-tools',
+        name: 'System Session Tools',
+        version: '1.0.0',
+        description: '系统会话管理工具',
+        type: 'builtin',
+        enabled: true,
+        capabilities: [
+          {
+            name: 'get_session_meta',
+            description: 'Read agent session metadata by sessionId.',
+            parameters: {
+              sessionId: { type: 'string', required: false, description: '会话 ID' },
             },
           },
         ],

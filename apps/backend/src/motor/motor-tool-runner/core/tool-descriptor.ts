@@ -166,6 +166,14 @@ export interface ToolInstance {
   destroy?(): Promise<void>;
 }
 
+/** Builtin 工具提供者 — 负责为内置工具绑定执行逻辑 */
+export interface BuiltinToolProvider {
+  /** 对应的工具 ID */
+  readonly providerId: string;
+  /** 创建工具实例并绑定逻辑 */
+  createInstance(descriptor: ToolDescriptor): ToolInstance;
+}
+
 /** 执行结果 */
 export interface ToolResult {
   success: boolean;

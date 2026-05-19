@@ -14,11 +14,14 @@ import {
   MOTOR_TOPICS,
   ToolInstance,
   ToolResult,
+  BuiltinToolProvider,
 } from './core/tool-descriptor';
 import type { BusMessage } from '@/neural/interfaces';
 import type { InternalCommandHandler } from '@/neural/neural-http/neural-http.service';
 import { NeuralHttpService } from '@/neural/neural-http/neural-http.service';
 import { ToolConfigService } from '@/brain/tool-config/tool-config.service';
+import { PiCodingProvider } from './providers/pi-coding-provider';
+import { SystemSessionProvider } from './providers/system-session-provider';
 
 @Injectable()
 export class MotorToolRunnerService implements OnModuleInit, OnModuleDestroy, InternalCommandHandler {
@@ -26,17 +29,26 @@ export class MotorToolRunnerService implements OnModuleInit, OnModuleDestroy, In
 
   private toolConfigService: ToolConfigService | null = null;
 
+  /** 已注册的内置工具提供者 */
+  private readonly builtinProviders: BuiltinToolProvider[] = [];
+
   constructor(
     private readonly registry: ToolRegistry,
     private readonly executor: ToolExecutor,
     private readonly gateway: MotorGateway,
     private readonly handler: ToolHandler,
     private readonly httpService: NeuralHttpService,
+    private readonly piCodingProvider: PiCodingProvider,
+    private readonly systemSessionProvider: SystemSessionProvider,
     @Optional() private readonly moduleRef?: ModuleRef,
   ) {}
 
   async onModuleInit(): Promise<void> {
     this.logger.log('Motor Tool Runner 初始化...');
+
+    // 注册内置工具提供者
+    this.registerBuiltinProvider(this.piCodingProvider);
+    this.registerBuiltinProvider(this.systemSessionProvider);
 
     // 尝试获取 ToolConfigService（来自 BrainModule）
     if (this.moduleRef) {
@@ -61,6 +73,14 @@ export class MotorToolRunnerService implements OnModuleInit, OnModuleDestroy, In
   }
 
   /**
+   * 注册内置工具提供者
+   */
+  registerBuiltinProvider(provider: BuiltinToolProvider): void {
+    this.builtinProviders.push(provider);
+    this.logger.log(`内置工具提供者已注册: ${provider.providerId}`);
+  }
+
+  /**
    * 从配置文件加载工具
    */
   private async loadToolsFromConfig(): Promise<void> {
@@ -70,11 +90,11 @@ export class MotorToolRunnerService implements OnModuleInit, OnModuleDestroy, In
     }
 
     try {
-      const tools = await this.toolConfigService.reload();
+      const tools = await this.toolConfigService.reload(this.builtinProviders);
       for (const tool of tools) {
         await this.registry.register(tool);
         this.gateway.registerToolCapabilities(tool);
-        this.logger.log(`从配置加载工具: ${tool.descriptor.id}`);
+        this.logger.log(`从配置加载工具: ${tool.descriptor.id} (${tool.descriptor.type})`);
       }
       this.logger.log(`配置加载完成，共 ${tools.length} 个工具`);
     } catch (error) {

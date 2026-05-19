@@ -43,7 +43,22 @@
         "stopped":   { "kind": "event",   "direction": "python → subscribers", "description": "录音已停止" },
         "error":     { "kind": "event",   "direction": "python → subscribers", "description": "错误" }
       }
-    }, 
+    },
+    "sensory.hearing.question": {
+      "description": "听觉感知 — 语音提问最终文本事件",
+      "actor": {
+        "actorId": "sensory-hearing",
+        "runtime": "python",
+        "system": "sensory",
+        "module": "hearing"
+      },
+      "capabilities": [],
+      "subscribeTopics": ["sensory.hearing.question.finalized"],
+      "subscribeKinds": ["event"],
+      "actions": {
+        "finalized": { "topic": "sensory.hearing.question.finalized", "kind": "event", "direction": "python → subscribers", "description": "语音提问最终文本（带 requestId）" }
+      }
+    },
     "motor.animation.focused_app": {
       "description": "执行系统 — 向当前焦点应用输入文本",
       "actor": {
@@ -117,6 +132,48 @@
       "actions": {
         "complete": { "kind": "command", "direction": "body → nest", "description": "一次性生成对话响应" },
         "stream":   { "kind": "command", "direction": "body → nest", "description": "流式生成对话响应" }
+      }
+    },
+    "brain.cortex.rewrite": {
+      "description": "脑系统 — 语音提问口语转书面语阶段",
+      "actor": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "cortex"
+      },
+      "capabilities": [
+        {
+          "id": "brain.cortex.rewrite.requested",
+          "topic": "brain.cortex.rewrite.requested",
+          "kinds": ["command"],
+          "mode": "once"
+        }
+      ],
+      "subscribeTopics": [],
+      "subscribeKinds": [],
+      "actions": {
+        "requested": { "topic": "brain.cortex.rewrite.requested", "kind": "command", "direction": "body/sensory → nest", "description": "触发口语转书面语" },
+        "completed": { "topic": "brain.cortex.rewrite.completed", "kind": "event", "direction": "nest → subscribers", "description": "改写完成，返回 normalizedQuestion" },
+        "confirmed": { "topic": "brain.cortex.rewrite.confirmed", "kind": "event", "direction": "body → nest/subscribers", "description": "用户确认后的问题文本" }
+      }
+    },
+    "brain.cortex.answer": {
+      "description": "脑系统 — 语音提问正式回答阶段",
+      "actor": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "cortex"
+      },
+      "capabilities": [],
+      "subscribeTopics": [],
+      "subscribeKinds": [],
+      "actions": {
+        "stream_think": { "topic": "brain.cortex.answer.stream.think", "kind": "event", "direction": "nest → subscribers", "description": "思考流片段" },
+        "stream_chunk": { "topic": "brain.cortex.answer.stream.chunk", "kind": "event", "direction": "nest → subscribers", "description": "正式回答流片段" },
+        "completed": { "topic": "brain.cortex.answer.completed", "kind": "event", "direction": "nest → subscribers", "description": "回答完成" },
+        "failed": { "topic": "brain.cortex.answer.failed", "kind": "event", "direction": "nest → subscribers", "description": "回答失败" }
       }
     },
     "brain.language.models": {

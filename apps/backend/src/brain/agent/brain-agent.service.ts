@@ -3,7 +3,6 @@ import { existsSync, statSync } from 'node:fs';
 import * as path from 'node:path';
 import type { Context, Model, ToolResultMessage } from '@mariozechner/pi-ai';
 import type { AgentEvent, AgentMessage, AgentTool } from '@mariozechner/pi-agent-core';
-import { Type } from 'typebox';
 import type { BusMessage, Capability } from '../../neural/interfaces';
 import type { InternalCommandHandler } from '../../neural/neural-http/neural-http.service';
 import { NeuralHttpService } from '../../neural/neural-http/neural-http.service';
@@ -69,7 +68,6 @@ const AGENT_CAPABILITIES: Capability[] = [
 ];
 
 const PI_AGENT_CORE_MODULE = '@mariozechner/pi-agent-core';
-const PI_CODING_AGENT_MODULE = '@mariozechner/pi-coding-agent';
 const dynamicImport = <T = unknown>(specifier: string): Promise<T> =>
   new Function('s', 'return import(s)')(specifier) as Promise<T>;
 
@@ -263,71 +261,37 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
     toolPreset: ToolPreset;
     codingCwd?: string;
   }): Promise<AgentTool[]> {
+    // 注入当前工作目录到 context metadata，供 builtin 工具使用
+    const hooks = {
+      beforeToolCall: async (context: any) => {
+        context.metadata = { ...context.metadata, cwd: options.codingCwd || process.cwd() };
+        return undefined;
+      },
+    };
+
     // 从 MotorToolRunner 获取工具（通过 ToolAdapterService）
-    const motorTools = this.toolAdapterService.getToolsForAgent();
+    const allTools = this.toolAdapterService.getAllTools(hooks);
 
     if (options.toolPreset === 'default') {
-      return motorTools;
+      // 默认模式：返回所有已注册且启用的 Motor 工具
+      return allTools;
     }
-
-    // 保留原有的系统内置工具（session 相关）
-    const systemTools: AgentTool[] = [
-      {
-        name: 'get_session_meta',
-        label: 'Get Session Metadata',
-        description: 'Read agent session metadata by sessionId.',
-        parameters: Type.Object(
-          {
-            sessionId: Type.String({ minLength: 1 }),
-          },
-          { additionalProperties: false },
-        ),
-        execute: async (_toolCallId, params) => {
-          const args = params as { sessionId: string };
-          const session = this.sessionStore.getSession(args.sessionId, {
-            includeMessages: false,
-          });
-          if (!session) {
-            return {
-              content: [{ type: 'text', text: `session not found: ${args.sessionId}` }],
-              details: { sessionId: args.sessionId },
-            };
-          }
-          return {
-            content: [{ type: 'text', text: JSON.stringify(session) }],
-            details: session,
-          };
-        },
-      },
-    ];
-
-    // Coding 模式下，添加 coding tools
-    const codingTools = await this.buildCodingTools(
-      options.codingCwd ?? process.cwd(),
-    );
 
     if (options.toolPreset === 'coding_only') {
-      return [...systemTools, ...codingTools];
+      // coding_only 模式：仅返回 coding 相关的工具和 session 工具
+      return allTools.filter(t => 
+        t.name.startsWith('pi-coding-tools.') || 
+        t.name.startsWith('system-session-tools.')
+      );
     }
 
-    // coding 模式：motor tools + system tools + coding tools
-    return [...motorTools, ...systemTools, ...codingTools];
+    // coding 模式：返回所有工具
+    return allTools;
   }
 
   private async getAgentCore(): Promise<typeof import('@mariozechner/pi-agent-core')> {
     return dynamicImport<typeof import('@mariozechner/pi-agent-core')>(
       PI_AGENT_CORE_MODULE,
-    );
-  }
-
-  private async buildCodingTools(cwd: string): Promise<AgentTool[]> {
-    const codingAgent = await this.getPiCodingAgent();
-    return codingAgent.createCodingTools(cwd) as AgentTool[];
-  }
-
-  private async getPiCodingAgent(): Promise<typeof import('@mariozechner/pi-coding-agent')> {
-    return dynamicImport<typeof import('@mariozechner/pi-coding-agent')>(
-      PI_CODING_AGENT_MODULE,
     );
   }
 

@@ -151,13 +151,8 @@ export class ToolExecutor {
     const startTime = Date.now();
 
     try {
-      // 创建执行上下文
-      const execContext: ToolContext = {
-        sessionId,
-      };
-
-      // 执行工具能力
-      const result = await tool.execute(capability, params, execContext);
+      // 执行工具能力（传递完整上下文，包含 toolCallId, signal, onUpdate）
+      const result = await tool.execute(capability, params, context);
 
       // 执行后钩子
       if (effectiveHooks?.afterToolCall) {
