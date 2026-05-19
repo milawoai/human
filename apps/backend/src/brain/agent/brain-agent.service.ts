@@ -13,6 +13,7 @@ import { LlmService } from '../language-center/llm.service';
 import { ModelConfigService } from '../language-center/model-config.service';
 import { ProviderAuthService } from '../language-center/provider-auth.service';
 import { AgentSessionStore } from './agent-session.store';
+import { ToolAdapterService } from '../../motor/motor-tool-runner/core/tool-adapter.service';
 
 const BRAIN_AGENT_ACTOR = {
   actorId: 'brain-main',
@@ -86,6 +87,7 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
     private readonly modelConfigService: ModelConfigService,
     private readonly providerAuthService: ProviderAuthService,
     private readonly sessionStore: AgentSessionStore,
+    private readonly toolAdapterService: ToolAdapterService,
   ) {}
 
   onModuleInit() {
@@ -261,37 +263,15 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
     toolPreset: ToolPreset;
     codingCwd?: string;
   }): Promise<AgentTool[]> {
-    const defaultTools: AgentTool[] = [
-      {
-        name: 'get_current_time',
-        label: 'Get Current Time',
-        description: 'Get current local server time as ISO string.',
-        parameters: Type.Object({}, { additionalProperties: false }),
-        execute: async (_toolCallId) => {
-          const now = new Date().toISOString();
-          return {
-            content: [{ type: 'text', text: now }],
-            details: { now },
-          };
-        },
-      },
-      {
-        name: 'list_model_profiles',
-        label: 'List Model Profiles',
-        description:
-          'List configured model profiles in ~/.ai_secretary/config.json.',
-        parameters: Type.Object({}, { additionalProperties: false }),
-        execute: async (_toolCallId) => {
-          const profiles = this.modelConfigService.listProfiles({
-            strictEnv: false,
-          });
-          const summary = profiles.map((p) => `${p.name}:${p.provider}/${p.model}`);
-          return {
-            content: [{ type: 'text', text: summary.join('\n') || '(empty)' }],
-            details: { profiles },
-          };
-        },
-      },
+    // 从 MotorToolRunner 获取工具（通过 ToolAdapterService）
+    const motorTools = this.toolAdapterService.getToolsForAgent();
+
+    if (options.toolPreset === 'default') {
+      return motorTools;
+    }
+
+    // 保留原有的系统内置工具（session 相关）
+    const systemTools: AgentTool[] = [
       {
         name: 'get_session_meta',
         label: 'Get Session Metadata',
@@ -321,17 +301,17 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
       },
     ];
 
-    if (options.toolPreset === 'default') {
-      return defaultTools;
-    }
-
+    // Coding 模式下，添加 coding tools
     const codingTools = await this.buildCodingTools(
       options.codingCwd ?? process.cwd(),
     );
+
     if (options.toolPreset === 'coding_only') {
-      return codingTools;
+      return [...systemTools, ...codingTools];
     }
-    return [...defaultTools, ...codingTools];
+
+    // coding 模式：motor tools + system tools + coding tools
+    return [...motorTools, ...systemTools, ...codingTools];
   }
 
   private async getAgentCore(): Promise<typeof import('@mariozechner/pi-agent-core')> {

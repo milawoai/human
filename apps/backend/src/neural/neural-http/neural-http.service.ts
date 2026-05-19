@@ -58,15 +58,24 @@ export class NeuralHttpService implements OnModuleInit {
    * 延迟发现 BrainModule 注册的 handlers。
    */
   private discoverHandlers(): void {
+    // 发现 BrainInitService
     try {
-      // 尝试从容器中获取 BrainInitService
       const brainInit = this.moduleRef.get('BrainInitService', { strict: false });
       if (brainInit && typeof brainInit.canHandle === 'function') {
         this.registerCommandHandler(brainInit as InternalCommandHandler);
       }
     } catch {
-      // BrainModule 可能未注册，忽略
       this.logger.debug('BrainModule 未注册，跳过内部处理器发现');
+    }
+
+    // 发现 MotorToolRunnerService
+    try {
+      const motorRunner = this.moduleRef.get('MotorToolRunnerService', { strict: false });
+      if (motorRunner && typeof motorRunner.canHandle === 'function') {
+        this.registerCommandHandler(motorRunner as InternalCommandHandler);
+      }
+    } catch {
+      this.logger.debug('MotorToolRunnerService 未注册，跳过内部处理器发现');
     }
   }
 

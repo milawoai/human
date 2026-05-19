@@ -1,7 +1,7 @@
 *.bundle
 # Dependencies
 node_modules/
-
+sub-tools/*
 # Build output
 dist/
 out/

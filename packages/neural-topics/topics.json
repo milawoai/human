@@ -43,7 +43,7 @@
         "stopped":   { "kind": "event",   "direction": "python → subscribers", "description": "录音已停止" },
         "error":     { "kind": "event",   "direction": "python → subscribers", "description": "错误" }
       }
-    },
+    }, 
     "motor.animation.focused_app": {
       "description": "执行系统 — 向当前焦点应用输入文本",
       "actor": {
