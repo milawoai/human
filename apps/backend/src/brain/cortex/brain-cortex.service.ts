@@ -143,9 +143,10 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
   private async handleChatComplete(message: BusMessage) {
     const payload = this.ensureObject(message.payload);
     const { providerOptions, stripThinking } = this.parseChatOptions(payload);
+    const context = await this.resolveContext(payload)
     const response = await this.llmService.complete({
       profileName: this.readString(payload.profileName),
-      context: await this.resolveContext(payload),
+      context,
       options: providerOptions,
       timeoutMs: this.readNumber(payload.timeoutMs),
       retryAttempts: this.readNumber(payload.retryAttempts),
@@ -316,8 +317,20 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
     ].join('\n');
 
     const basePrompt = context.systemPrompt?.trim();
+    const memoryMessage = {
+      role: 'user' as const,
+      content: [
+        'You have retrieved memory context for the next user request.',
+        'Use it when relevant and mention sourceUri/sourcePath when citing facts.',
+        '',
+        memoryPrompt,
+      ].join('\n'),
+      timestamp: Date.now(),
+    };
+
     return {
       ...context,
+      messages: [memoryMessage, ...context.messages],
       systemPrompt: basePrompt
         ? `${basePrompt}\n\n${memoryPrompt}`
         : memoryPrompt,

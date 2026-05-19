@@ -76,6 +76,13 @@ async function main() {
 
   const normalized = normalizer.normalize('  秘书 自动化  ');
   assert.equal(normalized, '秘书 自动化');
+  const normalizedWithStopwords = normalizer.normalize(
+    '我们 今天 讨论 memory 系统 海马体 reindex',
+  );
+  assert.ok(normalizedWithStopwords.includes('海马体'));
+  assert.ok(normalizedWithStopwords.includes('reindex'));
+  assert.ok(!normalizedWithStopwords.includes('memory'));
+  assert.ok(!normalizedWithStopwords.includes('我们'));
 
   const parsed = parser.parse({ sourceUri: 'obsidian://demo.md', raw: '# T\n' + 'x'.repeat(320) });
   const testChunks = chunker.chunk(parsed, { minChars: 50, maxChars: 100, overlapChars: 10 });

@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { BrainLanguageCenterModule } from '../language-center/language-center.module';
 import { MemoryDatabaseModule } from './db/memory-database.module';
 import { MemoryNeuralService } from './api/memory-neural.service';
-import { MemoryConfigService } from './memory-config.service';
 import { MemoryService } from './memory.service';
+import { NeuralHttpModule } from '../../neural/neural-http/neural-http.module';
 import { DocumentRepository } from './repositories/document.repository';
 import { ChunkRepository } from './repositories/chunk.repository';
 import { MarkdownParser } from './ingest/markdown-parser';
@@ -14,9 +14,8 @@ import { ObsidianScanner } from './ingest/obsidian-scanner';
 import { IngestService } from './ingest/ingest.service';
 
 @Module({
-  imports: [BrainLanguageCenterModule, MemoryDatabaseModule],
+  imports: [BrainLanguageCenterModule, MemoryDatabaseModule, NeuralHttpModule],
   providers: [
-    MemoryConfigService,
     MemoryService,
     MemoryNeuralService,
     DocumentRepository,
@@ -29,7 +28,6 @@ import { IngestService } from './ingest/ingest.service';
     MemorySearchService,
   ],
   exports: [
-    MemoryConfigService,
     MemoryService,
     MemoryNeuralService,
     DocumentRepository,

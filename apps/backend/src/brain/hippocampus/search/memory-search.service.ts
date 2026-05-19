@@ -29,7 +29,37 @@ export class MemorySearchService {
     if (!normalized) return [];
 
     const limit = Math.max(1, Math.min(50, Math.trunc(input.limit ?? 10)));
-    const rows = this.memoryDatabaseService
+    let rows = this.searchByMatch(normalized, limit);
+
+    // Fallback: SQLite FTS space-separated terms are typically interpreted as AND.
+    // If strict match returns nothing, relax to OR to improve recall for multi-term queries.
+    if (rows.length === 0) {
+      const terms = normalized.split(' ').map((part) => part.trim()).filter(Boolean);
+      if (terms.length > 1) {
+        const relaxed = terms.join(' OR ');
+        rows = this.searchByMatch(relaxed, limit);
+      }
+    }
+
+    return rows.map((row) => ({
+      chunkId: row.chunk_id,
+      chunkUid: row.chunk_uid,
+      documentId: row.document_id,
+      title: row.title,
+      heading: row.heading ?? undefined,
+      content: row.content,
+      snippet: row.snippet,
+      sourceUri: row.source_uri,
+      sourcePath: row.source_path ?? undefined,
+      score: row.score,
+      metadata: row.metadata_json
+        ? (JSON.parse(row.metadata_json) as Record<string, unknown>)
+        : undefined,
+    }));
+  }
+
+  private searchByMatch(matchQuery: string, limit: number): SearchRow[] {
+    return this.memoryDatabaseService
       .getDatabase()
       .prepare(
         `
@@ -53,22 +83,6 @@ export class MemorySearchService {
         LIMIT ?
         `,
       )
-      .all(normalized, limit) as SearchRow[];
-
-    return rows.map((row) => ({
-      chunkId: row.chunk_id,
-      chunkUid: row.chunk_uid,
-      documentId: row.document_id,
-      title: row.title,
-      heading: row.heading ?? undefined,
-      content: row.content,
-      snippet: row.snippet,
-      sourceUri: row.source_uri,
-      sourcePath: row.source_path ?? undefined,
-      score: row.score,
-      metadata: row.metadata_json
-        ? (JSON.parse(row.metadata_json) as Record<string, unknown>)
-        : undefined,
-    }));
+      .all(matchQuery, limit) as SearchRow[];
   }
 }

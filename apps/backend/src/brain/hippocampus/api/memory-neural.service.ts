@@ -1,10 +1,17 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { TOPIC } from 'neural-topics';
 import type { BusMessage, Capability } from '../../../neural/interfaces';
 import type { InternalCommandHandler } from '../../../neural/neural-http/neural-http.service';
 import { NeuralHttpService } from '../../../neural/neural-http/neural-http.service';
 import { NeuralCoreService } from '../../../neural/neural-core/neural-core.service';
 import { MemoryService } from '../memory.service';
+
+const TOPIC = {
+  BRAIN_HIPPOCAMPUS_MEMORY_WRITE: 'brain.hippocampus.memory.write',
+  BRAIN_HIPPOCAMPUS_MEMORY_SEARCH: 'brain.hippocampus.memory.search',
+  BRAIN_HIPPOCAMPUS_MEMORY_DOCUMENT_GET: 'brain.hippocampus.memory.document.get',
+  BRAIN_HIPPOCAMPUS_MEMORY_CHUNK_GET: 'brain.hippocampus.memory.chunk.get',
+  BRAIN_HIPPOCAMPUS_MEMORY_REINDEX: 'brain.hippocampus.memory.reindex',
+} as const;
 
 const BRAIN_HIPPOCAMPUS_ACTOR = {
   actorId: 'brain-main',
