@@ -11,9 +11,12 @@ Neural Topics — Python 常量导出
 
 NS = {
     "SENSORY_HEARING": "sensory.hearing.caption_stream",
+    "SENSORY_HEARING_QUESTION": "sensory.hearing.question",
     "MOTOR_ANIMATION": "motor.animation.focused_app",
     "BRAIN_INIT": "brain.init",
     "BRAIN_CORTEX_CHAT": "brain.cortex.chat",
+    "BRAIN_CORTEX_REWRITE": "brain.cortex.rewrite",
+    "BRAIN_CORTEX_ANSWER": "brain.cortex.answer",
     "BRAIN_LANGUAGE_MODELS": "brain.language.models",
     "BRAIN_LANGUAGE_OAUTH": "brain.language.oauth",
     "BRAIN_AGENT": "brain.agent",
@@ -38,6 +41,16 @@ TOPICS = {
     "SENSORY_HEARING_SEGMENT": "sensory.hearing.caption_stream.segment",
     "SENSORY_HEARING_STOPPED": "sensory.hearing.caption_stream.stopped",
     "SENSORY_HEARING_ERROR": "sensory.hearing.caption_stream.error",
+    "SENSORY_HEARING_QUESTION_FINALIZED": "sensory.hearing.question.finalized",
+    # brain.cortex.rewrite — command/event
+    "BRAIN_CORTEX_REWRITE_REQUESTED": "brain.cortex.rewrite.requested",
+    "BRAIN_CORTEX_REWRITE_COMPLETED": "brain.cortex.rewrite.completed",
+    "BRAIN_CORTEX_REWRITE_CONFIRMED": "brain.cortex.rewrite.confirmed",
+    # brain.cortex.answer — event
+    "BRAIN_CORTEX_ANSWER_STREAM_THINK": "brain.cortex.answer.stream.think",
+    "BRAIN_CORTEX_ANSWER_STREAM_CHUNK": "brain.cortex.answer.stream.chunk",
+    "BRAIN_CORTEX_ANSWER_COMPLETED": "brain.cortex.answer.completed",
+    "BRAIN_CORTEX_ANSWER_FAILED": "brain.cortex.answer.failed",
     # motor.animation.focused_app — command
     "MOTOR_ANIMATION_INPUT_TEXT_TO_FOCUSED_APP": "motor.animation.focused_app.input_text",
     # brain.init — command & event
@@ -66,6 +79,15 @@ TOPICS = {
     "BRAIN_HIPPOCAMPUS_MEMORY_DOCUMENT_GET": "brain.hippocampus.memory.document.get",
     "BRAIN_HIPPOCAMPUS_MEMORY_CHUNK_GET": "brain.hippocampus.memory.chunk.get",
     "BRAIN_HIPPOCAMPUS_MEMORY_REINDEX": "brain.hippocampus.memory.reindex",
+}
+
+VOICE_QUESTION_STATES = {
+    "LISTENING": "LISTENING",
+    "REWRITING": "REWRITING",
+    "WAITING_CONFIRM": "WAITING_CONFIRM",
+    "ANSWERING": "ANSWERING",
+    "DONE": "DONE",
+    "ERROR": "ERROR",
 }
 
 # ──────────────────────────────────────────────

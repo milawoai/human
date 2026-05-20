@@ -120,6 +120,7 @@ class NeuralAdapter:
         logger.info("[Adapter] 发送 event: topic=%s, type=%s", topic, event_type)
         await self._client.send_event(topic, payload)
 
+
     # ──────────────────────────────────────────────
     # 内部方法
     # ──────────────────────────────────────────────

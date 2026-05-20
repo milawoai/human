@@ -1,0 +1,2 @@
+{"id":"int-6cedd6ea","kind":"field_change","created_at":"2026-05-20T02:55:17.37491Z","actor":"zhou","issue_id":"human-1w2","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Completed"}}
+{"id":"int-af2bf457","kind":"field_change","created_at":"2026-05-20T02:55:27.318859Z","actor":"zhou","issue_id":"human-qfi","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Completed"}}
