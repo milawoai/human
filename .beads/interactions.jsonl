@@ -1,2 +1,10 @@
 {"id":"int-6cedd6ea","kind":"field_change","created_at":"2026-05-20T02:55:17.37491Z","actor":"zhou","issue_id":"human-1w2","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Completed"}}
 {"id":"int-af2bf457","kind":"field_change","created_at":"2026-05-20T02:55:27.318859Z","actor":"zhou","issue_id":"human-qfi","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Completed"}}
+{"id":"int-7dec512c","kind":"field_change","created_at":"2026-05-20T03:26:01.225201Z","actor":"zhou","issue_id":"human-ew7","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Completed"}}
+{"id":"int-d070e86a","kind":"field_change","created_at":"2026-05-20T06:46:56.824579Z","actor":"zhou","issue_id":"human-wcq","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-36fb58a2","kind":"field_change","created_at":"2026-05-20T11:24:26.813841Z","actor":"zhou","issue_id":"human-itu","extra":{"field":"status","new_value":"closed","old_value":"in_progress"}}
+{"id":"int-c1138fae","kind":"field_change","created_at":"2026-05-20T11:24:26.857759Z","actor":"zhou","issue_id":"human-itu","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Completed"}}
+{"id":"int-fdae61cc","kind":"field_change","created_at":"2026-05-20T11:24:26.86537Z","actor":"zhou","issue_id":"human-d6i","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-5bb7015e","kind":"field_change","created_at":"2026-05-20T11:24:37.90443Z","actor":"zhou","issue_id":"human-wcq","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Completed"}}
+{"id":"int-46bbc47d","kind":"field_change","created_at":"2026-05-20T11:24:38.011465Z","actor":"zhou","issue_id":"human-41b","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-1df1c1d1","kind":"field_change","created_at":"2026-05-21T08:20:33.885374Z","actor":"zhou","issue_id":"human-6py","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}

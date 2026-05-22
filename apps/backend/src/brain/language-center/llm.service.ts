@@ -11,7 +11,7 @@ import { BrainModelProfileConfig } from './config.types';
 import { ModelConfigService } from './model-config.service';
 import { ProviderAuthService } from './provider-auth.service';
 
-const DEFAULT_TIMEOUT_MS = 60_000;
+const DEFAULT_TIMEOUT_MS = 600_000;
 const DEFAULT_RETRY_ATTEMPTS = 2;
 const PI_AI_MODULE = '@mariozechner/pi-ai';
 const dynamicImport = <T = unknown>(specifier: string): Promise<T> =>

@@ -20,6 +20,13 @@ const BRAIN_CORTEX_ACTOR = {
 const TOPIC = {
   BRAIN_CORTEX_CHAT_COMPLETE: 'brain.cortex.chat.complete',
   BRAIN_CORTEX_CHAT_STREAM: 'brain.cortex.chat.stream',
+  BRAIN_CORTEX_REWRITE_REQUESTED: 'brain.cortex.rewrite.requested',
+  BRAIN_CORTEX_REWRITE_COMPLETED: 'brain.cortex.rewrite.completed',
+  BRAIN_CORTEX_ASK_REQUESTED: 'brain.cortex.ask.requested',
+  BRAIN_CORTEX_ANSWER_STREAM_THINK: 'brain.cortex.answer.stream.think',
+  BRAIN_CORTEX_ANSWER_STREAM_CHUNK: 'brain.cortex.answer.stream.chunk',
+  BRAIN_CORTEX_ANSWER_COMPLETED: 'brain.cortex.answer.completed',
+  BRAIN_CORTEX_ANSWER_FAILED: 'brain.cortex.answer.failed',
   BRAIN_LANGUAGE_MODELS_LIST: 'brain.language.models.list',
   BRAIN_LANGUAGE_MODELS_VALIDATE: 'brain.language.models.validate',
   BRAIN_LANGUAGE_OAUTH_PROVIDERS: 'brain.language.oauth.providers',
@@ -42,6 +49,24 @@ const CORTEX_CAPABILITIES: Capability[] = [
     topic: TOPIC.BRAIN_CORTEX_CHAT_STREAM,
     kinds: ['command'],
     mode: 'stream',
+    enabled: true,
+    online: true,
+  },
+  {
+    id: 'brain.cortex.rewrite.requested',
+    actor: BRAIN_CORTEX_ACTOR,
+    topic: TOPIC.BRAIN_CORTEX_REWRITE_REQUESTED,
+    kinds: ['command'],
+    mode: 'once',
+    enabled: true,
+    online: true,
+  },
+  {
+    id: 'brain.cortex.ask.requested',
+    actor: BRAIN_CORTEX_ACTOR,
+    topic: TOPIC.BRAIN_CORTEX_ASK_REQUESTED,
+    kinds: ['command'],
+    mode: 'once',
     enabled: true,
     online: true,
   },
@@ -107,6 +132,8 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
   canHandle(topic: string): boolean {
     return (
       topic.startsWith('brain.cortex.chat') ||
+      topic.startsWith('brain.cortex.rewrite') ||
+      topic.startsWith('brain.cortex.ask') ||
       topic.startsWith('brain.language.models') ||
       topic.startsWith('brain.language.oauth')
     );
@@ -121,6 +148,10 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
           return await this.handleChatComplete(message);
         case TOPIC.BRAIN_CORTEX_CHAT_STREAM:
           return await this.handleChatStream(message);
+        case TOPIC.BRAIN_CORTEX_REWRITE_REQUESTED:
+          return await this.handleRewriteRequested(message);
+        case TOPIC.BRAIN_CORTEX_ASK_REQUESTED:
+          return await this.handleAskRequested(message);
         case TOPIC.BRAIN_LANGUAGE_MODELS_LIST:
           return this.handleModelsList();
         case TOPIC.BRAIN_LANGUAGE_MODELS_VALIDATE:
@@ -187,6 +218,186 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
           : finalMessage,
       },
     };
+  }
+
+  private async handleRewriteRequested(message: BusMessage) {
+    const payload = this.ensureObject(message.payload);
+    const originalText =
+      this.readString(payload.text) ??
+      this.readString(payload.userText) ??
+      '';
+    if (!originalText) {
+      return { success: false, msg: 'payload.text is required for rewrite' };
+    }
+
+    const rewriteContext: Context = {
+      systemPrompt: [
+        '你是书面化改写助手。',
+        '任务：将用户口语问题改写为简洁、自然、语义不变的书面语问句。',
+        '要求：',
+        '1) 不引入新事实',
+        '2) 不省略关键约束',
+        '3) 仅输出改写后的单句问题，不要解释',
+      ].join('\n'),
+      messages: [
+        {
+          role: 'user',
+          content: originalText,
+          timestamp: Date.now(),
+        },
+      ],
+    };
+
+    const response = await this.llmService.complete({
+      profileName: this.readString(payload.profileName),
+      context: rewriteContext,
+      options: this.ensureObject(payload.options),
+      timeoutMs: this.readNumber(payload.timeoutMs),
+      retryAttempts: this.readNumber(payload.retryAttempts),
+    });
+
+    const normalizedQuestion = this.extractAssistantText(response).trim();
+    const requestId =
+      this.readString(payload.requestId) ??
+      this.readString(payload.sessionId) ??
+      message.id;
+
+    const rewriteCompleted = {
+      requestId,
+      originalText,
+      normalizedQuestion,
+      source: payload.source ?? 'brain.cortex',
+    };
+    this.logger.log(
+      `[rewrite] completed requestId=${requestId}, normalizedQuestion=${normalizedQuestion}`,
+    );
+    this.publishEvent(TOPIC.BRAIN_CORTEX_REWRITE_COMPLETED, rewriteCompleted);
+
+    return {
+      success: true,
+      data: rewriteCompleted,
+    };
+  }
+
+  private async handleAskRequested(message: BusMessage) {
+    const payload = this.ensureObject(message.payload);
+    const confirmedQuestion =
+      this.readString(payload.confirmedQuestion) ??
+      this.readString(payload.text) ??
+      '';
+    if (!confirmedQuestion) {
+      return { success: false, msg: 'payload.confirmedQuestion is required' };
+    }
+
+    const requestId =
+      this.readString(payload.requestId) ??
+      this.readString(payload.sessionId) ??
+      message.id;
+
+    try {
+      const context = await this.attachMemoryContext(
+        {
+          messages: [
+            {
+              role: 'user',
+              content: confirmedQuestion,
+              timestamp: Date.now(),
+            },
+          ],
+        },
+        {
+          ...payload,
+          useMemory: payload.useMemory ?? true,
+          userText: confirmedQuestion,
+        },
+      );
+
+      const stream = await this.llmService.stream({
+        profileName: this.readString(payload.profileName),
+        context,
+        options: this.ensureObject(payload.options),
+        timeoutMs: this.readNumber(payload.timeoutMs),
+      });
+
+      let parserMode: 'think' | 'answer' = 'answer';
+      let parseBuffer = '';
+      let fullThink = '';
+      let fullAnswer = '';
+
+      for await (const event of stream) {
+        const delta = this.extractTextFromStreamEvent(event);
+        if (!delta) continue;
+        const parsed = this.consumeTextByThinkTags(parseBuffer + delta, parserMode);
+        parseBuffer = parsed.buffer;
+        parserMode = parsed.mode;
+
+        if (parsed.thinkDelta) {
+          fullThink += parsed.thinkDelta;
+          this.publishEvent(TOPIC.BRAIN_CORTEX_ANSWER_STREAM_THINK, {
+            requestId,
+            content: parsed.thinkDelta,
+            source: payload.source ?? 'brain.cortex',
+          });
+        }
+        if (parsed.answerDelta) {
+          fullAnswer += parsed.answerDelta;
+          this.publishEvent(TOPIC.BRAIN_CORTEX_ANSWER_STREAM_CHUNK, {
+            requestId,
+            content: parsed.answerDelta,
+            source: payload.source ?? 'brain.cortex',
+          });
+        }
+      }
+
+      if (parseBuffer) {
+        if (parserMode === 'think') {
+          fullThink += parseBuffer;
+          this.publishEvent(TOPIC.BRAIN_CORTEX_ANSWER_STREAM_THINK, {
+            requestId,
+            content: parseBuffer,
+            source: payload.source ?? 'brain.cortex',
+          });
+        } else {
+          fullAnswer += parseBuffer;
+          this.publishEvent(TOPIC.BRAIN_CORTEX_ANSWER_STREAM_CHUNK, {
+            requestId,
+            content: parseBuffer,
+            source: payload.source ?? 'brain.cortex',
+          });
+        }
+      }
+
+      const finalMessage = await stream.result();
+      const finalRawText = this.extractAssistantText(finalMessage).trim();
+      const thinkText = fullThink.trim() || this.extractThinkText(finalRawText);
+      const answerText = fullAnswer.trim() || this.stripThinkingTags(finalRawText);
+
+      this.publishEvent(TOPIC.BRAIN_CORTEX_ANSWER_COMPLETED, {
+        requestId,
+        confirmedQuestion,
+        answer: answerText,
+        source: payload.source ?? 'brain.cortex',
+      });
+
+      return {
+        success: true,
+        data: {
+          requestId,
+          confirmedQuestion,
+          think: thinkText,
+          answer: answerText,
+        },
+      };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.publishEvent(TOPIC.BRAIN_CORTEX_ANSWER_FAILED, {
+        requestId,
+        confirmedQuestion,
+        error: msg,
+        source: payload.source ?? 'brain.cortex',
+      });
+      return { success: false, msg };
+    }
   }
 
   private handleModelsList() {
@@ -348,6 +559,7 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
     };
 
     const subscribers = this.coreService.findSubscribers(topic, 'event');
+    this.logger.log(`[event] ${topic} subscribers=${subscribers.length}`);
     for (const sub of subscribers) {
       this.wsGateway.sendToConnection(sub.connectionId, 'message', eventMessage);
     }
@@ -439,5 +651,104 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
   private stripThinkingTags(text: string): string {
     const withoutThink = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
     return withoutThink.replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  private extractTextFromStreamEvent(event: unknown): string {
+    if (!event || typeof event !== 'object') return '';
+    const obj = event as Record<string, any>;
+
+    if (typeof obj.text === 'string') return obj.text;
+    if (typeof obj.delta === 'string') return obj.delta;
+    if (typeof obj.content === 'string') return obj.content;
+
+    if (Array.isArray(obj.content)) {
+      const text = obj.content
+        .map((part) => {
+          if (typeof part === 'string') return part;
+          if (part && typeof part === 'object' && typeof part.text === 'string') {
+            return part.text;
+          }
+          return '';
+        })
+        .join('');
+      if (text) return text;
+    }
+    return '';
+  }
+
+  private consumeTextByThinkTags(
+    text: string,
+    initialMode: 'think' | 'answer',
+  ): {
+    thinkDelta: string;
+    answerDelta: string;
+    buffer: string;
+    mode: 'think' | 'answer';
+  } {
+    let remaining = text;
+    let mode = initialMode;
+    let thinkDelta = '';
+    let answerDelta = '';
+
+    while (remaining.length > 0) {
+      const openTag = '<think>';
+      const closeTag = '</think>';
+      const targetTag = mode === 'answer' ? openTag : closeTag;
+      const idx = remaining.indexOf(targetTag);
+
+      if (idx === -1) {
+        const hold = this.detectPossibleTagPrefixSuffix(remaining, targetTag);
+        const consumable = remaining.slice(0, remaining.length - hold.length);
+        if (mode === 'answer') answerDelta += consumable;
+        else thinkDelta += consumable;
+        return {
+          thinkDelta,
+          answerDelta,
+          buffer: hold,
+          mode,
+        };
+      }
+
+      const before = remaining.slice(0, idx);
+      if (mode === 'answer') answerDelta += before;
+      else thinkDelta += before;
+      remaining = remaining.slice(idx + targetTag.length);
+      mode = mode === 'answer' ? 'think' : 'answer';
+    }
+
+    return {
+      thinkDelta,
+      answerDelta,
+      buffer: '',
+      mode,
+    };
+  }
+
+  private detectPossibleTagPrefixSuffix(text: string, tag: string): string {
+    const maxLen = Math.min(text.length, tag.length - 1);
+    for (let len = maxLen; len > 0; len--) {
+      if (text.endsWith(tag.slice(0, len))) {
+        return text.slice(text.length - len);
+      }
+    }
+    return '';
+  }
+
+  private extractThinkText(text: string): string {
+    const matches = text.match(/<think>([\s\S]*?)<\/think>/gi) ?? [];
+    if (matches.length === 0) return '';
+    return matches
+      .map((chunk) => chunk.replace(/<\/?think>/gi, '').trim())
+      .filter(Boolean)
+      .join('\n')
+      .trim();
+  }
+
+  private extractAssistantText(message: Record<string, any>): string {
+    const content = Array.isArray(message.content) ? message.content : [];
+    const textParts = content
+      .filter((part: any) => part?.type === 'text' && typeof part?.text === 'string')
+      .map((part: any) => part.text as string);
+    return textParts.join('\n').trim();
   }
 }

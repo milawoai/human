@@ -155,7 +155,7 @@
       "actions": {
         "requested": { "topic": "brain.cortex.rewrite.requested", "kind": "command", "direction": "body/sensory → nest", "description": "触发口语转书面语" },
         "completed": { "topic": "brain.cortex.rewrite.completed", "kind": "event", "direction": "nest → subscribers", "description": "改写完成，返回 normalizedQuestion" },
-        "confirmed": { "topic": "brain.cortex.rewrite.confirmed", "kind": "event", "direction": "body → nest/subscribers", "description": "用户确认后的问题文本" }
+        "ask_requested": { "topic": "brain.cortex.ask.requested", "kind": "command", "direction": "body → nest", "description": "会话窗口提交通用问答请求" }
       }
     },
     "brain.cortex.answer": {

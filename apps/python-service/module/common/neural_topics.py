@@ -45,7 +45,7 @@ TOPICS = {
     # brain.cortex.rewrite — command/event
     "BRAIN_CORTEX_REWRITE_REQUESTED": "brain.cortex.rewrite.requested",
     "BRAIN_CORTEX_REWRITE_COMPLETED": "brain.cortex.rewrite.completed",
-    "BRAIN_CORTEX_REWRITE_CONFIRMED": "brain.cortex.rewrite.confirmed",
+    "BRAIN_CORTEX_ASK_REQUESTED": "brain.cortex.ask.requested",
     # brain.cortex.answer — event
     "BRAIN_CORTEX_ANSWER_STREAM_THINK": "brain.cortex.answer.stream.think",
     "BRAIN_CORTEX_ANSWER_STREAM_CHUNK": "brain.cortex.answer.stream.chunk",

@@ -12,7 +12,7 @@ const requiredTopics = [
   'sensory.hearing.question.finalized',
   'brain.cortex.rewrite.requested',
   'brain.cortex.rewrite.completed',
-  'brain.cortex.rewrite.confirmed',
+  'brain.cortex.ask.requested',
   'brain.cortex.answer.stream.think',
   'brain.cortex.answer.stream.chunk',
   'brain.cortex.answer.completed',
