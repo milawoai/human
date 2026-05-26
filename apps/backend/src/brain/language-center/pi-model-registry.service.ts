@@ -170,11 +170,13 @@ export class PiModelRegistryService {
     for (const profile of Object.values(profiles)) {
       // 仅将 custom provider（有 baseUrl + api）同步到 pi models registry。
       if (!profile.baseUrl || !profile.api) continue;
+      const modelId = profile.model?.trim();
+      if (!modelId) continue;
 
       const providerName = profile.provider;
       const model: PiProviderModel = {
-        id: profile.model,
-        name: profile.model,
+        id: modelId,
+        name: modelId,
         ...(profile.reasoning !== undefined ? { reasoning: profile.reasoning } : {}),
         ...(profile.contextWindow !== undefined
           ? { contextWindow: profile.contextWindow }

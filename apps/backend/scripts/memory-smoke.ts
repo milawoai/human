@@ -25,7 +25,6 @@ function setupConfig(tempHome: string, vaultPath: string) {
         version: 1,
         brain: {
           defaultProfile: '',
-          profiles: {},
         },
         memory: {
           obsidianVaultPath: vaultPath,

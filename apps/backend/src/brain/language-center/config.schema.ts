@@ -11,15 +11,14 @@ export const CONFIG_SCHEMA = {
     version: { type: 'integer', minimum: 1 },
     brain: {
       type: 'object',
-      required: ['defaultProfile', 'profiles'],
+      required: ['defaultProfile'],
       properties: {
-        defaultProfile: { type: 'string', minLength: 1 },
+        defaultProfile: { type: 'string' },
         profiles: {
           type: 'object',
-          minProperties: 1,
           additionalProperties: {
             type: 'object',
-            required: ['provider', 'model'],
+            required: ['provider'],
           },
         },
       },

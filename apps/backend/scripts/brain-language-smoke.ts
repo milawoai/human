@@ -30,6 +30,12 @@ class HttpStub {
   registerCommandHandler(_handler: unknown): void {}
 }
 
+class MemoryStub {
+  search(): any[] {
+    return [];
+  }
+}
+
 async function main() {
   const { fauxAssistantMessage, fauxText, registerFauxProvider } = await import(
     '@mariozechner/pi-ai'
@@ -48,23 +54,35 @@ async function main() {
         version: 1,
         brain: {
           defaultProfile: 'faux-default',
-          profiles: {
-            'faux-default': {
-              provider: 'faux-provider',
-              model: 'faux-1',
-              api: 'faux-api',
-              baseUrl: 'http://localhost:0',
-            },
-            'zai-glm': {
-              provider: 'zai',
-              model: 'glm-5.1',
-              api: 'openai-completions',
-              baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
-              apiKeyEnv: 'ZAI_API_KEY',
-              reasoning: true,
-              contextWindow: 204800,
-              maxTokens: 131072,
-            },
+        },
+      },
+      null,
+      2,
+    ) + '\n',
+    'utf-8',
+  );
+  fs.writeFileSync(
+    path.join(secretaryDir, 'profiles.json'),
+    JSON.stringify(
+      {
+        version: 1,
+        profiles: {
+          'faux-default': {
+            provider: 'faux-provider',
+            model: 'faux-1',
+            api: 'faux-api',
+            baseUrl: 'http://localhost:0',
+          },
+          'zai-glm': {
+            provider: 'zai',
+            models: ['glm-5.1', 'glm-4.6'],
+            defaultModel: 'glm-5.1',
+            api: 'openai-completions',
+            baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
+            apiKeyEnv: 'ZAI_API_KEY',
+            reasoning: true,
+            contextWindow: 204800,
+            maxTokens: 131072,
           },
         },
       },
@@ -120,6 +138,7 @@ async function main() {
     llmService,
     modelConfigService,
     providerAuthService,
+    new MemoryStub() as any,
   );
   assert.equal(cortex.canHandle(TOPIC.BRAIN_CORTEX_CHAT_COMPLETE), true);
   assert.equal(cortex.canHandle(TOPIC.BRAIN_LANGUAGE_MODELS_LIST), true);

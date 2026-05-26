@@ -5,7 +5,9 @@ export interface OAuthAuthConfig {
 
 export interface BrainModelProfileConfig {
   provider: string;
-  model: string;
+  model?: string;
+  models?: string[];
+  defaultModel?: string;
   api?: 'openai-completions' | 'responses' | 'chat-completions';
   baseUrl?: string;
   apiKeyEnv?: string;
@@ -21,6 +23,11 @@ export interface BrainModelProfileConfig {
 
 export interface BrainSectionConfig {
   defaultProfile: string;
+  profiles: Record<string, BrainModelProfileConfig>;
+}
+
+export interface ProfilesConfigFile {
+  version: number;
   profiles: Record<string, BrainModelProfileConfig>;
 }
 

@@ -40,7 +40,6 @@ const DEFAULT_CONFIG = {
   version: 1,
   brain: {
     defaultProfile: '',
-    profiles: {},
   },
   memory: {
     dbPath: '~/.ai_secretary/sqlite/memory.db',
@@ -51,6 +50,18 @@ const DEFAULT_CONFIG = {
       minChars: 400,
       maxChars: 1600,
       overlapChars: 100,
+    },
+  },
+} as const;
+
+const DEFAULT_PROFILES = {
+  version: 1,
+  profiles: {
+    'kimi-coding': {
+      provider: 'kimi-coding',
+      models: ['kimi-for-coding'],
+      defaultModel: 'kimi-for-coding',
+      apiKeyEnv: 'KIMI_API_KEY',
     },
   },
 } as const;
@@ -140,6 +151,7 @@ export class BrainInitService implements OnModuleInit, InternalCommandHandler {
       const secretDir = path.join(projectRoot, '.ai_secretary');
       const sqliteDir = path.join(secretDir, 'sqlite');
       const configPath = path.join(secretDir, 'config.json');
+      const profilesPath = path.join(secretDir, 'profiles.json');
       const secretsExamplePath = path.join(secretDir, 'secrets.env.example');
 
       // 创建目录
@@ -175,15 +187,25 @@ export class BrainInitService implements OnModuleInit, InternalCommandHandler {
         this.logger.log(`[executeInit] secrets 模板已存在: ${secretsExamplePath}`);
       }
 
+      const profilesExisted = fs.existsSync(profilesPath);
+      if (!profilesExisted) {
+        fs.writeFileSync(profilesPath, JSON.stringify(DEFAULT_PROFILES, null, 2) + '\n', 'utf-8');
+        this.logger.log(`[executeInit] ✓ 创建 profiles 配置文件: ${profilesPath}`);
+      } else {
+        this.logger.log(`[executeInit] profiles 配置文件已存在: ${profilesPath}`);
+      }
+
       const result = {
         projectRoot,
         secretDir,
         sqliteDir,
         configPath,
+        profilesPath,
         secretsExamplePath,
         secretExisted,
         sqliteExisted,
         configExisted,
+        profilesExisted,
         secretsExampleExisted,
       };
 

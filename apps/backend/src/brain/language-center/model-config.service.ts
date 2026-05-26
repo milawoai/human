@@ -3,7 +3,9 @@ import * as os from 'os';
 import * as path from 'path';
 import { Injectable, Logger } from '@nestjs/common';
 import {
+  BrainModelProfileConfig,
   ConfigValidationResult,
+  ProfilesConfigFile,
   SecretaryConfig,
 } from './config.types';
 
@@ -15,12 +17,17 @@ export class ModelConfigService {
     this.secretDir,
     'config.json',
   );
+  private readonly profilesPath = path.join(this.secretDir, 'profiles.json');
   private readonly secretsEnvPath = path.join(this.secretDir, 'secrets.env');
   private cachedConfig: SecretaryConfig | null = null;
   private secretsLoaded = false;
 
   getConfigPath(): string {
     return this.configPath;
+  }
+
+  getProfilesPath(): string {
+    return this.profilesPath;
   }
 
   getConfig(options?: { forceReload?: boolean; strictEnv?: boolean }): SecretaryConfig {
@@ -74,15 +81,15 @@ export class ModelConfigService {
     }
     return {
       name: resolvedName,
-      profile,
+      profile: this.resolveProfileModel(resolvedName, profile),
     };
   }
 
   listProfiles(options?: { forceReload?: boolean; strictEnv?: boolean }) {
     const config = this.getConfig(options);
-    return Object.entries(config.brain.profiles).map(([name, profile]) => ({
+    return Object.entries(config.brain.profiles ?? {}).map(([name, profile]) => ({
       name,
-      ...profile,
+      ...this.resolveProfileModel(name, profile),
     }));
   }
 
@@ -111,12 +118,15 @@ export class ModelConfigService {
       errors.push('brain.defaultProfile must be a string');
     }
 
-    if (!this.isObject(raw.brain.profiles)) {
-      errors.push('brain.profiles must be an object');
+    const profilesRaw = this.isObject(raw.brain.profiles)
+      ? raw.brain.profiles
+      : undefined;
+    if (raw.brain.profiles !== undefined && !profilesRaw) {
+      errors.push('brain.profiles must be an object when provided');
       return { valid: false, errors, warnings };
     }
 
-    const profileEntries = Object.entries(raw.brain.profiles);
+    const profileEntries = Object.entries(profilesRaw ?? {});
     if (profileEntries.length === 0) {
       warnings.push('brain.profiles is empty (no model profile configured yet)');
       if (raw.brain.defaultProfile.trim()) {
@@ -136,8 +146,31 @@ export class ModelConfigService {
         errors.push(`profile "${profileName}" must define non-empty provider`);
       }
 
-      if (typeof profile.model !== 'string' || !profile.model.trim()) {
-        errors.push(`profile "${profileName}" must define non-empty model`);
+      const singleModel = typeof profile.model === 'string' ? profile.model.trim() : '';
+      const modelList = Array.isArray(profile.models)
+        ? profile.models.filter((m) => typeof m === 'string').map((m) => m.trim()).filter(Boolean)
+        : [];
+      if (!singleModel && modelList.length === 0) {
+        errors.push(
+          `profile "${profileName}" must define non-empty model or non-empty models[]`,
+        );
+      }
+      if (profile.models !== undefined) {
+        if (
+          !Array.isArray(profile.models) ||
+          profile.models.some((m) => typeof m !== 'string' || !m.trim())
+        ) {
+          errors.push(`profile "${profileName}" has invalid models (must be non-empty string[])`);
+        }
+      }
+      if (profile.defaultModel !== undefined) {
+        if (typeof profile.defaultModel !== 'string' || !profile.defaultModel.trim()) {
+          errors.push(`profile "${profileName}" has invalid defaultModel`);
+        } else if (modelList.length > 0 && !modelList.includes(profile.defaultModel.trim())) {
+          errors.push(
+            `profile "${profileName}" defaultModel "${profile.defaultModel}" must exist in models[]`,
+          );
+        }
       }
 
       if (
@@ -167,14 +200,14 @@ export class ModelConfigService {
     if (
       typeof defaultProfile === 'string' &&
       defaultProfile.trim() &&
-      this.isObject(raw.brain.profiles) &&
-      !Object.prototype.hasOwnProperty.call(raw.brain.profiles, defaultProfile)
+      this.isObject(profilesRaw) &&
+      !Object.prototype.hasOwnProperty.call(profilesRaw, defaultProfile)
     ) {
       errors.push(`defaultProfile "${defaultProfile}" does not exist in brain.profiles`);
     }
 
-    if (this.isObject(raw.brain.profiles)) {
-      for (const [profileName, profile] of Object.entries(raw.brain.profiles)) {
+    if (this.isObject(profilesRaw)) {
+      for (const [profileName, profile] of Object.entries(profilesRaw)) {
         if (!this.isObject(profile) || typeof profile.apiKeyEnv !== 'string') continue;
         const envExists = Boolean(process.env[profile.apiKeyEnv]);
         if (envExists) continue;
@@ -267,7 +300,91 @@ export class ModelConfigService {
       throw new Error(`config JSON parse error: ${(error as Error).message}`);
     }
 
-    return parsed as SecretaryConfig;
+    const rawConfig = parsed as SecretaryConfig;
+    const profilesFile = this.loadProfilesFromDisk();
+    const mergedProfiles = this.resolveProfiles(rawConfig, profilesFile);
+    const normalizedProfiles = Object.fromEntries(
+      Object.entries(mergedProfiles).map(([name, profile]) => [
+        name,
+        this.resolveProfileModel(name, profile),
+      ]),
+    );
+    const mergedBrain: SecretaryConfig['brain'] = {
+      ...rawConfig.brain,
+      profiles: normalizedProfiles,
+    };
+    return {
+      ...rawConfig,
+      brain: mergedBrain,
+    };
+  }
+
+  private loadProfilesFromDisk(): ProfilesConfigFile | undefined {
+    if (!fs.existsSync(this.profilesPath)) {
+      return undefined;
+    }
+    const text = fs.readFileSync(this.profilesPath, 'utf-8');
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch (error) {
+      throw new Error(`profiles JSON parse error: ${(error as Error).message}`);
+    }
+    if (!this.isObject(parsed)) {
+      throw new Error(`profiles file must be an object: ${this.profilesPath}`);
+    }
+    const version = parsed.version;
+    if (!Number.isInteger(version) || version < 1) {
+      throw new Error(`profiles.version must be an integer >= 1: ${this.profilesPath}`);
+    }
+    if (!this.isObject(parsed.profiles)) {
+      throw new Error(`profiles.profiles must be an object: ${this.profilesPath}`);
+    }
+    return parsed as ProfilesConfigFile;
+  }
+
+  private resolveProfiles(
+    config: SecretaryConfig,
+    profilesFile: ProfilesConfigFile | undefined,
+  ): Record<string, BrainModelProfileConfig> {
+    const inConfig = this.isObject(config.brain?.profiles)
+      ? (config.brain.profiles as Record<string, BrainModelProfileConfig>)
+      : {};
+    const inFile = profilesFile?.profiles ?? {};
+    if (Object.keys(inFile).length > 0 && Object.keys(inConfig).length > 0) {
+      this.logger.warn(
+        'Both config.json brain.profiles and profiles.json exist; profiles.json takes precedence on conflicts',
+      );
+    }
+    return {
+      ...inConfig,
+      ...inFile,
+    };
+  }
+
+  private resolveProfileModel(
+    profileName: string,
+    profile: BrainModelProfileConfig,
+  ): BrainModelProfileConfig {
+    const singleModel = typeof profile.model === 'string' ? profile.model.trim() : '';
+    const modelList = Array.isArray(profile.models)
+      ? profile.models.filter((m) => typeof m === 'string').map((m) => m.trim()).filter(Boolean)
+      : [];
+    const defaultModel =
+      typeof profile.defaultModel === 'string' ? profile.defaultModel.trim() : '';
+    const resolvedModel =
+      singleModel ||
+      defaultModel ||
+      modelList[0];
+    if (!resolvedModel) {
+      throw new Error(`profile "${profileName}" has no resolved model`);
+    }
+    return {
+      ...profile,
+      model: resolvedModel,
+      ...(modelList.length > 0 ? { models: modelList } : {}),
+      ...(defaultModel ? { defaultModel } : {}),
+    };
   }
 
   private loadSecretsEnvIfPresent(): void {

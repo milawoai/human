@@ -54,13 +54,24 @@ async function main() {
         version: 1,
         brain: {
           defaultProfile: 'faux-default',
-          profiles: {
-            'faux-default': {
-              provider: 'faux-provider',
-              model: 'faux-1',
-              api: 'faux-api',
-              baseUrl: 'http://localhost:0',
-            },
+        },
+      },
+      null,
+      2,
+    ) + '\n',
+    'utf-8',
+  );
+  fs.writeFileSync(
+    path.join(secretaryDir, 'profiles.json'),
+    JSON.stringify(
+      {
+        version: 1,
+        profiles: {
+          'faux-default': {
+            provider: 'faux-provider',
+            model: 'faux-1',
+            api: 'faux-api',
+            baseUrl: 'http://localhost:0',
           },
         },
       },

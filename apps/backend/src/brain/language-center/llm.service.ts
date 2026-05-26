@@ -114,11 +114,15 @@ export class LlmService {
   }
 
   private async createModelFromProfile(profile: BrainModelProfileConfig): Promise<Model<Api>> {
+    const modelId = profile.model?.trim();
+    if (!modelId) {
+      throw new Error(`profile "${profile.provider}" has no resolved model`);
+    }
     // custom provider: 从本地配置构建 OpenAI-compatible model
     if (profile.baseUrl && profile.api) {
       return {
-        id: profile.model,
-        name: profile.model,
+        id: modelId,
+        name: modelId,
         api: profile.api,
         provider: profile.provider,
         baseUrl: profile.baseUrl,
@@ -136,7 +140,7 @@ export class LlmService {
     }
 
     const { getModel } = await this.getPiAi();
-    return getModel(profile.provider as any, profile.model as any) as Model<Api>;
+    return getModel(profile.provider as any, modelId as any) as Model<Api>;
   }
 
   private async getPiAi(): Promise<typeof import('@mariozechner/pi-ai')> {
