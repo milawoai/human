@@ -1,0 +1,17 @@
+{
+  "name": "@human/cmux-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "cmux 终端控制工具 —— 通过 cmux CLI/socket 控制本地终端 agent",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "config"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  }
+}

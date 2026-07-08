@@ -192,18 +192,43 @@ export class ToolRegistry {
   }
 
   /**
-   * 启动工具进程
+   * 启动工具
+   *
+   * 优先调用工具实例自提供的 start()（用于拉起外部应用等自定义启动逻辑）；
+   * 未实现时回退到 descriptor.lifecycle.start 命令模式（spawn 子进程）。
+   *
+   * @param options 透传给工具 start() 的选项，如 { force?: boolean }
    */
-  async startTool(toolId: string): Promise<boolean> {
+  async startTool(toolId: string, options?: { force?: boolean }): Promise<boolean> {
     const tool = this.tools.get(toolId);
     if (!tool) {
       this.logger.warn(`启动工具失败: ${toolId} 不存在`);
       return false;
     }
 
+    // 路径 A：工具自提供 start()
+    if (typeof tool.start === 'function') {
+      this.logger.log(`启动工具(自定义): ${toolId}`);
+      try {
+        const result = await tool.start(options);
+        if (result.success) {
+          tool.status = 'running';
+        } else {
+          this.logger.warn(`工具 ${toolId} 自定义启动返回失败: ${result.error?.message ?? ''}`);
+          tool.status = 'error';
+        }
+        return result.success;
+      } catch (error) {
+        this.logger.error(`工具 ${toolId} 自定义启动异常: ${error}`);
+        tool.status = 'error';
+        return false;
+      }
+    }
+
+    // 路径 B：lifecycle 命令模式（回退）
     const lifecycle = tool.descriptor.lifecycle;
     if (!lifecycle?.start) {
-      this.logger.debug(`工具 ${toolId} 无启动命令`);
+      this.logger.debug(`工具 ${toolId} 无启动命令也无 start() 实现`);
       return false;
     }
 
@@ -245,9 +270,25 @@ export class ToolRegistry {
   }
 
   /**
-   * 停止工具进程
+   * 停止工具
+   *
+   * 优先调用工具实例自提供的 stop()；未实现时回退到停止 lifecycle 启动的子进程。
    */
   async stopTool(toolId: string): Promise<boolean> {
+    const tool = this.tools.get(toolId);
+    if (tool && typeof tool.stop === 'function') {
+      this.logger.log(`停止工具(自定义): ${toolId}`);
+      try {
+        const result = await tool.stop();
+        if (result.success) {
+          tool.status = 'stopped';
+        }
+        return result.success;
+      } catch (error) {
+        this.logger.error(`工具 ${toolId} 自定义停止异常: ${error}`);
+        return false;
+      }
+    }
     return this.stopProcess(toolId);
   }
 
@@ -256,7 +297,7 @@ export class ToolRegistry {
    */
   async restartTool(toolId: string): Promise<boolean> {
     await this.stopTool(toolId);
-    return this.startTool(toolId);
+    return this.startTool(toolId, { force: true });
   }
 
   // ──────────────────────────────────────────────

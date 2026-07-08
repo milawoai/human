@@ -187,8 +187,8 @@ export class MotorToolRunnerService implements OnModuleInit, OnModuleDestroy, In
       }
 
       case MOTOR_TOPICS.TOOL_START: {
-        const payload = message.payload as { toolId: string };
-        const result = await this.handler.handleStart(payload.toolId);
+        const payload = message.payload as { toolId: string; force?: boolean };
+        const result = await this.handler.handleStart(payload.toolId, { force: payload.force });
         return { success: result.success, data: result };
       }
 
@@ -212,6 +212,28 @@ export class MotorToolRunnerService implements OnModuleInit, OnModuleDestroy, In
         }
         await this.loadToolsFromConfig();
         return { success: true, data: { message: '工具配置已重新加载' } };
+      }
+
+      case MOTOR_TOPICS.TOOL_INSTALL: {
+        // 安装/同步工具包配置：从独立包的 config/<id>.json 同步到用户磁盘，然后 reload
+        const payload = message.payload as { toolId: string };
+        if (!payload?.toolId) {
+          return { success: false, msg: '缺少 toolId 参数' };
+        }
+        if (!this.toolConfigService) {
+          return { success: false, msg: 'ToolConfigService 不可用，无法安装' };
+        }
+        const result = await this.toolConfigService.installToolConfig(payload.toolId);
+        if (!result.success) {
+          return { success: false, data: result };
+        }
+        // 同步成功后 reload，让新配置生效
+        const installedTools = this.registry.listDescriptors();
+        for (const tool of installedTools) {
+          await this.registry.unregister(tool.id);
+        }
+        await this.loadToolsFromConfig();
+        return { success: true, data: result };
       }
 
       default:

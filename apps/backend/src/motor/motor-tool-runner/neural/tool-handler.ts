@@ -96,10 +96,12 @@ export class ToolHandler {
 
   /**
    * 处理 motor.tool.start 命令
+   *
+   * @param options.force 已运行时强制重启（用于切到 allowAll 等场景）
    */
-  async handleStart(toolId: string): Promise<ToolResult> {
-    this.logger.log(`启动工具: ${toolId}`);
-    const ok = await this.registry.startTool(toolId);
+  async handleStart(toolId: string, options?: { force?: boolean }): Promise<ToolResult> {
+    this.logger.log(`启动工具: ${toolId}${options?.force ? ' (force)' : ''}`);
+    const ok = await this.registry.startTool(toolId, options);
     return {
       success: ok,
       data: { toolId, started: ok },

@@ -99,6 +99,9 @@ export class ToolConfigService {
     const index = this.loadIndex();
     const tools: ToolInstance[] = [];
 
+    // 动态加载的 provider 缓存（providerModule 解析结果），与传入的 builtinProviders 合并使用
+    const dynamicProviders: BuiltinToolProvider[] = [];
+
     for (const item of index.tools) {
       if (!item.enabled) {
         this.logger.debug(`工具 ${item.id} 已禁用，跳过`);
@@ -107,12 +110,74 @@ export class ToolConfigService {
 
       const config = this.loadToolConfig(item.configFile);
       if (config) {
-        const instance = this.toToolInstance(config, builtinProviders);
+        // 新机制：若配置声明了 providerModule，先 dynamicImport 加载 provider
+        if (config.providerModule) {
+          const existing = dynamicProviders.find(p => p.providerId === config.id);
+          if (!existing) {
+            const provider = await this.loadProviderFromModule(
+              config.providerModule,
+              config.providerExport,
+              config.id,
+            );
+            if (provider) {
+              dynamicProviders.push(provider);
+            }
+          }
+        }
+        const instance = this.toToolInstance(config, [...builtinProviders, ...dynamicProviders]);
         tools.push(instance);
       }
     }
 
     return tools;
+  }
+
+  /**
+   * 通过 dynamicImport 从外部包加载 BuiltinToolProvider。
+   *
+   * 支持两种导出形态：
+   * - 工厂对象：{ create(): BuiltinToolProvider }（推荐，cmux-tools 用此形态）
+   * - 直接 provider 实例：BuiltinToolProvider（兼容）
+   *
+   * 用 new Function 包裹 import，防止打包器静态分析（沿用 pi-coding-provider 先例）。
+   * 加载失败返回 null 并记日志，不阻断其他工具加载。
+   */
+  private async loadProviderFromModule(
+    moduleName: string,
+    exportName: string | undefined,
+    toolId: string,
+  ): Promise<BuiltinToolProvider | null> {
+    const dynamicImport = <T = unknown>(specifier: string): Promise<T> =>
+      new Function('specifier', 'return import(specifier)')(specifier);
+
+    try {
+      const mod = (await dynamicImport(moduleName)) as Record<string, unknown>;
+      const target = mod[exportName || 'default'];
+      if (!target) {
+        this.logger.error(`工具 ${toolId} 动态加载 provider 失败: 包 ${moduleName} 无导出 ${exportName || 'default'}`);
+        return null;
+      }
+      // 工厂对象形态
+      if (typeof (target as { create?: unknown }).create === 'function') {
+        const provider = (target as { create: () => BuiltinToolProvider }).create();
+        this.logger.log(`工具 ${toolId} 动态加载 provider 成功(工厂): ${moduleName}`);
+        return provider;
+      }
+      // 直接 provider 实例形态
+      if (typeof (target as { createInstance?: unknown }).createInstance === 'function') {
+        this.logger.log(`工具 ${toolId} 动态加载 provider 成功(实例): ${moduleName}`);
+        return target as BuiltinToolProvider;
+      }
+      this.logger.error(
+        `工具 ${toolId} 动态加载 provider 失败: ${moduleName}.${exportName || 'default'} 既非工厂也非 provider 实例`,
+      );
+      return null;
+    } catch (error) {
+      this.logger.error(
+        `工具 ${toolId} 动态加载 provider 异常 (${moduleName}): ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
   }
 
   /**
@@ -282,6 +347,8 @@ export class ToolConfigService {
       interfaces,
       config: config.config || {},
       healthCheck,
+      providerModule: config.providerModule,
+      providerExport: config.providerExport,
     };
 
     // 如果是 builtin 类型，尝试使用 provider
@@ -465,10 +532,128 @@ export class ToolConfigService {
       const configPath = path.join(this.toolsDir, configFile);
 
       if (!fs.existsSync(configPath)) {
-        fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
-        this.updateIndex(config.id, config.name, config.enabled, configFile);
+        // 详情文件不含 enabled（单一真相源在 index.json）
+        const { enabled: _omit, ...detailConfig } = config;
+        fs.writeFileSync(configPath, JSON.stringify(detailConfig, null, 2), 'utf-8');
+        this.updateIndex(config.id, config.name, config.enabled ?? false, configFile);
         this.logger.log(`创建示例工具配置: ${config.id}`);
       }
+    }
+
+    // 注意：独立包工具（如 cmux）的配置同步不在启动时自动做，
+    // 由 motor.tool.install 命令在「安装/升级工具包」时显式触发。
+    // 这样用户磁盘的 enabled 等运行时状态不会被无故重置。
+  }
+
+  /**
+   * 安装/同步工具包配置 —— 由 motor.tool.install 命令调用。
+   *
+   * 按 toolId 从已注册的工具配置里查 providerModule，再从包内 config/<id>.json
+   * 同步到用户磁盘。覆盖配置结构（capabilities/config 等），**保留磁盘已有 enabled**
+   * （首次安装用包默认值）。
+   *
+   * 不在 backend 启动时自动调用 —— 安装是用户显式动作，避免运行时状态被重置。
+   *
+   * @returns { success, data?: {firstInstall, enabled, capabilities}, error? }
+   */
+  async installToolConfig(toolId: string): Promise<{
+    success: boolean;
+    data?: { firstInstall: boolean; enabled: boolean; capabilities: number; moduleName: string };
+    error?: { code: string; message: string };
+  }> {
+    // 1. 从磁盘已有的工具配置读 providerModule（确定包名）
+    const index = this.loadIndex();
+    const indexItem = index.tools.find((t) => t.id === toolId);
+    let moduleName: string | undefined;
+    if (indexItem) {
+      const cfg = this.loadToolConfig(indexItem.configFile);
+      moduleName = cfg?.providerModule;
+    }
+    if (!moduleName) {
+      // 磁盘无配置或无 providerModule → 工具不是独立包工具
+      return {
+        success: false,
+        error: {
+          code: 'NOT_PACKAGE_TOOL',
+          message: `工具 ${toolId} 未在磁盘登记 providerModule，无法同步（仅支持独立包工具）`,
+        },
+      };
+    }
+
+    return this.syncPackageToolConfig(moduleName, toolId);
+  }
+
+  /**
+   * 从独立工具包内的 config/<id>.json 同步到用户磁盘。
+   *
+   * 覆盖策略：配置结构（capabilities / config / description 等）覆盖为包的最新版，
+   * 但 **enabled 字段保留用户磁盘已有值**（启用状态是用户的运行时开关，
+   * 不应被包的出厂默认值重置；首次生成时用包的默认值）。
+   *
+   * @param moduleName 包名（须在 backend dependencies 里，可被 require.resolve）
+   * @param toolId 工具 id（同时是 config 文件名 <id>.json）
+   */
+  async syncPackageToolConfig(
+    moduleName: string,
+    toolId: string,
+  ): Promise<{
+    success: boolean;
+    data?: { firstInstall: boolean; enabled: boolean; capabilities: number; moduleName: string };
+    error?: { code: string; message: string };
+  }> {
+    let pkgConfigPath: string;
+    try {
+      pkgConfigPath = require.resolve(`${moduleName}/config/${toolId}.json`);
+    } catch {
+      return {
+        success: false,
+        error: {
+          code: 'PACKAGE_NOT_FOUND',
+          message: `包 ${moduleName} 未安装或缺少 config/${toolId}.json`,
+        },
+      };
+    }
+
+    let pkgConfig: Record<string, unknown>;
+    try {
+      pkgConfig = JSON.parse(fs.readFileSync(pkgConfigPath, 'utf-8'));
+    } catch (error) {
+      return {
+        success: false,
+        error: { code: 'PACKAGE_CONFIG_INVALID', message: `包配置 JSON 解析失败: ${error}` },
+      };
+    }
+
+    const configFile = `tools/${toolId}.json`;
+    const destPath = path.join(this.toolsDir, configFile);
+    const firstInstall = !fs.existsSync(destPath);
+
+    // enabled 的单一真相源是 index.json，不从详情文件读。
+    // 已安装的工具保留 index.json 现有 enabled；首次安装用包默认值。
+    let enabled: boolean;
+    if (firstInstall) {
+      enabled = (pkgConfig.enabled as boolean) ?? false;
+    } else {
+      const index = this.loadIndex();
+      const existing = index.tools.find((t) => t.id === toolId);
+      enabled = existing ? existing.enabled : (pkgConfig.enabled as boolean) ?? false;
+    }
+
+    try {
+      // 详情文件不含 enabled（enabled 只存 index.json）
+      const { enabled: _omit, ...detailConfig } = pkgConfig;
+      fs.writeFileSync(destPath, JSON.stringify(detailConfig, null, 2), 'utf-8');
+      this.updateIndex(toolId, (pkgConfig.name as string) ?? toolId, enabled, configFile);
+      const capabilities = Array.isArray(pkgConfig.capabilities) ? pkgConfig.capabilities.length : 0;
+      this.logger.log(
+        `安装/同步工具配置: ${toolId} (from ${moduleName}, firstInstall=${firstInstall}, enabled=${enabled}, capabilities=${capabilities})`,
+      );
+      return { success: true, data: { firstInstall, enabled, capabilities, moduleName } };
+    } catch (error) {
+      return {
+        success: false,
+        error: { code: 'WRITE_FAILED', message: `写入用户工具配置失败: ${error}` },
+      };
     }
   }
 

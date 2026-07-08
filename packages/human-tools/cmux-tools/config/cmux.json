@@ -1,0 +1,183 @@
+{
+  "id": "cmux",
+  "name": "cmux 终端控制",
+  "version": "1.0.0",
+  "description": "通过 cmux 控制本地终端：发送命令、读取屏幕、管理 workspace、通知等。需 cmux 应用开启 allowAll 访问模式。",
+  "type": "builtin",
+  "providerModule": "@human/cmux-tools",
+  "providerExport": "cmuxProvider",
+  "capabilities": [
+    {
+      "name": "execute",
+      "description": "万能透传：直接调用任意 cmux 命令。method 例如 'workspace.list'/'send'/'read-screen'。",
+      "parameters": {
+        "method": {
+          "type": "string",
+          "required": true,
+          "description": "cmux 命令名"
+        },
+        "args": {
+          "type": "array",
+          "required": false,
+          "description": "CLI 参数数组"
+        },
+        "params": {
+          "type": "object",
+          "required": false,
+          "description": "socket 模式参数对象"
+        },
+        "json": {
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "是否 --json 解析"
+        }
+      }
+    },
+    {
+      "name": "check_health",
+      "description": "检查 cmux 健康状态：是否安装、运行、allowAll、socket 路径",
+      "parameters": {}
+    },
+    {
+      "name": "workspace.list",
+      "description": "列出所有 workspace",
+      "parameters": {}
+    },
+    {
+      "name": "workspace.create",
+      "description": "创建 workspace",
+      "parameters": {
+        "name": {
+          "type": "string",
+          "required": false,
+          "description": "workspace 名称"
+        },
+        "cwd": {
+          "type": "string",
+          "required": false,
+          "description": "工作目录"
+        }
+      }
+    },
+    {
+      "name": "workspace.close",
+      "description": "关闭 workspace",
+      "parameters": {
+        "ref": {
+          "type": "string",
+          "required": true,
+          "description": "workspace 引用，如 workspace:2"
+        }
+      }
+    },
+    {
+      "name": "workspace.select",
+      "description": "切换到指定 workspace",
+      "parameters": {
+        "ref": {
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    {
+      "name": "agent.send",
+      "description": "向终端发送文本（支持 \\n \\r \\t 转义）",
+      "parameters": {
+        "text": {
+          "type": "string",
+          "required": true,
+          "description": "要发送的文本"
+        },
+        "surface": {
+          "type": "string",
+          "required": false,
+          "description": "目标 surface 引用"
+        },
+        "workspace": {
+          "type": "string",
+          "required": false
+        }
+      }
+    },
+    {
+      "name": "agent.send_key",
+      "description": "向终端发送特殊键",
+      "parameters": {
+        "key": {
+          "type": "string",
+          "required": true,
+          "description": "enter/tab/escape/up/down/left/right/backspace/..."
+        },
+        "surface": {
+          "type": "string",
+          "required": false
+        }
+      }
+    },
+    {
+      "name": "agent.read_screen",
+      "description": "读取终端屏幕内容（走 socket，低延迟）",
+      "parameters": {
+        "surface": {
+          "type": "string",
+          "required": false
+        },
+        "lines": {
+          "type": "number",
+          "required": false,
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "scrollback": {
+          "type": "boolean",
+          "required": false,
+          "default": false
+        }
+      }
+    },
+    {
+      "name": "agent.identify",
+      "description": "返回当前聚焦的 window/workspace/pane/surface",
+      "parameters": {}
+    },
+    {
+      "name": "agent.list_surfaces",
+      "description": "列出所有 surface 及其名称(title)、类型、所属 workspace、是否聚焦。用于查找目标 surface。",
+      "parameters": {
+        "workspace": {
+          "type": "string",
+          "required": false,
+          "description": "可选，按 workspace 过滤"
+        }
+      }
+    },
+    {
+      "name": "notify",
+      "description": "发送系统通知",
+      "parameters": {
+        "title": {
+          "type": "string",
+          "required": true
+        },
+        "body": {
+          "type": "string",
+          "required": false
+        }
+      }
+    },
+    {
+      "name": "current_workspace",
+      "description": "获取当前 workspace",
+      "parameters": {}
+    }
+  ],
+  "config": {
+    "binaryPath": "/Applications/cmux.app/Contents/Resources/bin/cmux",
+    "appPath": "/Applications/cmux.app",
+    "socketEnabled": true,
+    "cliTimeoutMs": 15000,
+    "socketIdleTimeoutMs": 60000
+  }
+}

@@ -42,15 +42,6 @@ TOPICS = {
     "SENSORY_HEARING_STOPPED": "sensory.hearing.caption_stream.stopped",
     "SENSORY_HEARING_ERROR": "sensory.hearing.caption_stream.error",
     "SENSORY_HEARING_QUESTION_FINALIZED": "sensory.hearing.question.finalized",
-    # brain.cortex.rewrite — command/event
-    "BRAIN_CORTEX_REWRITE_REQUESTED": "brain.cortex.rewrite.requested",
-    "BRAIN_CORTEX_REWRITE_COMPLETED": "brain.cortex.rewrite.completed",
-    "BRAIN_CORTEX_ASK_REQUESTED": "brain.cortex.ask.requested",
-    # brain.cortex.answer — event
-    "BRAIN_CORTEX_ANSWER_STREAM_THINK": "brain.cortex.answer.stream.think",
-    "BRAIN_CORTEX_ANSWER_STREAM_CHUNK": "brain.cortex.answer.stream.chunk",
-    "BRAIN_CORTEX_ANSWER_COMPLETED": "brain.cortex.answer.completed",
-    "BRAIN_CORTEX_ANSWER_FAILED": "brain.cortex.answer.failed",
     # motor.animation.focused_app — command
     "MOTOR_ANIMATION_INPUT_TEXT_TO_FOCUSED_APP": "motor.animation.focused_app.input_text",
     # brain.init — command & event
@@ -60,6 +51,13 @@ TOPICS = {
     # brain.cortex.chat — command
     "BRAIN_CORTEX_CHAT_COMPLETE": "brain.cortex.chat.complete",
     "BRAIN_CORTEX_CHAT_STREAM": "brain.cortex.chat.stream",
+    "BRAIN_CORTEX_REWRITE_REQUESTED": "brain.cortex.rewrite.requested",
+    "BRAIN_CORTEX_REWRITE_COMPLETED": "brain.cortex.rewrite.completed",
+    "BRAIN_CORTEX_ASK_REQUESTED": "brain.cortex.ask.requested",
+    "BRAIN_CORTEX_ANSWER_STREAM_THINK": "brain.cortex.answer.stream.think",
+    "BRAIN_CORTEX_ANSWER_STREAM_CHUNK": "brain.cortex.answer.stream.chunk",
+    "BRAIN_CORTEX_ANSWER_COMPLETED": "brain.cortex.answer.completed",
+    "BRAIN_CORTEX_ANSWER_FAILED": "brain.cortex.answer.failed",
     # brain.language.models — query/control
     "BRAIN_LANGUAGE_MODELS_LIST": "brain.language.models.list",
     "BRAIN_LANGUAGE_MODELS_VALIDATE": "brain.language.models.validate",

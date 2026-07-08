@@ -69,8 +69,13 @@ export interface ToolConfig {
   version: string;
   description?: string;
   type: ToolConfigType;
-  /** 是否启用 */
-  enabled: boolean;
+  /**
+   * 是否启用（可选）。
+   *
+   * 单一真相源是 index.json 的 ToolIndexItem.enabled，详情文件的此字段不再被读取。
+   * 保留此字段仅为向后兼容旧配置文件；新写入的详情文件不再带 enabled。
+   */
+  enabled?: boolean;
   /** 工具路径 */
   path?: string;
   /** 生命周期命令 */
@@ -83,6 +88,14 @@ export interface ToolConfig {
   healthCheck?: ToolHealthCheckConfig;
   /** 工具特定配置 */
   config?: Record<string, unknown>;
+  /**
+   * builtin 工具的 provider 所在包名（新机制）。
+   * 设置后 motor 通过 dynamicImport(providerModule) 加载 provider，
+   * 不再依赖 motor 模块内 import 具体 provider。
+   */
+  providerModule?: string;
+  /** provider 在包中导出的名称（配合 providerModule 使用，默认 'default'） */
+  providerExport?: string;
 }
 
 /**

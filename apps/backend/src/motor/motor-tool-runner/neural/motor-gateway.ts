@@ -20,10 +20,43 @@ export class MotorGateway {
 
   /**
    * 注册 Motor Tool Runner 为内部 Actor
+   *
+   * 同时注册全局管理类 Capability（reload/start/stop/restart），
+   * 使这些命令能经 Neural Core trigger 路由到 handleCommand。
+   * 这些 capability 不绑具体工具 id，按 topic 直接匹配。
    */
   register(): void {
     this.coreService.registerInternalActor(MOTOR_TOOL_RUNNER_ACTOR);
+    this.registerManagementCapabilities();
     this.logger.log(`Motor Tool Runner Actor 注册: ${MOTOR_TOOL_RUNNER_ACTOR.actorId}`);
+  }
+
+  /**
+   * 注册全局管理类 Capability（reload/start/stop/restart）
+   *
+   * 不同于 registerToolCapabilities（每个工具一项，挂 motor.tool.execute/list/status），
+   * 管理命令是 motor 级别的，按各自 topic 直接路由，id 用 motor.tool.<verb> 形式。
+   * kinds 同时含 command 和 query，使 trigger 的 command 与 query 分支都能路由。
+   */
+  registerManagementCapabilities(): void {
+    const mgmtTopics = [
+      MOTOR_TOPICS.TOOL_RELOAD,
+      MOTOR_TOPICS.TOOL_START,
+      MOTOR_TOPICS.TOOL_STOP,
+      MOTOR_TOPICS.TOOL_RESTART,
+      MOTOR_TOPICS.TOOL_INSTALL,
+    ];
+    const capabilities: Capability[] = mgmtTopics.map((topic) => ({
+      id: topic, // motor.tool.reload 等
+      actor: MOTOR_TOOL_RUNNER_ACTOR,
+      topic,
+      kinds: ['command', 'query'] as const,
+      mode: 'once' as const,
+      enabled: true,
+      online: true,
+    }));
+    this.coreService.registerCapabilities(capabilities);
+    this.logger.log(`管理 Capability 注册: ${mgmtTopics.join(', ')}`);
   }
 
   /**

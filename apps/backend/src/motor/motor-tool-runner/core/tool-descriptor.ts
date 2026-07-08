@@ -109,6 +109,10 @@ export interface ToolDescriptor {
   config: Record<string, unknown>;
   /** 健康检测配置 */
   healthCheck?: HealthCheckConfig;
+  /** builtin 工具 provider 所在包名（新机制：dynamicImport 加载，解耦 motor） */
+  providerModule?: string;
+  /** provider 在包中导出的名称（配合 providerModule，默认 'default'） */
+  providerExport?: string;
 }
 
 /** 工具元数据 — 用于工具注册表管理 */
@@ -162,6 +166,26 @@ export interface ToolInstance {
     context: ToolContext,
   ): Promise<ToolResult>;
 
+  /**
+   * 启动工具（可选）。
+   *
+   * 由 ToolRegistry.startTool 优先调用（若实现）。
+   * 用于工具需要拉起外部依赖（如 GUI 应用、后台服务）的场景。
+   * 未实现时，registry 回退到 descriptor.lifecycle.start 命令模式。
+   *
+   * @param options 启动选项，如 { force?: boolean } 强制重启
+   * @returns 启动结果，data 建议含 { started: boolean, alreadyRunning?: boolean, ... }
+   */
+  start?(options?: { force?: boolean }): Promise<ToolResult>;
+
+  /**
+   * 停止工具（可选）。
+   *
+   * 由 ToolRegistry.stopTool 优先调用（若实现）。
+   * 未实现时，registry 回退到停止 lifecycle 启动的子进程。
+   */
+  stop?(): Promise<ToolResult>;
+
   /** 销毁（可选） */
   destroy?(): Promise<void>;
 }
@@ -203,6 +227,7 @@ export const MOTOR_TOPICS = {
   TOOL_STOP: 'motor.tool.stop',
   TOOL_RESTART: 'motor.tool.restart',
   TOOL_RELOAD: 'motor.tool.reload',
+  TOOL_INSTALL: 'motor.tool.install',
 
   // Events
   TOOL_STARTED: 'motor.tool.started',
