@@ -6,6 +6,35 @@
   "type": "builtin",
   "providerModule": "@human/cmux-tools",
   "providerExport": "cmuxProvider",
+  "events": [
+    {
+      "name": "notification_created",
+      "description": "cmux 发出通知（agent 完成/等待输入时的系统通知）。最佳'agent 完成'信号。订阅 motor.tool.cmux.event.notification_created",
+      "payloadSchema": {
+        "name": "cmux 原始事件名（notification.created）",
+        "surfaceId": "触发通知的 surface uuid（可经 list_surfaces.id 映射回 ref）",
+        "workspaceId": "workspace uuid",
+        "seq": "事件序号",
+        "occurredAt": "ISO 时间",
+        "data": "cmux 原始 payload（title/body 被脱敏，仅长度可知）"
+      }
+    },
+    {
+      "name": "notification_removed",
+      "description": "通知被清除/替换",
+      "payloadSchema": { "name": "notification.removed", "surfaceId": "surface uuid" }
+    },
+    {
+      "name": "agent_hook_Stop",
+      "description": "agent 主任务停止（Claude Code 等 agent hook 触发）。注意 surfaceId 可能为 null",
+      "payloadSchema": { "name": "agent.hook.Stop", "phase": "received/completed" }
+    },
+    {
+      "name": "feed_item_completed",
+      "description": "feed 项完成",
+      "payloadSchema": { "name": "feed.item.completed" }
+    }
+  ],
   "capabilities": [
     {
       "name": "execute",

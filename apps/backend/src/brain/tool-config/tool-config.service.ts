@@ -22,6 +22,7 @@ import {
 import type {
   ToolInstance,
   ToolCapability,
+  ToolEvent,
   ToolInterface,
   ToolStatus,
   ToolType,
@@ -307,6 +308,12 @@ export class ToolConfigService {
       parametersSchema: cap.parameters as Record<string, unknown>,
     }));
 
+    const events: ToolEvent[] = (config.events || []).map(ev => ({
+      name: ev.name,
+      description: ev.description,
+      payloadSchema: ev.payloadSchema,
+    }));
+
     const interfaces: ToolInterface[] = (config.interfaces || []).map(iface => ({
       name: iface.name,
       type: iface.type,
@@ -347,6 +354,7 @@ export class ToolConfigService {
       interfaces,
       config: config.config || {},
       healthCheck,
+      events,
       providerModule: config.providerModule,
       providerExport: config.providerExport,
     };

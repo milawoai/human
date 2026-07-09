@@ -106,26 +106,13 @@ export async function dispatchCapability(
     case 'agent.identify':
       return toToolResult(await client.call('identify', {}, { transport: 'auto' }));
     case 'agent.list_surfaces': {
-      // 列出所有 surface（走 socket，返回干净 JSON + 含 title 名称）
-      const p: Record<string, unknown> = {};
-      if (params.workspace != null) p.workspace = params.workspace;
-      const r = await client.call('list-surfaces', p, { transport: 'auto' });
-      if (!r.ok) return toToolResult(r);
-      // 精简：只留对外有用字段 + 统一命名
-      const raw = (r.data as { surfaces?: unknown[] })?.surfaces ?? r.data ?? [];
-      const surfaces = (Array.isArray(raw) ? raw : []).map((s) => {
-        const sf = s as Record<string, unknown>;
-        return {
-          ref: sf.ref ?? sf.id,
-          title: sf.title ?? '',
-          type: sf.type ?? 'terminal',
-          workspaceRef: sf.workspace_ref,
-          paneRef: sf.pane_ref,
-          focused: sf.focused === true,
-          workingDirectory: sf.requested_working_directory ?? sf.working_directory,
-        };
-      });
-      return { success: true, data: { surfaces, count: surfaces.length } };
+      // cmux 的 surface.list 只返回【当前 workspace】的 surface（实测确认，传 workspace 参数无效）。
+      // 要跨 workspace 列 surface，需 workspace.select 切换后再 list。
+      // 本能力根据参数决定行为：
+      //   - 不传 workspace → 遍历所有 workspace，合并返回（每个 surface 带 workspaceRef）
+      //   - 传 workspace   → 只列该 workspace（select 切过去再 list）
+      const targetWorkspace = params.workspace as string | undefined;
+      return listSurfacesAcrossWorkspaces(client, targetWorkspace);
     }
 
     // ────────────── 通知 / 查询 ──────────────
@@ -202,4 +189,82 @@ async function runExecute(params: Record<string, unknown>, client: CmuxClient): 
 async function runCheckHealth(client: CmuxClient): Promise<ToolResult> {
   const state = await client.probeHealth(true);
   return { success: true, data: state };
+}
+
+/** 把 cmux 原始 surface 对象转为对外统一结构 */
+function mapSurface(
+  sf: Record<string, unknown>,
+  workspaceRef?: string,
+  workspaceId?: string,
+): Record<string, unknown> {
+  return {
+    ref: sf.ref ?? sf.id,
+    /** surface 的 uuid —— cmux 事件流(notification.created 等)用这个标识 surface */
+    id: sf.id,
+    title: sf.title ?? '',
+    type: sf.type ?? 'terminal',
+    workspaceRef: workspaceRef ?? sf.workspace_ref,
+    workspaceId: workspaceId ?? sf.workspace_id,
+    paneRef: sf.pane_ref,
+    paneId: sf.pane_id,
+    focused: sf.focused === true,
+    workingDirectory: sf.requested_working_directory ?? sf.working_directory,
+  };
+}
+
+/**
+ * 跨 workspace 列 surface。
+ *
+ * cmux 的 surface.list 只返回当前 workspace 的 surface（实测确认）。
+ * 本函数通过 workspace.select 切换实现跨 workspace：
+ *   - targetWorkspace 给定：只列该 workspace
+ *   - targetWorkspace 省略：遍历所有 workspace 合并返回
+ * 无论结果如何，最后切回原 workspace（避免副作用）。
+ */
+async function listSurfacesAcrossWorkspaces(
+  client: CmuxClient,
+  targetWorkspace?: string,
+): Promise<ToolResult> {
+  // 全程走 socket：不影响 cmux UI 焦点（CLI select 会切换用户可见 workspace）。
+  // 1. 记住原 workspace（workspace.current 返回 workspace_ref）
+  const curRes = await client.call('current-workspace', {}, { transport: 'socket' });
+  const originalRef = (curRes.data as { workspace_ref?: string })?.workspace_ref;
+
+  try {
+    // 2. 确定要遍历的 workspace 列表
+    let workspaces: Array<{ ref: string; id?: string; title?: string }>;
+    if (targetWorkspace) {
+      workspaces = [{ ref: targetWorkspace }];
+    } else {
+      const listRes = await client.call('workspace.list', {}, { transport: 'socket' });
+      const arr = (listRes.data as { workspaces?: unknown[] })?.workspaces ?? [];
+      workspaces = (Array.isArray(arr) ? arr : []).map((w) => {
+        const ws = w as Record<string, unknown>;
+        return { ref: String(ws.ref), id: ws.id as string | undefined, title: ws.title as string | undefined };
+      });
+    }
+
+    // 3. 逐个 workspace：socket select(workspace_id) → list surfaces
+    const all: Record<string, unknown>[] = [];
+    for (const ws of workspaces) {
+      const selRes = await client.call('workspace.select', { workspace_id: ws.ref }, { transport: 'socket' });
+      if (!selRes.ok) continue;
+      const listRes = await client.call('list-surfaces', {}, { transport: 'socket' });
+      if (!listRes.ok) continue;
+      const raw = (listRes.data as { surfaces?: unknown[] })?.surfaces ?? [];
+      const surfaces = Array.isArray(raw) ? raw : [];
+      for (const s of surfaces) {
+        all.push(mapSurface(s as Record<string, unknown>, ws.ref, ws.id));
+      }
+    }
+
+    return { success: true, data: { surfaces: all, count: all.length } };
+  } finally {
+    // 4. 切回原 workspace（socket，避免改变用户聚焦）
+    if (originalRef) {
+      await client
+        .call('workspace.select', { workspace_id: originalRef }, { transport: 'socket' })
+        .catch(() => {});
+    }
+  }
 }

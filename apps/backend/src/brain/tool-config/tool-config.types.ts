@@ -49,6 +49,16 @@ export interface ToolCapabilityConfig {
   interface?: string;
 }
 
+/** 工具事件配置 —— 声明工具通过总线推送的异步事件 */
+export interface ToolEventConfig {
+  /** 事件名（topic 末段）。完整 topic 由 motor 拼为 motor.tool.<toolId>.event.<name> */
+  name: string;
+  /** 事件描述：什么时候发生、用途 */
+  description?: string;
+  /** payload 字段说明（字段名 → 说明） */
+  payloadSchema?: Record<string, string>;
+}
+
 /** 工具接口配置 */
 export interface ToolInterfaceConfig {
   name: string;
@@ -82,6 +92,8 @@ export interface ToolConfig {
   lifecycle?: ToolLifecycleCommands;
   /** 能力列表 */
   capabilities: ToolCapabilityConfig[];
+  /** 异步事件列表（工具通过总线 motor.tool.<id>.event.* 推送的事件声明） */
+  events?: ToolEventConfig[];
   /** 接口列表 */
   interfaces?: ToolInterfaceConfig[];
   /** 健康检测配置 */

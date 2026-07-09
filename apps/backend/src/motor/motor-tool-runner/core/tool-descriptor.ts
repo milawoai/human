@@ -56,6 +56,16 @@ export interface ToolCapability {
   interface?: string;
 }
 
+/** 工具事件定义 —— 工具通过总线推送的异步事件 */
+export interface ToolEvent {
+  /** 事件名（topic 末段，如 'notification_created'）*/
+  name: string;
+  /** 事件描述 */
+  description?: string;
+  /** payload 字段说明（字段名 → 说明） */
+  payloadSchema?: Record<string, string>;
+}
+
 /** 健康检测配置 */
 export interface HealthCheckConfig {
   /** 检测方式 */
@@ -109,6 +119,8 @@ export interface ToolDescriptor {
   config: Record<string, unknown>;
   /** 健康检测配置 */
   healthCheck?: HealthCheckConfig;
+  /** 异步事件声明（工具通过总线推送的事件） */
+  events?: ToolEvent[];
   /** builtin 工具 provider 所在包名（新机制：dynamicImport 加载，解耦 motor） */
   providerModule?: string;
   /** provider 在包中导出的名称（配合 providerModule，默认 'default'） */
@@ -144,6 +156,26 @@ export interface ToolMetadata {
   status: ToolStatus;
   /** 注册时间 */
   registeredAt?: number;
+}
+
+/**
+ * 异步事件源（可选）。
+ *
+ * 用于工具需要把外部异步事件（如 cmux 的 agent 完成通知、文件变化、定时器）
+ * 转发到 Neural Core 总线的场景。工具实现 getEventSource() 返回此对象，
+ * motor 在工具注册时启动它，unregister/destroy 时停止。
+ *
+ * 事件经 motor 转发到总线，topic 命名：motor.tool.<toolId>.event.<eventName>
+ * 订阅方（brain/展示方）订阅 topic 即可收到，无需关心工具细节。
+ */
+export interface AsyncEventSource {
+  /**
+   * 启动事件源（如 spawn cmux events 流）。
+   * @param emit 事件回调，工具调用它转发事件。参数：eventName(简短，如 'agent_completed') + payload
+   */
+  start(emit: (eventName: string, payload: unknown) => void): Promise<void>;
+  /** 停止事件源（kill 子进程、关连接） */
+  stop(): Promise<void>;
 }
 
 /** 工具实例 — 运行时工具对象 */
@@ -185,6 +217,15 @@ export interface ToolInstance {
    * 未实现时，registry 回退到停止 lifecycle 启动的子进程。
    */
   stop?(): Promise<ToolResult>;
+
+  /**
+   * 异步事件源（可选）。
+   *
+   * 工具实现此方法返回 AsyncEventSource，motor 会启动它，把外部异步事件
+   * （cmux agent 完成、文件变化等）转发到 Neural Core 总线。
+   * 实现了 execute 立即返回 + 异步回调结果的「fire-and-forget + later notify」模式。
+   */
+  getEventSource?(): AsyncEventSource;
 
   /** 销毁（可选） */
   destroy?(): Promise<void>;

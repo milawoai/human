@@ -17,8 +17,11 @@ import * as path from 'path';
 import * as os from 'os';
 import { CmuxClient, CmuxLogger } from './client';
 import { dispatchCapability } from './capabilities';
+import { CmuxEventSource } from './event-source';
 import {
+  AsyncEventSource,
   BuiltinToolProvider,
+  DEFAULT_BINARY_PATH,
   ToolDescriptor,
   ToolInstance,
   ToolResult,
@@ -61,19 +64,22 @@ export class CmuxProvider implements BuiltinToolProvider {
     });
     client.setLogger(this.logger);
     const appPath = (cfg.appPath as string) || DEFAULT_APP_PATH;
-    return new CmuxToolInstance(descriptor, client, this.logger, appPath);
+    const binaryPath = (cfg.binaryPath as string) || DEFAULT_BINARY_PATH;
+    return new CmuxToolInstance(descriptor, client, this.logger, appPath, binaryPath);
   }
 }
 
 class CmuxToolInstance implements ToolInstance {
   status: ToolStatus = 'idle';
   private healthChecked = false;
+  private eventSource: CmuxEventSource | null = null;
 
   constructor(
     readonly descriptor: ToolDescriptor,
     private readonly client: CmuxClient,
     private readonly logger: CmuxLogger,
     private readonly appPath: string,
+    private readonly binaryPath: string,
   ) {}
 
   async initialize(): Promise<void> {
@@ -371,7 +377,26 @@ class CmuxToolInstance implements ToolInstance {
     }
   }
 
+  /**
+   * 异步事件源：spawn cmux events 流，把 cmux 事件转发到总线。
+   *
+   * 由 motor 在工具注册时启动（见 motor 的 MotorToolRunnerService）。
+   * 事件经 motor 转发到总线，topic: motor.tool.cmux.event.<eventName>。
+   * 订阅方可监听 notification_created（agent 完成通知）、agent_hook_Stop 等。
+   */
+  getEventSource(): AsyncEventSource {
+    if (!this.eventSource) {
+      this.eventSource = new CmuxEventSource(this.binaryPath);
+    }
+    return this.eventSource;
+  }
+
   async destroy(): Promise<void> {
+    // 停止事件源（kill cmux events 子进程）
+    if (this.eventSource) {
+      await this.eventSource.stop();
+      this.eventSource = null;
+    }
     await this.client.close();
   }
 

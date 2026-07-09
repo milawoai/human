@@ -50,6 +50,12 @@ export interface ToolContext {
   metadata?: Record<string, unknown>;
 }
 
+/** 异步事件源（结构对齐 motor AsyncEventSource） */
+export interface AsyncEventSource {
+  start(emit: (eventName: string, payload: unknown) => void): Promise<void>;
+  stop(): Promise<void>;
+}
+
 /** 工具实例（结构对齐 motor ToolInstance） */
 export interface ToolInstance {
   readonly descriptor: ToolDescriptor;
@@ -60,6 +66,8 @@ export interface ToolInstance {
   start?(options?: { force?: boolean }): Promise<ToolResult>;
   /** 停止工具 */
   stop?(): Promise<ToolResult>;
+  /** 异步事件源（转发外部事件到总线） */
+  getEventSource?(): AsyncEventSource;
   destroy?(): Promise<void>;
 }
 

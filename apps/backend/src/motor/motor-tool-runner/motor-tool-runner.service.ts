@@ -15,6 +15,7 @@ import {
   ToolInstance,
   ToolResult,
   BuiltinToolProvider,
+  AsyncEventSource,
 } from './core/tool-descriptor';
 import type { BusMessage } from '@/neural/interfaces';
 import type { InternalCommandHandler } from '@/neural/neural-http/neural-http.service';
@@ -31,6 +32,9 @@ export class MotorToolRunnerService implements OnModuleInit, OnModuleDestroy, In
 
   /** 已注册的内置工具提供者 */
   private readonly builtinProviders: BuiltinToolProvider[] = [];
+
+  /** toolId → 异步事件源（工具注册时启动，注销时停止） */
+  private readonly eventSources = new Map<string, AsyncEventSource>();
 
   constructor(
     private readonly registry: ToolRegistry,
@@ -92,8 +96,8 @@ export class MotorToolRunnerService implements OnModuleInit, OnModuleDestroy, In
     try {
       const tools = await this.toolConfigService.reload(this.builtinProviders);
       for (const tool of tools) {
-        await this.registry.register(tool);
-        this.gateway.registerToolCapabilities(tool);
+        // 复用 registerTool：统一走 registry.register + capability 注册 + startEventSource
+        await this.registerTool(tool);
         this.logger.log(`从配置加载工具: ${tool.descriptor.id} (${tool.descriptor.type})`);
       }
       this.logger.log(`配置加载完成，共 ${tools.length} 个工具`);
@@ -108,7 +112,12 @@ export class MotorToolRunnerService implements OnModuleInit, OnModuleDestroy, In
     // 清理所有已注册的工具
     const tools = this.registry.listDescriptors();
     for (const tool of tools) {
-      await this.registry.unregister(tool.id);
+      await this.unregisterTool(tool.id);
+    }
+
+    // 兜底：停止所有事件源（unregisterTool 应已停，这里防漏）
+    for (const toolId of Array.from(this.eventSources.keys())) {
+      await this.stopEventSource(toolId);
     }
 
     this.logger.log('Motor Tool Runner 已关闭');
@@ -120,6 +129,8 @@ export class MotorToolRunnerService implements OnModuleInit, OnModuleDestroy, In
   async registerTool(tool: ToolInstance): Promise<void> {
     await this.registry.register(tool);
     this.gateway.registerToolCapabilities(tool);
+    // 若工具提供异步事件源，启动它并转发到总线
+    await this.startEventSource(tool);
     this.logger.log(`工具已注册: ${tool.descriptor.id}`);
   }
 
@@ -127,8 +138,44 @@ export class MotorToolRunnerService implements OnModuleInit, OnModuleDestroy, In
    * 注销工具
    */
   async unregisterTool(toolId: string): Promise<void> {
+    await this.stopEventSource(toolId);
     await this.registry.unregister(toolId);
     this.logger.log(`工具已注销: ${toolId}`);
+  }
+
+  /**
+   * 启动工具的异步事件源（若有）。
+   *
+   * 工具产生的每个事件转发到 Neural Core 总线：
+   * topic = motor.tool.<toolId>.event.<eventName>
+   * 订阅方（brain/展示方）订阅该 topic 即可收到。
+   */
+  private async startEventSource(tool: ToolInstance): Promise<void> {
+    if (typeof tool.getEventSource !== 'function') return;
+    const toolId = tool.descriptor.id;
+    try {
+      const source = tool.getEventSource();
+      await source.start(async (eventName, payload) => {
+        const topic = `motor.tool.${toolId}.event.${eventName}`;
+        await this.gateway.emit(topic, payload);
+      });
+      this.eventSources.set(toolId, source);
+      this.logger.log(`异步事件源已启动: ${toolId} → motor.tool.${toolId}.event.*`);
+    } catch (error) {
+      this.logger.error(`启动事件源失败 ${toolId}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /** 停止工具的异步事件源 */
+  private async stopEventSource(toolId: string): Promise<void> {
+    const source = this.eventSources.get(toolId);
+    if (!source) return;
+    try {
+      await source.stop();
+    } catch {
+      /* ignore */
+    }
+    this.eventSources.delete(toolId);
   }
 
   /**

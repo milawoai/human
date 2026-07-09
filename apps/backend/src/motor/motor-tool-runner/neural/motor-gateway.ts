@@ -5,6 +5,7 @@
  */
 import { Injectable, Logger } from '@nestjs/common';
 import { NeuralCoreService } from '@/neural/neural-core/neural-core.service';
+import { NeuralWsGateway } from '@/neural/neural-ws/neural-ws.gateway';
 import { Capability, BusMessage, ActorRef } from '@/neural/interfaces';
 import {
   MOTOR_TOOL_RUNNER_ACTOR,
@@ -16,7 +17,10 @@ import {
 export class MotorGateway {
   private readonly logger = new Logger(MotorGateway.name);
 
-  constructor(private readonly coreService: NeuralCoreService) {}
+  constructor(
+    private readonly coreService: NeuralCoreService,
+    private readonly wsGateway: NeuralWsGateway,
+  ) {}
 
   /**
    * 注册 Motor Tool Runner 为内部 Actor
@@ -102,6 +106,9 @@ export class MotorGateway {
 
   /**
    * 发送事件到 Neural Core（广播给订阅者）
+   *
+   * route 算出订阅者后，dispatch 到每个订阅者的 WS 连接。
+   * 若无 WS 订阅者，事件仍被 route 记录（trace），只是无人接收。
    */
   async emit(topic: string, payload: unknown): Promise<void> {
     const message: BusMessage = {
@@ -114,8 +121,15 @@ export class MotorGateway {
     };
 
     try {
-      await this.coreService.route(message);
-      this.logger.debug(`事件发送: ${topic}`);
+      const result = this.coreService.route(message);
+      // 把事件推送给所有匹配的订阅者（WS 连接）
+      let sent = 0;
+      for (const sub of result.subscribers) {
+        if (this.wsGateway.sendToConnection(sub.connectionId, 'message', message)) {
+          sent++;
+        }
+      }
+      this.logger.debug(`事件发送: ${topic} (推送 ${sent}/${result.subscribers.length} 订阅者)`);
     } catch (error) {
       this.logger.error(`事件发送失败: ${topic}, ${error}`);
     }
