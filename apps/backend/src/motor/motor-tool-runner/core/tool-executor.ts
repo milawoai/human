@@ -5,9 +5,9 @@
  * 支持 pi-agent-core 的执行能力扩展
  */
 import { Injectable, Logger } from '@nestjs/common';
-import type { BeforeToolCallContext, AfterToolCallContext } from '@mariozechner/pi-agent-core';
-import type { AgentToolResult, AgentToolUpdateCallback } from '@mariozechner/pi-agent-core';
-import type { TextContent, ImageContent } from '@mariozechner/pi-ai';
+import type { BeforeToolCallContext, AfterToolCallContext } from '@earendil-works/pi-agent-core';
+import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-agent-core';
+import type { TextContent, ImageContent } from '@earendil-works/pi-ai';
 import { ToolRegistry } from './tool-registry';
 import { MotorGateway } from '../neural/motor-gateway';
 import {

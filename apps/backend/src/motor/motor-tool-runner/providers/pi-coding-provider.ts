@@ -11,7 +11,7 @@ import {
 } from '../core/tool-descriptor';
 import { ToolContext } from '../core/tool-context';
 
-const PI_CODING_AGENT_MODULE = '@mariozechner/pi-coding-agent';
+const PI_CODING_AGENT_MODULE = '@earendil-works/pi-coding-agent';
 
 const dynamicImport = <T = unknown>(specifier: string): Promise<T> =>
   new Function('specifier', 'return import(specifier)')(specifier);

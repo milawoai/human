@@ -11,8 +11,8 @@ import type {
   AgentToolUpdateCallback,
   BeforeToolCallContext,
   AfterToolCallContext,
-} from '@mariozechner/pi-agent-core';
-import type { TextContent, ImageContent } from '@mariozechner/pi-ai';
+} from '@earendil-works/pi-agent-core';
+import type { TextContent, ImageContent } from '@earendil-works/pi-ai';
 import type { ToolInstance, ToolDescriptor, ToolCapability, ToolContext, ToolResult } from './tool-descriptor';
 
 // Typebox schema 构建工具

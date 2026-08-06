@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import type { Context } from '@mariozechner/pi-ai';
+import type { Context } from '@earendil-works/pi-ai';
 import type { BusMessage, Capability } from '../../neural/interfaces';
 import type { InternalCommandHandler } from '../../neural/neural-http/neural-http.service';
 import { NeuralHttpService } from '../../neural/neural-http/neural-http.service';

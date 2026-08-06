@@ -22,9 +22,9 @@
 ### 2.1 Backend 直接依赖（按包格式）
 
 - ESM 优先/模块化包：
-  - `@mariozechner/pi-ai`
-  - `@mariozechner/pi-agent-core`
-  - `@mariozechner/pi-coding-agent`
+  - `@earendil-works/pi-ai`
+  - `@earendil-works/pi-agent-core`
+  - `@earendil-works/pi-coding-agent`
 - CJS（或默认 CJS）：
   - `@nestjs/*`
   - `@nut-tree-fork/nut-js`

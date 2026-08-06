@@ -6,14 +6,14 @@ import {
   Context,
   Model,
   ProviderStreamOptions,
-} from '@mariozechner/pi-ai';
+} from '@earendil-works/pi-ai';
 import { BrainModelProfileConfig } from './config.types';
 import { ModelConfigService } from './model-config.service';
 import { ProviderAuthService } from './provider-auth.service';
 
 const DEFAULT_TIMEOUT_MS = 600_000;
 const DEFAULT_RETRY_ATTEMPTS = 2;
-const PI_AI_MODULE = '@mariozechner/pi-ai';
+const PI_AI_MODULE = '@earendil-works/pi-ai';
 const dynamicImport = <T = unknown>(specifier: string): Promise<T> =>
   new Function('s', 'return import(s)')(specifier) as Promise<T>;
 
@@ -61,16 +61,26 @@ export class LlmService {
     }
   }
 
+  private modelsInstance?: import('@earendil-works/pi-ai').MutableModels;
+
+  async getModels(): Promise<import('@earendil-works/pi-ai').MutableModels> {
+    if (!this.modelsInstance) {
+      const { createModels } = await this.getPiAi();
+      this.modelsInstance = createModels();
+    }
+    return this.modelsInstance;
+  }
+
   async complete(request: LlmRequest): Promise<AssistantMessage> {
     const resolved = await this.resolveModel(request.profileName);
     const timeoutMs = request.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const retryAttempts = request.retryAttempts ?? DEFAULT_RETRY_ATTEMPTS;
-    const { complete } = await this.getPiAi();
+    const models = await this.getModels();
 
     return this.retry(async () => {
       const { controller, cleanup } = this.createTimeoutController(timeoutMs);
       try {
-        return await complete(
+        return await models.complete(
           resolved.model,
           request.context,
           await this.buildStreamOptions(
@@ -92,10 +102,10 @@ export class LlmService {
     const resolved = await this.resolveModel(request.profileName);
     const timeoutMs = request.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const { controller, cleanup } = this.createTimeoutController(timeoutMs);
-    const { stream } = await this.getPiAi();
+    const models = await this.getModels();
 
     try {
-      const eventStream = stream(
+      const eventStream = models.stream(
         resolved.model,
         request.context,
         await this.buildStreamOptions(
@@ -111,6 +121,15 @@ export class LlmService {
       cleanup();
       throw this.mapError(error, resolved.profileName, resolved.profile.provider);
     }
+  }
+
+  async streamSimple(
+    model: Model<Api>,
+    context: Context,
+    options?: import('@earendil-works/pi-ai').SimpleStreamOptions,
+  ): Promise<AssistantMessageEventStream> {
+    const models = await this.getModels();
+    return models.streamSimple(model, context, options);
   }
 
   private async createModelFromProfile(profile: BrainModelProfileConfig): Promise<Model<Api>> {
@@ -139,12 +158,16 @@ export class LlmService {
       };
     }
 
-    const { getModel } = await this.getPiAi();
-    return getModel(profile.provider as any, modelId as any) as Model<Api>;
+    const models = await this.getModels();
+    const model = models.getModel(profile.provider, modelId);
+    if (!model) {
+      throw new Error(`Model "${modelId}" for provider "${profile.provider}" not found in catalog`);
+    }
+    return model as Model<Api>;
   }
 
-  private async getPiAi(): Promise<typeof import('@mariozechner/pi-ai')> {
-    return dynamicImport<typeof import('@mariozechner/pi-ai')>(PI_AI_MODULE);
+  private async getPiAi(): Promise<typeof import('@earendil-works/pi-ai')> {
+    return dynamicImport<typeof import('@earendil-works/pi-ai')>(PI_AI_MODULE);
   }
 
   private async buildStreamOptions(

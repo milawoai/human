@@ -4,7 +4,7 @@
  * 将 Motor ToolInstance 转换为 pi-agent-core AgentTool
  */
 import { Injectable, Logger } from '@nestjs/common';
-import type { AgentTool } from '@mariozechner/pi-agent-core';
+import type { AgentTool } from '@earendil-works/pi-agent-core';
 import type { ToolInstance, ToolDescriptor, ToolCapability } from './tool-descriptor';
 import { ToolExecutor, ExtendedToolContext, ToolExecutorHooks } from './tool-executor';
 import { ToolRegistry } from './tool-registry';

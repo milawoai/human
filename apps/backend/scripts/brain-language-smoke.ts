@@ -37,8 +37,8 @@ class MemoryStub {
 }
 
 async function main() {
-  const { fauxAssistantMessage, fauxText, registerFauxProvider } = await import(
-    '@mariozechner/pi-ai'
+  const { fauxAssistantMessage, fauxText, fauxProvider } = await import(
+    '@earendil-works/pi-ai'
   );
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'brain-smoke-'));
@@ -105,11 +105,12 @@ async function main() {
   assert.equal(preview.changed, true);
   assert.ok(preview.changes.some((c) => c.provider === 'zai' && c.modelId === 'glm-5.1'));
 
-  const faux = registerFauxProvider({
+  const faux = fauxProvider({
     api: 'faux-api',
     provider: 'faux-provider',
     models: [{ id: 'faux-1', reasoning: false }],
   });
+  (await llmService.getModels()).setProvider(faux.provider);
 
   faux.setResponses([fauxAssistantMessage([fauxText('hello-complete')])]);
   const completed = await llmService.complete({
@@ -154,7 +155,7 @@ async function main() {
   assert.equal(listResult.success, true);
   assert.ok(Array.isArray(listResult.data));
 
-  faux.unregister();
+  (faux as any).unregister?.();
   console.log('brain-language-smoke: OK');
 }
 

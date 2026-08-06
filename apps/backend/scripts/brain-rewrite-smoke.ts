@@ -38,8 +38,8 @@ class MemoryStub {
 }
 
 async function main() {
-  const { fauxAssistantMessage, fauxText, registerFauxProvider } = await import(
-    '@mariozechner/pi-ai'
+  const { fauxAssistantMessage, fauxText, fauxProvider } = await import(
+    '@earendil-works/pi-ai'
   );
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'brain-rewrite-smoke-'));
@@ -98,11 +98,12 @@ async function main() {
 
   assert.equal(cortex.canHandle(TOPIC.BRAIN_CORTEX_REWRITE_REQUESTED), true);
 
-  const faux = registerFauxProvider({
+  const faux = fauxProvider({
     api: 'faux-api',
     provider: 'faux-provider',
     models: [{ id: 'faux-1', reasoning: false }],
   });
+  (await llmService.getModels()).setProvider(faux.provider);
   faux.setResponses([fauxAssistantMessage([fauxText('请问今天功能何时上线？')])]);
 
   const result = await cortex.handleCommand({
@@ -130,7 +131,7 @@ async function main() {
   assert.ok(completedEvent);
   assert.equal((completedEvent?.message.payload as any)?.requestId, 'req-1');
 
-  faux.unregister();
+  (faux as any).unregister?.();
   console.log('brain-rewrite-smoke: OK');
 }
 

@@ -2,7 +2,12 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { Injectable } from '@nestjs/common';
-import type { OAuthCredentials } from '@mariozechner/pi-ai/oauth';
+import type {
+  Credential,
+  CredentialInfo,
+  CredentialStore,
+  Models,
+} from '@earendil-works/pi-ai';
 import type { BrainModelProfileConfig } from './config.types';
 
 interface AuthValidation {
@@ -11,8 +16,7 @@ interface AuthValidation {
   warnings: string[];
 }
 
-type OAuthCredentialStore = Record<string, OAuthCredentials>;
-const PI_AI_OAUTH_MODULE = '@mariozechner/pi-ai/oauth';
+const PI_AI_MODULE = '@earendil-works/pi-ai';
 const dynamicImport = <T = unknown>(specifier: string): Promise<T> =>
   new Function('s', 'return import(s)')(specifier) as Promise<T>;
 
@@ -24,6 +28,78 @@ interface OAuthLoginResult {
     instructions?: string;
   };
   progress: string[];
+}
+
+class SecretaryCredentialStore implements CredentialStore {
+  constructor(private readonly authPath: string) {}
+
+  private readStore(): Record<string, Credential> {
+    if (!fs.existsSync(this.authPath)) return {};
+    try {
+      const text = fs.readFileSync(this.authPath, 'utf-8');
+      const parsed = JSON.parse(text);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return {};
+      const store: Record<string, Credential> = {};
+      for (const [k, v] of Object.entries(parsed)) {
+        if (v && typeof v === 'object') {
+          const cred = { ...(v as any) };
+          if (!cred.type && (cred.access || cred.refresh)) {
+            cred.type = 'oauth';
+          }
+          store[k] = cred;
+        }
+      }
+      return store;
+    } catch {
+      return {};
+    }
+  }
+
+  private writeStore(store: Record<string, Credential>): void {
+    const dir = path.dirname(this.authPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(this.authPath, JSON.stringify(store, null, 2) + '\n', 'utf-8');
+    try {
+      fs.chmodSync(this.authPath, 0o600);
+    } catch {
+      // noop
+    }
+  }
+
+  async read(providerId: string): Promise<Credential | undefined> {
+    const store = this.readStore();
+    return store[providerId];
+  }
+
+  async list(): Promise<readonly CredentialInfo[]> {
+    const store = this.readStore();
+    return Object.entries(store).map(([providerId, cred]) => ({
+      providerId,
+      type: cred.type || 'oauth',
+    }));
+  }
+
+  async modify(
+    providerId: string,
+    fn: (current: Credential | undefined) => Promise<Credential | undefined>,
+  ): Promise<Credential | undefined> {
+    const store = this.readStore();
+    const current = store[providerId];
+    const updated = await fn(current);
+    if (updated) {
+      store[providerId] = updated;
+      this.writeStore(store);
+    }
+    return updated;
+  }
+
+  async delete(providerId: string): Promise<void> {
+    const store = this.readStore();
+    delete store[providerId];
+    this.writeStore(store);
+  }
 }
 
 @Injectable()
@@ -38,22 +114,24 @@ export class ProviderAuthService {
     return this.authPath;
   }
 
+  private async createModelsInstance(): Promise<Models> {
+    const { createModels } = await dynamicImport<typeof import('@earendil-works/pi-ai')>(PI_AI_MODULE);
+    return createModels({
+      credentials: new SecretaryCredentialStore(this.authPath),
+    });
+  }
+
   async resolveApiKey(profileName: string, profile: BrainModelProfileConfig): Promise<string | undefined> {
     const oauthProvider = this.resolveOAuthProvider(profile);
     if (oauthProvider) {
-      const { getOAuthApiKey } = await this.getOAuthModule();
-      const credentials = this.readOAuthStore();
-      const result = await getOAuthApiKey(oauthProvider, credentials);
-      if (!result) {
+      const models = await this.createModelsInstance();
+      const authResult = await models.getAuth(oauthProvider);
+      if (!authResult?.auth.apiKey) {
         throw new Error(
           `profile "${profileName}" requires OAuth credentials for "${oauthProvider}" at ${this.authPath}`,
         );
       }
-      if (result.newCredentials) {
-        credentials[oauthProvider] = result.newCredentials;
-        this.writeOAuthStore(credentials);
-      }
-      return result.apiKey;
+      return authResult.auth.apiKey;
     }
 
     if (!profile.apiKeyEnv) return undefined;
@@ -66,21 +144,18 @@ export class ProviderAuthService {
     return apiKey;
   }
 
-  private async getOAuthModule(): Promise<typeof import('@mariozechner/pi-ai/oauth')> {
-    return dynamicImport<typeof import('@mariozechner/pi-ai/oauth')>(
-      PI_AI_OAUTH_MODULE,
-    );
-  }
-
   async listOAuthProviders(): Promise<
-    Array<{ id: string; name: string; usesCallbackServer: boolean }>
+    Array<{ id: string; name: string; loginLabel?: string }>
   > {
-    const { getOAuthProviders } = await this.getOAuthModule();
-    return getOAuthProviders().map((provider) => ({
-      id: provider.id,
-      name: provider.name,
-      usesCallbackServer: Boolean(provider.usesCallbackServer),
-    }));
+    const models = await this.createModelsInstance();
+    return models
+      .getProviders()
+      .filter((p) => Boolean(p.auth.oauth))
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        loginLabel: p.auth.oauth?.loginLabel,
+      }));
   }
 
   async loginOAuth(params: {
@@ -92,9 +167,9 @@ export class ProviderAuthService {
       throw new Error('payload.provider is required');
     }
 
-    const { getOAuthProvider } = await this.getOAuthModule();
-    const oauthProvider = getOAuthProvider(providerId);
-    if (!oauthProvider) {
+    const models = await this.createModelsInstance();
+    const provider = models.getProvider(providerId);
+    if (!provider || !provider.auth.oauth) {
       const providers = await this.listOAuthProviders();
       throw new Error(
         `OAuth provider "${providerId}" is not registered. Available: ${providers.map((p) => p.id).join(', ')}`,
@@ -104,26 +179,22 @@ export class ProviderAuthService {
     const progress: string[] = [];
     let authInfo: OAuthLoginResult['authInfo'];
     const manualCode = params.manualCode?.trim();
-    let credentials: OAuthCredentials;
+
     try {
-      credentials = await oauthProvider.login({
-        onAuth: (info) => {
-          authInfo = info;
+      await models.login(providerId, 'oauth', {
+        notify: (event) => {
+          if (event.type === 'auth_url') {
+            authInfo = { url: event.url, instructions: event.instructions };
+          } else if (event.type === 'progress') {
+            progress.push(event.message);
+          }
         },
-        onProgress: (message) => {
-          progress.push(message);
-        },
-        onPrompt: async (prompt) => {
+        prompt: async (prompt) => {
           if (manualCode) return manualCode;
           throw new Error(
             `OAuth login for "${providerId}" requires manual input: ${prompt.message}`,
           );
         },
-        ...(manualCode
-          ? {
-              onManualCodeInput: async () => manualCode,
-            }
-          : {}),
       });
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -133,10 +204,6 @@ export class ProviderAuthService {
         `OAuth login failed for "${providerId}": ${msg}.${authHint}${progressHint}`,
       );
     }
-
-    const store = this.readOAuthStore();
-    store[providerId] = credentials;
-    this.writeOAuthStore(store);
 
     return {
       provider: providerId,
@@ -152,7 +219,6 @@ export class ProviderAuthService {
 
     const oauthProvider = this.resolveOAuthProvider(profile);
     if (oauthProvider) {
-
       if (!fs.existsSync(this.authPath)) {
         errors.push(
           `profile "${profileName}" missing OAuth credential file: ${this.authPath} (provider=${oauthProvider})`,
@@ -190,31 +256,5 @@ export class ProviderAuthService {
       return profile.auth.provider.trim();
     }
     return undefined;
-  }
-
-  private readOAuthStore(): OAuthCredentialStore {
-    if (!fs.existsSync(this.authPath)) {
-      return {};
-    }
-
-    const text = fs.readFileSync(this.authPath, 'utf-8');
-    const parsed = JSON.parse(text) as unknown;
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      throw new Error(`Invalid OAuth credential file format: ${this.authPath}`);
-    }
-    return parsed as OAuthCredentialStore;
-  }
-
-  private writeOAuthStore(store: OAuthCredentialStore): void {
-    const dir = path.dirname(this.authPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(this.authPath, JSON.stringify(store, null, 2) + '\n', 'utf-8');
-    try {
-      fs.chmodSync(this.authPath, 0o600);
-    } catch {
-      // noop: chmod may fail on some environments
-    }
   }
 }

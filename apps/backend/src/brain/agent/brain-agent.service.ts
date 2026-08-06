@@ -1,8 +1,8 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { existsSync, statSync } from 'node:fs';
 import * as path from 'node:path';
-import type { Context, Model, ToolResultMessage } from '@mariozechner/pi-ai';
-import type { AgentEvent, AgentMessage, AgentTool } from '@mariozechner/pi-agent-core';
+import type { Context, Model, ToolResultMessage } from '@earendil-works/pi-ai';
+import type { AgentEvent, AgentMessage, AgentTool } from '@earendil-works/pi-agent-core';
 import type { BusMessage, Capability } from '../../neural/interfaces';
 import type { InternalCommandHandler } from '../../neural/neural-http/neural-http.service';
 import { NeuralHttpService } from '../../neural/neural-http/neural-http.service';
@@ -67,7 +67,7 @@ const AGENT_CAPABILITIES: Capability[] = [
   },
 ];
 
-const PI_AGENT_CORE_MODULE = '@mariozechner/pi-agent-core';
+const PI_AGENT_CORE_MODULE = '@earendil-works/pi-agent-core';
 const dynamicImport = <T = unknown>(specifier: string): Promise<T> =>
   new Function('s', 'return import(s)')(specifier) as Promise<T>;
 
@@ -169,6 +169,8 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
         messages: (persisted?.messages ?? []) as AgentMessage[],
         tools,
       },
+      streamFn: (model, context, opts) =>
+        this.llmService.streamSimple(model, context, opts),
       getApiKey: async () =>
         await this.providerAuthService.resolveApiKey(
           resolved.profileName,
@@ -289,8 +291,8 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
     return allTools;
   }
 
-  private async getAgentCore(): Promise<typeof import('@mariozechner/pi-agent-core')> {
-    return dynamicImport<typeof import('@mariozechner/pi-agent-core')>(
+  private async getAgentCore(): Promise<typeof import('@earendil-works/pi-agent-core')> {
+    return dynamicImport<typeof import('@earendil-works/pi-agent-core')>(
       PI_AGENT_CORE_MODULE,
     );
   }
