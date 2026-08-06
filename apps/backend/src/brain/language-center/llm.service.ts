@@ -14,6 +14,7 @@ import { ProviderAuthService } from './provider-auth.service';
 const DEFAULT_TIMEOUT_MS = 600_000;
 const DEFAULT_RETRY_ATTEMPTS = 2;
 const PI_AI_MODULE = '@earendil-works/pi-ai';
+const PI_AI_PROVIDERS_ALL_MODULE = '@earendil-works/pi-ai/providers/all';
 const dynamicImport = <T = unknown>(specifier: string): Promise<T> =>
   new Function('s', 'return import(s)')(specifier) as Promise<T>;
 
@@ -65,8 +66,10 @@ export class LlmService {
 
   async getModels(): Promise<import('@earendil-works/pi-ai').MutableModels> {
     if (!this.modelsInstance) {
-      const { createModels } = await this.getPiAi();
-      this.modelsInstance = createModels();
+      const { builtinModels } = await dynamicImport<typeof import('@earendil-works/pi-ai/providers/all')>(
+        PI_AI_PROVIDERS_ALL_MODULE,
+      );
+      this.modelsInstance = builtinModels();
     }
     return this.modelsInstance;
   }

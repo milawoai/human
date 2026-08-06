@@ -102,6 +102,8 @@ class SecretaryCredentialStore implements CredentialStore {
   }
 }
 
+const PI_AI_PROVIDERS_ALL_MODULE = '@earendil-works/pi-ai/providers/all';
+
 @Injectable()
 export class ProviderAuthService {
   private readonly authPath = path.join(
@@ -115,8 +117,10 @@ export class ProviderAuthService {
   }
 
   private async createModelsInstance(): Promise<Models> {
-    const { createModels } = await dynamicImport<typeof import('@earendil-works/pi-ai')>(PI_AI_MODULE);
-    return createModels({
+    const { builtinModels } = await dynamicImport<typeof import('@earendil-works/pi-ai/providers/all')>(
+      PI_AI_PROVIDERS_ALL_MODULE,
+    );
+    return builtinModels({
       credentials: new SecretaryCredentialStore(this.authPath),
     });
   }
