@@ -8,3 +8,5 @@
 {"id":"int-5bb7015e","kind":"field_change","created_at":"2026-05-20T11:24:37.90443Z","actor":"zhou","issue_id":"human-wcq","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Completed"}}
 {"id":"int-46bbc47d","kind":"field_change","created_at":"2026-05-20T11:24:38.011465Z","actor":"zhou","issue_id":"human-41b","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
 {"id":"int-1df1c1d1","kind":"field_change","created_at":"2026-05-21T08:20:33.885374Z","actor":"zhou","issue_id":"human-6py","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-f8f4092a","kind":"field_change","created_at":"2026-09-24T07:41:16.278207Z","actor":"zhou","issue_id":"human-5hq","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"duplicate of human-mc4"}}
+{"id":"int-65f44dee","kind":"field_change","created_at":"2026-10-16T08:51:30.380976Z","actor":"zhou","issue_id":"human-1gy","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"已将 @earendil-works/pi-* 升级到最新版 1.2.0，适配 tool-executor context，并升级了 backend、根目录和 python-service 的依赖库，全套构建及测试均通过"}}

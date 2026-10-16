@@ -19,13 +19,13 @@
     "packages/*/*"
   ],
   "devDependencies": {
-    "turbo": "^2.5.6"
+    "turbo": "^2.11.8"
   },
   "packageManager": "yarn@1.22.0",
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "mysql2": "^3.22.2"
+    "mysql2": "^3.24.6"
   }
 }

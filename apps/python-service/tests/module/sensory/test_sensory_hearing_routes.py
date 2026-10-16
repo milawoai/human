@@ -17,7 +17,7 @@ def test_sensory_hearing_controller_exposes_asr_router():
 def test_main_app_mounts_sensory_hearing_routes():
     from main import app
 
-    paths = {route.path for route in app.routes if isinstance(route, APIRoute)}
+    paths = set(app.openapi()["paths"].keys())
     assert "/api/v1/asr/models" in paths
     assert "/api/v1/asr/status" in paths
 

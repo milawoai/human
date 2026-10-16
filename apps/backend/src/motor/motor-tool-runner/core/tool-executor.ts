@@ -122,7 +122,6 @@ export class ToolExecutor {
           toolCall: { id: toolCallId, name: `${toolId}.${capability}` } as any,
           args: params,
           context: {
-            systemPrompt: '',
             messages: [],
           },
         },
@@ -164,7 +163,6 @@ export class ToolExecutor {
             result: this.toAgentToolResult(result),
             isError: !result.success,
             context: {
-              systemPrompt: '',
               messages: [],
             },
           },
