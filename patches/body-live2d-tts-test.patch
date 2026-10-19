@@ -1,0 +1,500 @@
+diff --git a/apps/body/package.json b/apps/body/package.json
+index ded16ef..33e9ba1 100644
+--- a/apps/body/package.json
++++ b/apps/body/package.json
+@@ -11,6 +11,7 @@
+     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
+     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
+     "typecheck": "yarn typecheck:node && yarn typecheck:web",
++    "test:tts": "node --experimental-strip-types --test src/main/services/live2d/tts.test.ts",
+     "start": "yarn electron-vite preview",
+     "dev": "yarn electron-vite dev",
+     "build": "yarn typecheck && yarn electron-vite build",
+diff --git a/apps/body/src/main/services/live2d/index.ts b/apps/body/src/main/services/live2d/index.ts
+index 3a7ce4f..b66313f 100644
+--- a/apps/body/src/main/services/live2d/index.ts
++++ b/apps/body/src/main/services/live2d/index.ts
+@@ -6,6 +6,22 @@ import {
+ } from '@shared/live2dPerformance'
+ import { getLive2DPetModelsResponse } from '@shared/live2dPetModels'
+ import { WindowManager } from '../../windowManager'
++import { neuralTrigger } from '../neural/impl/neural-http'
++import { requestTtsSynthesis } from './tts'
++
++export const synthesizeTts = async (params: { text: string }) => {
++  try {
++    return { success: true, data: await requestTtsSynthesis(params?.text, neuralTrigger) }
++  } catch (error) {
++    const code = (error as { code?: string })?.code
++    return {
++      success: false,
++      msg: code === 'ECONNREFUSED'
++        ? '无法连接语音服务，请确认 Human 后端已启动'
++        : error instanceof Error ? error.message : '语音合成失败'
++    }
++  }
++}
+ 
+ type Live2DCommand = 'get-current' | 'play-motion' | 'set-expression' | 'perform'
+ 
+diff --git a/apps/body/src/main/services/live2d/tts.test.ts b/apps/body/src/main/services/live2d/tts.test.ts
+new file mode 100644
+index 0000000..f9d090c
+--- /dev/null
++++ b/apps/body/src/main/services/live2d/tts.test.ts
+@@ -0,0 +1,81 @@
++import assert from 'node:assert/strict'
++import { test } from 'node:test'
++// @ts-expect-error Node's strip-types runner requires the .ts extension.
++import { requestTtsSynthesis } from './tts.ts'
++
++test('discovers a ready TTS plugin and unwraps Neural plus ToolResult', async () => {
++  const calls: any[] = []
++  const result = await requestTtsSynthesis('  你好  ', async (request) => {
++    calls.push(request)
++    if (request.topic === 'motor.tool.list') {
++      return {
++        success: true,
++        data: {
++          tools: [
++            { id: 'offline', status: 'error', capabilities: ['tts.synthesize'] },
++            { id: 'external-tts', status: 'ready', capabilities: ['tts.synthesize'] }
++          ]
++        }
++      }
++    }
++    return {
++      success: true,
++      data: {
++        success: true,
++        data: {
++          audioUrl: 'http://127.0.0.1:12002/tts-cache/external-tts/test.wav'
++        }
++      }
++    }
++  })
++  assert.equal(result.audioUrl, 'http://127.0.0.1:12002/tts-cache/external-tts/test.wav')
++  assert.deepEqual(calls[0].payload, { category: 'tts', detailed: true })
++  assert.deepEqual(calls[1].payload, {
++    tool: 'external-tts',
++    capability: 'tts.synthesize',
++    parameters: { text: '你好', format: 'wav' }
++  })
++})
++
++test('rejects blank and overly long input before requesting the backend', async () => {
++  const trigger = async () => {
++    throw new Error('backend should not be called')
++  }
++  await assert.rejects(requestTtsSynthesis('  ', trigger), /请输入/)
++  await assert.rejects(requestTtsSynthesis('字'.repeat(2001), trigger), /2000/)
++})
++
++test('reports missing plugin and discovery errors', async () => {
++  await assert.rejects(
++    requestTtsSynthesis('你好', async () => ({ success: true, data: { tools: [] } })),
++    /没有可用/
++  )
++  await assert.rejects(
++    requestTtsSynthesis('你好', async () => ({ success: false, msg: '后端未就绪' })),
++    /后端未就绪/
++  )
++})
++
++test('preserves nested plugin errors and rejects invalid audio URLs', async () => {
++  for (const [response, pattern] of [
++    [
++      { success: false, data: { success: false, error: { message: '模型加载失败' } } },
++      /模型加载失败/
++    ],
++    [{ success: true, data: { success: false, error: { message: '合成失败' } } }, /合成失败/],
++    [{ success: true, data: { success: true, data: {} } }, /音频/],
++    [{ success: true, data: { success: true, data: { audioUrl: 'javascript:bad' } } }, /音频/]
++  ] as const) {
++    await assert.rejects(
++      requestTtsSynthesis('你好', async (request) =>
++        request.topic === 'motor.tool.list'
++          ? {
++              success: true,
++              data: { tools: [{ id: 'test', status: 'ready', capabilities: ['tts.synthesize'] }] }
++            }
++          : response
++      ),
++      pattern
++    )
++  }
++})
+diff --git a/apps/body/src/main/services/live2d/tts.ts b/apps/body/src/main/services/live2d/tts.ts
+new file mode 100644
+index 0000000..dc898c2
+--- /dev/null
++++ b/apps/body/src/main/services/live2d/tts.ts
+@@ -0,0 +1,50 @@
++type NeuralRequest = { kind: string; topic: string; payload?: unknown }
++type NeuralTrigger = (request: NeuralRequest) => Promise<any>
++
++const errorMessage = (response: any, fallback: string): string =>
++  response?.data?.error?.message || response?.error?.message || response?.msg || fallback
++
++/** Discover through the category contract; no engine IDs or Python paths in Body. */
++export async function requestTtsSynthesis(
++  input: string,
++  trigger: NeuralTrigger
++): Promise<{ audioUrl: string }> {
++  const text = typeof input === 'string' ? input.trim() : ''
++  if (!text) throw new Error('请输入要播放的文本')
++  if (text.length > 2000) throw new Error('文本不能超过 2000 字')
++
++  const discovery = await trigger({
++    kind: 'query',
++    topic: 'motor.tool.list',
++    payload: { category: 'tts', detailed: true }
++  })
++  if (!discovery?.success) throw new Error(errorMessage(discovery, '查询语音插件失败'))
++  const tools = discovery.data?.tools
++  const tool =
++    Array.isArray(tools) &&
++    tools.find(
++      (item: any) =>
++        ['ready', 'running'].includes(item.status) && item.capabilities?.includes('tts.synthesize')
++    )
++  if (!tool) throw new Error('没有可用的语音插件，请先启用 TTS 插件')
++
++  const response = await trigger({
++    kind: 'command',
++    topic: 'motor.tool.execute',
++    payload: { tool: tool.id, capability: 'tts.synthesize', parameters: { text, format: 'wav' } }
++  })
++  if (!response?.success || !response.data?.success) {
++    throw new Error(errorMessage(response, '语音合成失败'))
++  }
++  const audioUrl = response.data.data?.audioUrl
++  let url: URL
++  try {
++    url = new URL(audioUrl)
++  } catch {
++    throw new Error('语音插件没有返回有效的音频地址')
++  }
++  if (!['http:', 'https:'].includes(url.protocol)) {
++    throw new Error('语音插件返回了不支持的音频地址')
++  }
++  return { audioUrl: url.href }
++}
+diff --git a/apps/body/src/renderer/src/pages/pet/index.vue b/apps/body/src/renderer/src/pages/pet/index.vue
+index 9727732..4f46873 100644
+--- a/apps/body/src/renderer/src/pages/pet/index.vue
++++ b/apps/body/src/renderer/src/pages/pet/index.vue
+@@ -29,6 +29,12 @@ const isModelHovered = ref(false)
+ const tapOutputText = ref('')
+ const performanceText = ref('')
+ const showHearingButton = ref(false)
++const ttsVisible = ref(false)
++const ttsText = ref('你好，我是你的数字秘书。')
++const ttsBusy = ref(false)
++const ttsError = ref('')
++const ttsInput = ref<HTMLTextAreaElement | null>(null)
++let disposed = false
+ const petWindowClassName = 'pet-window'
+ let passthroughTimer: number | null = null
+ let live2dReadyPromise: Promise<void> | null = null
+@@ -90,6 +96,8 @@ const updateHoverState = async (clientX: number, clientY: number, isInside = tru
+   const shouldReceiveMouse =
+     isInside &&
+     (menuVisible.value ||
++      ttsVisible.value ||
++      Boolean(document.elementFromPoint(clientX, clientY)?.closest('[data-pet-interactive]')) ||
+       Boolean(canvas && live2dPetAdapter.hitTest(clientX, clientY, canvas).isHit))
+ 
+   const wasHovered = isModelHovered.value
+@@ -102,7 +110,7 @@ const updateHoverState = async (clientX: number, clientY: number, isInside = tru
+     clearHearingHoverTimer()
+     hearingHoverTimer = window.setTimeout(() => {
+       hearingHoverTimer = null
+-      if (isModelHovered.value && !menuVisible.value) {
++      if (isModelHovered.value && !menuVisible.value && !ttsVisible.value) {
+         showHearingButton.value = true
+       }
+     }, 2000)
+@@ -210,7 +218,7 @@ const handlePointerMove = (event: PointerEvent) => {
+ }
+ 
+ const handlePointerDown = (event: PointerEvent) => {
+-  if (passthrough.value || menuVisible.value) {
++  if (passthrough.value || menuVisible.value || ttsVisible.value) {
+     tapTracker.cancel()
+     dragTracker.cancel()
+     return
+@@ -261,7 +269,7 @@ const handlePointerCancel = () => {
+ }
+ 
+ const handleWheel = (event: WheelEvent) => {
+-  if (passthrough.value || menuVisible.value) return
++  if (passthrough.value || menuVisible.value || ttsVisible.value) return
+ 
+   event.preventDefault()
+   currentModelScale = calculateWheelScale(currentModelScale, event.deltaY)
+@@ -430,7 +438,11 @@ const playPerformanceAudio = async (audioUrl: string) => {
+   currentPerformanceAudio?.pause()
+   stopAudioLipSyncDriver()
+   const resolved = await resolveAudioUrlForRenderer(audioUrl)
+-  currentPerformanceAudio = new Audio(resolved.url)
++  currentPerformanceAudio = new Audio()
++  // The TTS cache is served by the backend on a different origin. WebAudio
++  // requires CORS mode to analyse the audio for lip sync without silencing it.
++  if (/^https?:/i.test(resolved.url)) currentPerformanceAudio.crossOrigin = 'anonymous'
++  currentPerformanceAudio.src = resolved.url
+   await startAudioLipSyncDriver(currentPerformanceAudio)
+   currentPerformanceAudio.addEventListener(
+     'ended',
+@@ -563,6 +575,49 @@ const onChatButtonClick = async () => {
+   await ipc.sense.openChatPanel()
+ }
+ 
++const openTtsDialog = async () => {
++  closeContextMenu()
++  showHearingButton.value = false
++  clearHearingHoverTimer()
++  tapTracker.cancel()
++  dragTracker.cancel()
++  ttsError.value = ''
++  ttsVisible.value = true
++  await setAutoIgnoreMouse(false)
++  await nextTick()
++  ttsInput.value?.focus()
++}
++
++const closeTtsDialog = () => {
++  if (!ttsBusy.value) ttsVisible.value = false
++}
++
++const submitTts = async () => {
++  if (ttsBusy.value) return
++  const text = ttsText.value.trim()
++  if (!text) {
++    ttsError.value = '请输入要播放的文本'
++    return
++  }
++  ttsBusy.value = true
++  ttsError.value = ''
++  try {
++    const result = await ipc.live2d.synthesizeTts({ text })
++    if (disposed) return
++    if (!result.success || !result.data?.audioUrl) {
++      throw new Error(result.msg || '语音合成失败，请稍后重试')
++    }
++    await playPerformanceAudio(result.data.audioUrl)
++    if (disposed) return
++    showPerformanceText(text)
++    ttsVisible.value = false
++  } catch (error) {
++    if (!disposed) ttsError.value = error instanceof Error ? error.message : '语音播放失败'
++  } finally {
++    ttsBusy.value = false
++  }
++}
++
+ const setupLive2DCommandListener = () => {
+   removeLive2DCommandListener = window.electron.ipcRenderer.on(
+     'live2d-pet-command',
+@@ -604,6 +659,7 @@ const setupLive2DCommandListener = () => {
+ }
+ 
+ onUnmounted(() => {
++  disposed = true
+   document.documentElement.classList.remove(petWindowClassName)
+ 
+   removeLive2DCommandListener?.()
+@@ -655,7 +711,64 @@ onMounted(() => {
+   >
+     <canvas id="canvas" class="live2d-canvas" />
+ 
+-    <section v-if="showHearingButton" class="pet-float-actions" @click.stop>
++    <button
++      class="pet-tts-launcher"
++      type="button"
++      data-pet-interactive
++      :disabled="passthrough || ttsBusy"
++      @pointerdown.stop
++      @pointerup.stop
++      @click.stop="openTtsDialog"
++    >
++      <i class="pi pi-volume-up" aria-hidden="true" />
++      语音测试
++    </button>
++
++    <section
++      v-if="ttsVisible"
++      class="pet-tts-overlay"
++      data-pet-interactive
++      @pointerdown.stop
++      @pointerup.stop
++      @click.stop
++      @wheel.stop
++      @contextmenu.stop.prevent
++      @keydown.esc.stop="closeTtsDialog"
++    >
++      <form
++        class="pet-tts-dialog"
++        role="dialog"
++        aria-modal="true"
++        aria-labelledby="tts-title"
++        @submit.prevent="submitTts"
++      >
++        <h2 id="tts-title">语音测试</h2>
++        <label for="tts-text">想让我说什么？</label>
++        <textarea
++          id="tts-text"
++          ref="ttsInput"
++          v-model="ttsText"
++          rows="4"
++          maxlength="2000"
++          placeholder="输入要播放的文本"
++          :disabled="ttsBusy"
++          @keydown.ctrl.enter.prevent="submitTts"
++          @keydown.meta.enter.prevent="submitTts"
++        />
++        <p class="pet-tts-hint" role="status" aria-live="polite">
++          {{ ttsBusy ? '正在生成语音，首次使用请稍等片刻…' : '使用当前语音插件的默认音色' }}
++        </p>
++        <p v-if="ttsError" class="pet-tts-error" role="alert">{{ ttsError }}</p>
++        <div class="pet-tts-buttons">
++          <button type="button" :disabled="ttsBusy" @click="closeTtsDialog">取消</button>
++          <button type="submit" class="pet-tts-confirm" :disabled="ttsBusy || !ttsText.trim()">
++            {{ ttsBusy ? '生成中…' : '确定并播放' }}
++          </button>
++        </div>
++      </form>
++    </section>
++
++    <section v-if="showHearingButton" class="pet-float-actions" data-pet-interactive @click.stop>
+       <button class="pet-float-action" type="button" @click="onHearingButtonClick">
+         <i class="pi pi-microphone" />
+         <span>听我说话</span>
+@@ -680,6 +793,7 @@ onMounted(() => {
+     <section
+       v-if="menuVisible"
+       class="pet-context-menu"
++      data-pet-interactive
+       :style="{ left: `${menuPosition.x}px`, top: `${menuPosition.y}px` }"
+       @click.stop
+       @contextmenu.prevent
+@@ -732,6 +846,105 @@ onMounted(() => {
+ </template>
+ 
+ <style scoped>
++.pet-tts-launcher {
++  position: absolute;
++  top: 12px;
++  right: 12px;
++  z-index: 3;
++  display: flex;
++  align-items: center;
++  gap: 6px;
++  padding: 8px 12px;
++  border: 1px solid rgba(255, 255, 255, 0.35);
++  border-radius: 18px;
++  background: rgba(24, 24, 28, 0.82);
++  color: #fff;
++  cursor: pointer;
++  -webkit-app-region: no-drag;
++}
++
++.pet-tts-overlay {
++  position: absolute;
++  inset: 0;
++  z-index: 5;
++  display: grid;
++  place-items: center;
++  padding: 12px;
++  background: rgba(0, 0, 0, 0.25);
++  -webkit-app-region: no-drag;
++}
++
++.pet-tts-dialog {
++  box-sizing: border-box;
++  width: 100%;
++  max-width: 360px;
++  max-height: calc(100vh - 24px);
++  overflow: auto;
++  padding: 16px;
++  border: 1px solid rgba(255, 255, 255, 0.25);
++  border-radius: 14px;
++  background: rgba(24, 24, 28, 0.96);
++  color: #fff;
++  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3);
++}
++
++.pet-tts-dialog h2 {
++  margin: 0 0 12px;
++  font-size: 16px;
++}
++.pet-tts-dialog label {
++  display: block;
++  margin-bottom: 8px;
++  font-size: 13px;
++}
++.pet-tts-dialog textarea {
++  box-sizing: border-box;
++  width: 100%;
++  padding: 10px;
++  resize: vertical;
++  border: 1px solid rgba(255, 255, 255, 0.3);
++  border-radius: 8px;
++  background: rgba(255, 255, 255, 0.08);
++  color: #fff;
++  font: inherit;
++  font-size: 14px;
++  user-select: text;
++}
++.pet-tts-dialog textarea:focus-visible {
++  outline: 2px solid #93c5fd;
++}
++.pet-tts-hint {
++  margin: 10px 0;
++  color: #c4c7ce;
++  font-size: 12px;
++}
++.pet-tts-error {
++  color: #ffaaaa;
++  font-size: 13px;
++  overflow-wrap: anywhere;
++}
++.pet-tts-buttons {
++  display: flex;
++  justify-content: flex-end;
++  gap: 8px;
++}
++.pet-tts-buttons button {
++  padding: 8px 12px;
++  border: 1px solid rgba(255, 255, 255, 0.25);
++  border-radius: 8px;
++  background: transparent;
++  color: #fff;
++  cursor: pointer;
++}
++.pet-tts-buttons .pet-tts-confirm {
++  background: #2563eb;
++}
++.pet-tts-buttons button:disabled,
++.pet-tts-launcher:disabled {
++  opacity: 0.55;
++  cursor: default;
++}
++
+ .pet-stage {
+   width: 100vw;
+   height: 100vh;
+diff --git a/apps/body/src/shared/datas/ipc.ts b/apps/body/src/shared/datas/ipc.ts
+index bcbff92..2bad235 100644
+--- a/apps/body/src/shared/datas/ipc.ts
++++ b/apps/body/src/shared/datas/ipc.ts
+@@ -124,6 +124,9 @@ export const defineHandlers = {
+     }
+   },
+   live2d: {
++    synthesizeTts: {
++      desc: '通过已安装的 TTS 插件合成语音'
++    },
+     getPetModels: {
+       desc: '获取Live2D模型列表'
+     },
