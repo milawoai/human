@@ -161,7 +161,8 @@ export class ToolConfigService {
   /**
    * 通过 dynamicImport 从外部包加载 BuiltinToolProvider。
    *
-   * 支持两种导出形态：
+   * 支持三种导出形态：
+   * - 工厂函数：() => BuiltinToolProvider（含具名 create 导出）
    * - 工厂对象：{ create(): BuiltinToolProvider }（推荐，cmux-tools 用此形态）
    * - 直接 provider 实例：BuiltinToolProvider（兼容）
    *
@@ -189,19 +190,25 @@ export class ToolConfigService {
         this.logger.error(`工具 ${toolId} 动态加载 provider 失败: 包 ${moduleName} 无导出 ${exportName || 'default'}`);
         return null;
       }
-      // 工厂对象形态
-      if (typeof (target as { create?: unknown }).create === 'function') {
-        const provider = (target as { create: () => BuiltinToolProvider }).create();
-        this.logger.log(`工具 ${toolId} 动态加载 provider 成功(工厂): ${moduleName}`);
-        return provider;
+      // 工厂函数、工厂对象、直接实例统一归一化，再校验 provider 的运行时形状。
+      let provider: unknown = target;
+      if (typeof target === 'function') {
+        provider = target.call(defaultExport ?? mod);
+      } else if (typeof (target as { create?: unknown }).create === 'function') {
+        provider = (target as { create: () => unknown }).create();
       }
-      // 直接 provider 实例形态
-      if (typeof (target as { createInstance?: unknown }).createInstance === 'function') {
-        this.logger.log(`工具 ${toolId} 动态加载 provider 成功(实例): ${moduleName}`);
-        return target as BuiltinToolProvider;
+      if (
+        provider !== null &&
+        typeof provider === 'object' &&
+        typeof (provider as BuiltinToolProvider).providerId === 'string' &&
+        (provider as BuiltinToolProvider).providerId.length > 0 &&
+        typeof (provider as BuiltinToolProvider).createInstance === 'function'
+      ) {
+        this.logger.log(`工具 ${toolId} 动态加载 provider 成功: ${moduleName}`);
+        return provider as BuiltinToolProvider;
       }
       this.logger.error(
-        `工具 ${toolId} 动态加载 provider 失败: ${moduleName}.${exportName || 'default'} 既非工厂也非 provider 实例`,
+        `工具 ${toolId} 动态加载 provider 失败: ${moduleName}.${exportName || 'default'} 未返回有效 provider（须含非空 providerId 与 createInstance）`,
       );
       return null;
     } catch (error) {

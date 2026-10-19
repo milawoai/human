@@ -23,6 +23,7 @@ import {
 import { PluginResolver } from '../src/motor/motor-tool-runner/core/plugin-resolver';
 import { ToolExecutor } from '../src/motor/motor-tool-runner/core/tool-executor';
 import { resolveCacheFile } from '../src/motor/motor-tool-runner/tts-cache.controller';
+import { ToolConfigService } from '../src/brain/tool-config/tool-config.service';
 
 async function main(): Promise<void> {
   // ──────────────────────────────────────────────
@@ -305,6 +306,40 @@ async function main(): Promise<void> {
     const condMod = await resolver.importModule('cond-exports-tool');
     assert.strictEqual((condMod.default as any)?.providerId, 'cond-tts', '顶层条件 exports 的 ESM 包应可加载');
     console.log('✓ PluginResolver：外部目录解析 / 加载 / 工厂 provider / 包内文件 / CJS 直接实例 / 顶层条件 exports');
+
+    // 经真实宿主加载器验证，而不是手动取导出并调用工厂。
+    const configService = new ToolConfigService();
+    const fixtureProvider = await configService['loadProviderFromModule'](
+      path.resolve(__dirname, '../test-fixtures/mock-tts-tool/index.js'), undefined, 'mock-tts',
+    );
+    assert.strictEqual(fixtureProvider?.providerId, 'mock-tts', '仓库 CJS mock 工厂须能由宿主加载');
+
+    const providerCode = '{ providerId: "loader-test", createInstance(d) { return { descriptor: d, status: "ready", execute: async () => ({ success: true }) }; } }';
+    const loaderCases: Array<{ name: string; code: string; ext: string; exportName?: string; valid: boolean }> = [
+      { name: 'esm-named-factory', ext: 'mjs', code: `export function create() { return ${providerCode}; }`, valid: true },
+      { name: 'esm-default-function', ext: 'mjs', code: `export default function () { return ${providerCode}; }`, valid: true },
+      { name: 'esm-default-object', ext: 'mjs', code: `export default { providerId: "loader-test", create() { return { ...${providerCode}, providerId: this.providerId }; } };`, valid: true },
+      { name: 'esm-direct', ext: 'mjs', code: `export default ${providerCode};`, valid: true },
+      { name: 'cjs-direct', ext: 'cjs', code: `module.exports = ${providerCode};`, valid: true },
+      { name: 'explicit-factory', ext: 'mjs', code: `export function buildProvider() { return ${providerCode}; }`, exportName: 'buildProvider', valid: true },
+      { name: 'cjs-named-object', ext: 'cjs', code: `module.exports = { custom: ${providerCode} };`, exportName: 'custom', valid: true },
+      { name: 'invalid-factory', ext: 'mjs', code: 'export default { create() { return {}; } };', valid: false },
+      { name: 'null-factory', ext: 'mjs', code: 'export function create() { return null; }', valid: false },
+      { name: 'throwing-factory', ext: 'mjs', code: 'export function create() { throw new Error("fixture failure"); }', valid: false },
+    ];
+    for (const test of loaderCases) {
+      const entryPath = path.join(tmpRoot, `${test.name}.${test.ext}`);
+      fs.writeFileSync(entryPath, test.code);
+      const loaded = await configService['loadProviderFromModule'](entryPath, test.exportName, 'loader-test');
+      if (!test.valid) {
+        assert.strictEqual(loaded, null, `${test.name}: 无效工厂应拒绝加载`);
+        continue;
+      }
+      assert.strictEqual(loaded?.providerId, 'loader-test', `${test.name}: 宿主应成功加载 provider`);
+      const instance = loaded!.createInstance(legacyDescriptor);
+      assert.strictEqual(instance.descriptor, legacyDescriptor, `${test.name}: provider 实例应可创建工具`);
+    }
+    console.log('✓ 宿主 provider 加载（仓库 mock / CJS / ESM / 函数与对象工厂 / 具名导出 / 无效工厂）');
 
     // ──────────────────────────────────────────────
     // 3.5 tts-cache 边界（回归 4：符号链接逃逸）
