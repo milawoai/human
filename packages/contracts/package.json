@@ -1,0 +1,16 @@
+{
+  "name": "@human/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Human 工具插件类别契约 —— 类别定义、Schema 校验、契约注册表（宿主与插件共用）",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  }
+}

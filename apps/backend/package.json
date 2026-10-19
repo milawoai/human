@@ -18,11 +18,13 @@
     "verify:brain-init-config": "ts-node scripts/brain-init-config-smoke.ts",
     "verify:model-config-profiles": "ts-node scripts/model-config-profiles-smoke.ts",
     "verify:memory-smoke": "ts-node scripts/memory-smoke.ts",
+    "verify:contracts": "ts-node scripts/contracts-smoke.ts",
     "clean": "rm -rf dist",
     "test": "jest"
   },
   "dependencies": {
     "@human/cmux-tools": "1.0.0",
+    "@human/contracts": "1.0.0",
     "@earendil-works/pi-agent-core": "^1.2.0",
     "@earendil-works/pi-ai": "^1.2.0",
     "@earendil-works/pi-coding-agent": "^1.2.0",

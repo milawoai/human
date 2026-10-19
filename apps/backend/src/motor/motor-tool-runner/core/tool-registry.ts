@@ -325,6 +325,9 @@ export class ToolRegistry {
       healthCheckType: healthCheck?.type,
       healthCheckEndpoint: healthCheck?.endpoint,
       status: tool.status,
+      category: tool.descriptor.category,
+      contractVersion: tool.descriptor.contractVersion,
+      origin: tool.descriptor.origin,
       registeredAt: 0, // TODO: 可以记录注册时间
     };
   }

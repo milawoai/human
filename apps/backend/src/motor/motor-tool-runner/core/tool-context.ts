@@ -14,6 +14,12 @@ export interface ToolContext {
   causationId?: string;
   /** 用户 ID */
   userId?: string;
+  /**
+   * 宿主对外的 HTTP 基地址（如 http://127.0.0.1:12002）。
+   * 由 ToolExecutor 注入；插件用它构造 Body 可访问的资源 URL
+   * （如 TTS 音频落盘后拼 /tts-cache/... 链接）。
+   */
+  publicBaseUrl?: string;
   /** 元数据 */
   metadata?: Record<string, unknown>;
 }
@@ -40,6 +46,7 @@ export const ToolErrorCodes = {
   EXECUTION_ERROR: 'EXECUTION_ERROR',
   EXECUTION_BLOCKED: 'EXECUTION_BLOCKED',  // 被 beforeToolCall 钩子阻止
   PARAMETER_VALIDATION_ERROR: 'PARAMETER_VALIDATION_ERROR',
+  CONTRACT_VIOLATION: 'CONTRACT_VIOLATION',  // 工具输出不符合其声明的契约（returns Schema）
   TIMEOUT: 'TIMEOUT',
   CANCELLED: 'CANCELLED',
 } as const;

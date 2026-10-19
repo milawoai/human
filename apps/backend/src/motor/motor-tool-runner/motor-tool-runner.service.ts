@@ -222,7 +222,7 @@ export class MotorToolRunnerService implements OnModuleInit, OnModuleDestroy, In
       }
 
       case MOTOR_TOPICS.TOOL_LIST: {
-        const payload = message.payload as { detailed?: boolean } | undefined;
+        const payload = message.payload as { detailed?: boolean; category?: string } | undefined;
         const result = this.handler.handleList(payload);
         return { success: true, data: result };
       }

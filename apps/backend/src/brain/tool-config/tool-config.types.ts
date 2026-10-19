@@ -4,8 +4,11 @@
  * 定义 tools/ 目录下 JSON 配置文件的 TypeScript 类型
  */
 
-/** 工具类型 */
+/** 工具类型（执行方式） */
 export type ToolConfigType = 'builtin' | 'process' | 'shell';
+
+/** 工具来源（与执行方式正交）：core 宿主内置 | bundled 随工程分发 | installed 工程外安装 */
+export type ToolConfigOrigin = 'core' | 'bundled' | 'installed';
 
 /** 工具接口类型 */
 export type ToolInterfaceType = 'http' | 'websocket' | 'grpc' | 'stdin' | 'file' | 'process';
@@ -35,8 +38,9 @@ export interface ToolParameterSchema {
   required?: boolean;
   default?: unknown;
   description?: string;
-  maxLength?: number;
+  enum?: Array<string | number>;
   minLength?: number;
+  maxLength?: number;
   minimum?: number;
   maximum?: number;
 }
@@ -46,6 +50,8 @@ export interface ToolCapabilityConfig {
   name: string;
   description?: string;
   parameters?: Record<string, ToolParameterSchema>;
+  /** 返回值 Schema（字段名 → Schema）；宿主在调用时据此校验输出 */
+  returns?: Record<string, ToolParameterSchema>;
   interface?: string;
 }
 
@@ -108,6 +114,15 @@ export interface ToolConfig {
   providerModule?: string;
   /** provider 在包中导出的名称（配合 providerModule 使用，默认 'default'） */
   providerExport?: string;
+  /**
+   * 类别契约（如 'tts'）。声明后加载时经 @human/contracts 注册表校验：
+   * 必选能力齐全、版本已注册；调用时出入参按能力 Schema 校验。
+   */
+  category?: string;
+  /** 类别契约版本（如 '1.0'），声明 category 时必填 */
+  contractVersion?: string;
+  /** 工具来源：core / bundled / installed（与 type 执行方式正交） */
+  origin?: ToolConfigOrigin;
 }
 
 /**

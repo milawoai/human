@@ -15,6 +15,7 @@ import {
   ToolResult,
 } from './tool-descriptor';
 import { ToolContext, ToolErrorCodes, generateSessionId } from './tool-context';
+import { validateFields, ContractFieldSchema } from '@human/contracts';
 
 /** 执行钩子 */
 export interface ToolExecutorHooks {
@@ -92,10 +93,10 @@ export class ToolExecutor {
     }
 
     // 检查工具是否支持该能力
-    const hasCapability = tool.descriptor.capabilities.some(
+    const capabilityDef = tool.descriptor.capabilities.find(
       (c) => c.name === capability,
     );
-    if (!hasCapability) {
+    if (!capabilityDef) {
       const result: ToolResult = {
         success: false,
         error: {
@@ -104,6 +105,26 @@ export class ToolExecutor {
         },
       };
       return result;
+    }
+
+    // 调用时入参校验（按 manifest 声明的 parametersSchema，宽松策略：
+    // 只校验声明过的字段，可选字段缺省不报错 —— 与存量工具声明兼容）
+    if (capabilityDef.parametersSchema && Object.keys(capabilityDef.parametersSchema).length > 0) {
+      const check = validateFields(
+        params,
+        capabilityDef.parametersSchema as Record<string, ContractFieldSchema>,
+        'parameters',
+      );
+      if (!check.ok) {
+        const result: ToolResult = {
+          success: false,
+          error: {
+            code: ToolErrorCodes.PARAMETER_VALIDATION_ERROR,
+            message: `工具 ${toolId}.${capability} 参数校验失败: ${check.errors.join('; ')}`,
+          },
+        };
+        return result;
+      }
     }
 
     // 获取扩展上下文
@@ -150,8 +171,35 @@ export class ToolExecutor {
     const startTime = Date.now();
 
     try {
+      // 注入宿主对外 HTTP 基地址（插件用它构造 Body 可访问的资源 URL，如 TTS 音频）
+      const effectiveContext = Object.assign({}, context, {
+        publicBaseUrl: extendedContext.publicBaseUrl ?? this.publicBaseUrl,
+      });
+
       // 执行工具能力（传递完整上下文，包含 toolCallId, signal, onUpdate）
-      const result = await tool.execute(capability, params, context);
+      let result = await tool.execute(capability, params, effectiveContext);
+
+      // 调用时出参校验（按 manifest 声明的 returnsSchema）：
+      // 插件输出不合契约即判失败，坏结果不向总线扩散（运行层兜底）
+      if (result.success && capabilityDef.returnsSchema && Object.keys(capabilityDef.returnsSchema).length > 0) {
+        const check = validateFields(
+          result.data,
+          capabilityDef.returnsSchema as Record<string, ContractFieldSchema>,
+          'result',
+        );
+        if (!check.ok) {
+          this.logger.error(
+            `工具 ${toolId}.${capability} 输出不符合契约: ${check.errors.join('; ')}`,
+          );
+          result = {
+            success: false,
+            error: {
+              code: ToolErrorCodes.CONTRACT_VIOLATION,
+              message: `工具 ${toolId}.${capability} 输出不符合契约: ${check.errors.join('; ')}`,
+            },
+          };
+        }
+      }
 
       // 执行后钩子
       if (effectiveHooks?.afterToolCall) {
@@ -208,6 +256,14 @@ export class ToolExecutor {
         },
       };
     }
+  }
+
+  /**
+   * 宿主对外 HTTP 基地址（TTS 音频等静态资源经 /tts-cache 暴露给 Body）
+   */
+  private get publicBaseUrl(): string {
+    const port = process.env.PORT ?? '12002';
+    return `http://127.0.0.1:${port}`;
   }
 
   /**

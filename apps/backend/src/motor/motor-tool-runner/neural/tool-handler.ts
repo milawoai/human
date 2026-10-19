@@ -52,16 +52,29 @@ export class ToolHandler {
 
   /**
    * 处理 motor.tool.list 查询
+   *
+   * @param payload.detailed 返回完整元数据
+   * @param payload.category 按类别契约过滤（如 'tts'）——上层「按类别发现能力」的入口
    */
-  handleList(payload?: { detailed?: boolean }): { tools: ToolDescriptor[] | ToolMetadata[] } {
+  handleList(payload?: { detailed?: boolean; category?: string }): {
+    tools: ToolDescriptor[] | ToolMetadata[];
+  } {
+    const category = payload?.category;
+
     if (payload?.detailed) {
-      const metadata = this.registry.listMetadata();
-      this.logger.debug(`查询工具列表(详细): ${metadata.length} 个`);
+      let metadata = this.registry.listMetadata();
+      if (category) {
+        metadata = metadata.filter((m) => m.category === category);
+      }
+      this.logger.debug(`查询工具列表(详细): ${metadata.length} 个${category ? ` (category=${category})` : ''}`);
       return { tools: metadata as any };
     }
 
-    const tools = this.registry.listDescriptors();
-    this.logger.debug(`查询工具列表: ${tools.length} 个`);
+    let tools = this.registry.listDescriptors();
+    if (category) {
+      tools = tools.filter((t) => t.category === category);
+    }
+    this.logger.debug(`查询工具列表: ${tools.length} 个${category ? ` (category=${category})` : ''}`);
     return { tools };
   }
 

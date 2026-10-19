@@ -32,6 +32,8 @@ import type {
   ToolDescriptor,
 } from '@/motor/motor-tool-runner/core/tool-descriptor';
 import type { ToolContext } from '@/motor/motor-tool-runner/core/tool-context';
+import { createDefaultRegistry, ContractRegistry } from '@human/contracts';
+import { defaultPluginResolver } from '@/motor/motor-tool-runner/core/plugin-resolver';
 
 @Injectable()
 export class ToolConfigService {
@@ -39,6 +41,9 @@ export class ToolConfigService {
 
   /** 配置目录路径 */
   private readonly toolsDir: string;
+
+  /** 类别契约注册表（内置全部已发布契约；Motor 对具体类别零感知） */
+  private readonly contractRegistry: ContractRegistry = createDefaultRegistry();
 
   constructor() {
     this.toolsDir = path.join(os.homedir(), DEFAULT_TOOLS_DIR);
@@ -126,6 +131,23 @@ export class ToolConfigService {
           }
         }
         const instance = this.toToolInstance(config, [...builtinProviders, ...dynamicProviders]);
+
+        // 类别契约校验（仅对声明了 category 的工具生效）：
+        // 不合契约（缺必选能力/版本未注册）则跳过加载，不阻断其他工具
+        const check = this.contractRegistry.validateTool(instance.descriptor);
+        if (!check.ok) {
+          this.logger.error(
+            `工具 ${config.id} 未通过类别契约校验 (${config.category}@${config.contractVersion ?? '未声明版本'}): ` +
+              `${check.errors.join('; ')}，已跳过加载`,
+          );
+          continue;
+        }
+        if (check.contract) {
+          this.logger.log(
+            `工具 ${config.id} 通过契约校验: ${check.contract.category}@${check.contract.version}`,
+          );
+        }
+
         tools.push(instance);
       }
     }
@@ -148,11 +170,10 @@ export class ToolConfigService {
     exportName: string | undefined,
     toolId: string,
   ): Promise<BuiltinToolProvider | null> {
-    const dynamicImport = <T = unknown>(specifier: string): Promise<T> =>
-      new Function('specifier', 'return import(specifier)')(specifier);
-
     try {
-      const mod = (await dynamicImport(moduleName)) as Record<string, unknown>;
+      // 经 PluginResolver 解析入口（宿主 node_modules → 插件根目录 ~/.ai_secretary/plugins），
+      // 使工程外安装的插件包可被加载
+      const mod = await defaultPluginResolver.importModule(moduleName);
       const target = mod[exportName || 'default'];
       if (!target) {
         this.logger.error(`工具 ${toolId} 动态加载 provider 失败: 包 ${moduleName} 无导出 ${exportName || 'default'}`);
@@ -306,6 +327,7 @@ export class ToolConfigService {
       name: cap.name,
       description: cap.description,
       parametersSchema: cap.parameters as Record<string, unknown>,
+      returnsSchema: cap.returns as Record<string, unknown>,
     }));
 
     const events: ToolEvent[] = (config.events || []).map(ev => ({
@@ -357,6 +379,9 @@ export class ToolConfigService {
       events,
       providerModule: config.providerModule,
       providerExport: config.providerExport,
+      category: config.category,
+      contractVersion: config.contractVersion,
+      origin: config.origin,
     };
 
     // 如果是 builtin 类型，尝试使用 provider
@@ -598,7 +623,7 @@ export class ToolConfigService {
    * 但 **enabled 字段保留用户磁盘已有值**（启用状态是用户的运行时开关，
    * 不应被包的出厂默认值重置；首次生成时用包的默认值）。
    *
-   * @param moduleName 包名（须在 backend dependencies 里，可被 require.resolve）
+   * @param moduleName 包名（在 backend dependencies 或插件根目录中可被解析）
    * @param toolId 工具 id（同时是 config 文件名 <id>.json）
    */
   async syncPackageToolConfig(
@@ -609,10 +634,9 @@ export class ToolConfigService {
     data?: { firstInstall: boolean; enabled: boolean; capabilities: number; moduleName: string };
     error?: { code: string; message: string };
   }> {
-    let pkgConfigPath: string;
-    try {
-      pkgConfigPath = require.resolve(`${moduleName}/config/${toolId}.json`);
-    } catch {
+    // 经 PluginResolver 解析（支持工程外插件根目录中的包）
+    const pkgConfigPath = defaultPluginResolver.resolvePackageFile(moduleName, `config/${toolId}.json`);
+    if (!pkgConfigPath) {
       return {
         success: false,
         error: {

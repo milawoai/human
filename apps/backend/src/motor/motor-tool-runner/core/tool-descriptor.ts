@@ -9,8 +9,11 @@ import { ToolContext } from './tool-context';
 // Re-export ToolContext for external use
 export type { ToolContext } from './tool-context';
 
-/** 工具类型 */
+/** 工具类型（执行方式） */
 export type ToolType = 'builtin' | 'process' | 'shell';
+
+/** 工具来源（与执行方式正交）：core 宿主内置 | bundled 随工程分发 | installed 工程外安装 */
+export type ToolOrigin = 'core' | 'bundled' | 'installed';
 
 /** 工具状态 */
 export type ToolStatus =
@@ -125,6 +128,12 @@ export interface ToolDescriptor {
   providerModule?: string;
   /** provider 在包中导出的名称（配合 providerModule，默认 'default'） */
   providerExport?: string;
+  /** 类别契约（如 'tts'）：声明后须满足对应契约（@human/contracts 注册表校验） */
+  category?: string;
+  /** 类别契约版本（如 '1.0'），声明 category 时必填 */
+  contractVersion?: string;
+  /** 工具来源：core / bundled / installed（与 type 执行方式正交） */
+  origin?: ToolOrigin;
 }
 
 /** 工具元数据 — 用于工具注册表管理 */
@@ -154,6 +163,12 @@ export interface ToolMetadata {
   healthCheckEndpoint?: string;
   /** 状态 */
   status: ToolStatus;
+  /** 类别契约（声明了 category 的工具才有） */
+  category?: string;
+  /** 类别契约版本 */
+  contractVersion?: string;
+  /** 工具来源 */
+  origin?: ToolOrigin;
   /** 注册时间 */
   registeredAt?: number;
 }

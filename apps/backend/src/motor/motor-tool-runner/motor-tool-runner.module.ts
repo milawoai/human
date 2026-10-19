@@ -10,12 +10,14 @@ import { ToolExecutor } from './core/tool-executor';
 import { ToolAdapterService } from './core/tool-adapter.service';
 import { MotorGateway } from './neural/motor-gateway';
 import { ToolHandler } from './neural/tool-handler';
+import { TtsCacheController } from './tts-cache.controller';
 import { NeuralModule } from '../../neural/neural.module';
 import { PiCodingProvider } from './providers/pi-coding-provider';
 import { SystemSessionProvider } from './providers/system-session-provider';
 
 @Module({
   imports: [NeuralModule],
+  controllers: [TtsCacheController],
   providers: [
     MotorToolRunnerService,
     ToolRegistry,
