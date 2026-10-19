@@ -32,7 +32,7 @@ import type {
   ToolDescriptor,
 } from '@/motor/motor-tool-runner/core/tool-descriptor';
 import type { ToolContext } from '@/motor/motor-tool-runner/core/tool-context';
-import { createDefaultRegistry, ContractRegistry } from '@human/contracts';
+import { getDefaultRegistry, ContractRegistry } from '@human/contracts';
 import { defaultPluginResolver } from '@/motor/motor-tool-runner/core/plugin-resolver';
 
 @Injectable()
@@ -42,8 +42,11 @@ export class ToolConfigService {
   /** 配置目录路径 */
   private readonly toolsDir: string;
 
-  /** 类别契约注册表（内置全部已发布契约；Motor 对具体类别零感知） */
-  private readonly contractRegistry: ContractRegistry = createDefaultRegistry();
+  /**
+   * 类别契约注册表（进程级单例，与 ToolExecutor 共用同一实例）：
+   * 加载时通过的契约 = 执行时强制的基线，Motor 对具体类别零感知。
+   */
+  private readonly contractRegistry: ContractRegistry = getDefaultRegistry();
 
   constructor() {
     this.toolsDir = path.join(os.homedir(), DEFAULT_TOOLS_DIR);
@@ -174,7 +177,14 @@ export class ToolConfigService {
       // 经 PluginResolver 解析入口（宿主 node_modules → 插件根目录 ~/.ai_secretary/plugins），
       // 使工程外安装的插件包可被加载
       const mod = await defaultPluginResolver.importModule(moduleName);
-      const target = mod[exportName || 'default'];
+      // namespace 保留原生形态（见 PluginResolver.importModule 约定）：
+      // - 显式指定导出名：优先具名导出，回退 default 上的同名属性
+      // - 未指定：优先具名 create 工厂，回退 default（CJS 的 module.exports 即在此）
+      //   —— 覆盖「ESM 具名 create 工厂」「CJS/ESM default 工厂」「CJS 直接 provider 实例」三种形态
+      const defaultExport = mod.default;
+      const target = exportName
+        ? (mod[exportName] ?? (defaultExport as Record<string, unknown> | undefined)?.[exportName])
+        : (mod.create ?? defaultExport);
       if (!target) {
         this.logger.error(`工具 ${toolId} 动态加载 provider 失败: 包 ${moduleName} 无导出 ${exportName || 'default'}`);
         return null;

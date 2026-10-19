@@ -22,3 +22,17 @@ export function createDefaultRegistry(): ContractRegistry {
   registry.register(TTS_CONTRACT_V1);
   return registry;
 }
+
+let defaultRegistry: ContractRegistry | undefined;
+
+/**
+ * 进程级默认注册表单例。
+ * 宿主内多处（加载时校验、执行时校验）必须引用同一实例，
+ * 以保证「加载时通过的契约」与「执行时强制的基线」一致。
+ */
+export function getDefaultRegistry(): ContractRegistry {
+  if (!defaultRegistry) {
+    defaultRegistry = createDefaultRegistry();
+  }
+  return defaultRegistry;
+}

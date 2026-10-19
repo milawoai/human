@@ -1,6 +1,6 @@
 {
   "name": "mock-tts-tool",
   "version": "0.1.0",
-  "description": "mock TTS 插件（P4 替换验证用，零依赖）",
-  "main": "dist/index.js"
+  "description": "mock TTS 插件（P4 替换验证用，零依赖）：真实生成 WAV 并经 /tts-cache 提供 URL",
+  "main": "index.js"
 }

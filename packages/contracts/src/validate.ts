@@ -103,6 +103,12 @@ export function validateFields(
           errors.push(`${label}[${i}] 应为 ${field.items.type}`);
           break;
         }
+        // object 元素的字段校验（如 voices[].voiceId 必填非空）
+        if (field.items.type === 'object' && field.items.fields) {
+          const itemCheck = validateFields(arr[i], field.items.fields, `${label}[${i}]`);
+          errors.push(...itemCheck.errors);
+          if (!itemCheck.ok) break;
+        }
       }
     }
   }

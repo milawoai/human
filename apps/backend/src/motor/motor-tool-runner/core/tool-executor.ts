@@ -13,9 +13,15 @@ import { MotorGateway } from '../neural/motor-gateway';
 import {
   MOTOR_TOPICS,
   ToolResult,
+  ToolDescriptor,
 } from './tool-descriptor';
 import { ToolContext, ToolErrorCodes, generateSessionId } from './tool-context';
-import { validateFields, ContractFieldSchema } from '@human/contracts';
+import {
+  validateFields,
+  getDefaultRegistry,
+  ContractFieldSchema,
+  CapabilityContract,
+} from '@human/contracts';
 
 /** 执行钩子 */
 export interface ToolExecutorHooks {
@@ -107,24 +113,44 @@ export class ToolExecutor {
       return result;
     }
 
-    // 调用时入参校验（按 manifest 声明的 parametersSchema，宽松策略：
-    // 只校验声明过的字段，可选字段缺省不报错 —— 与存量工具声明兼容）
-    if (capabilityDef.parametersSchema && Object.keys(capabilityDef.parametersSchema).length > 0) {
-      const check = validateFields(
-        params,
-        capabilityDef.parametersSchema as Record<string, ContractFieldSchema>,
-        'parameters',
+    // 契约基线解析：声明了 category 的工具，其能力出入参以注册表契约为强制基线
+    // （插件 manifest 的 Schema 只能补充约束，不能替代或放松契约 —— 防止省略 Schema 绕过校验）
+    let contractCap: CapabilityContract | undefined;
+    if (tool.descriptor.category) {
+      const contract = getDefaultRegistry().get(
+        tool.descriptor.category,
+        tool.descriptor.contractVersion ?? '',
       );
-      if (!check.ok) {
+      if (!contract) {
+        // fail-closed：能加载到这里的类别工具理论上已通过加载时校验，
+        // 若运行时契约不可得（注册表被裁剪等），拒绝执行而非放行
         const result: ToolResult = {
           success: false,
           error: {
-            code: ToolErrorCodes.PARAMETER_VALIDATION_ERROR,
-            message: `工具 ${toolId}.${capability} 参数校验失败: ${check.errors.join('; ')}`,
+            code: ToolErrorCodes.CONTRACT_VIOLATION,
+            message: `工具 ${toolId} 声明契约 ${tool.descriptor.category}@${tool.descriptor.contractVersion ?? '未声明版本'} 不可用，拒绝执行`,
           },
         };
         return result;
       }
+      contractCap = contract.capabilities.find((c) => c.name === capability);
+    }
+
+    // 调用时入参校验：契约 Schema（强制基线）+ manifest Schema（补充约束）均须通过；
+    // 宽松策略只校验声明过的字段，与无类别的存量工具兼容
+    const paramErrors = this.checkSchemas(params, [
+      { origin: '契约', schema: contractCap?.parameters as Record<string, ContractFieldSchema> | undefined },
+      { origin: '声明', schema: capabilityDef.parametersSchema as Record<string, ContractFieldSchema> | undefined },
+    ], 'parameters');
+    if (paramErrors.length > 0) {
+      const result: ToolResult = {
+        success: false,
+        error: {
+          code: ToolErrorCodes.PARAMETER_VALIDATION_ERROR,
+          message: `工具 ${toolId}.${capability} 参数校验失败: ${paramErrors.join('; ')}`,
+        },
+      };
+      return result;
     }
 
     // 获取扩展上下文
@@ -179,23 +205,22 @@ export class ToolExecutor {
       // 执行工具能力（传递完整上下文，包含 toolCallId, signal, onUpdate）
       let result = await tool.execute(capability, params, effectiveContext);
 
-      // 调用时出参校验（按 manifest 声明的 returnsSchema）：
+      // 调用时出参校验：契约 Schema（强制基线）+ manifest Schema（补充约束）。
       // 插件输出不合契约即判失败，坏结果不向总线扩散（运行层兜底）
-      if (result.success && capabilityDef.returnsSchema && Object.keys(capabilityDef.returnsSchema).length > 0) {
-        const check = validateFields(
-          result.data,
-          capabilityDef.returnsSchema as Record<string, ContractFieldSchema>,
-          'result',
-        );
-        if (!check.ok) {
+      if (result.success) {
+        const returnErrors = this.checkSchemas(result.data, [
+          { origin: '契约', schema: contractCap?.returns as Record<string, ContractFieldSchema> | undefined },
+          { origin: '声明', schema: capabilityDef.returnsSchema as Record<string, ContractFieldSchema> | undefined },
+        ], 'result');
+        if (returnErrors.length > 0) {
           this.logger.error(
-            `工具 ${toolId}.${capability} 输出不符合契约: ${check.errors.join('; ')}`,
+            `工具 ${toolId}.${capability} 输出不符合契约: ${returnErrors.join('; ')}`,
           );
           result = {
             success: false,
             error: {
               code: ToolErrorCodes.CONTRACT_VIOLATION,
-              message: `工具 ${toolId}.${capability} 输出不符合契约: ${check.errors.join('; ')}`,
+              message: `工具 ${toolId}.${capability} 输出不符合契约: ${returnErrors.join('; ')}`,
             },
           };
         }
@@ -256,6 +281,26 @@ export class ToolExecutor {
         },
       };
     }
+  }
+
+  /**
+   * 依次执行多份 Schema 校验，汇总错误（带来源标注）。
+   * 空 Schema / 未声明跳过 —— 保证「契约未定义该字段且插件也未声明」时不误伤。
+   */
+  private checkSchemas(
+    value: unknown,
+    schemas: Array<{ origin: string; schema?: Record<string, ContractFieldSchema> }>,
+    rootName: string,
+  ): string[] {
+    const errors: string[] = [];
+    for (const { origin, schema } of schemas) {
+      if (!schema || Object.keys(schema).length === 0) continue;
+      const check = validateFields(value, schema, rootName);
+      for (const err of check.errors) {
+        errors.push(`[${origin}] ${err}`);
+      }
+    }
+    return errors;
   }
 
   /**

@@ -24,8 +24,15 @@ export interface ContractFieldSchema {
   maxLength?: number;
   minimum?: number;
   maximum?: number;
-  /** array 元素类型（一层，简化） */
-  items?: { type: ContractFieldSchema['type'] };
+  /** array 元素约束（一层：元素类型，object 元素可再约束字段） */
+  items?: {
+    type: ContractFieldSchema['type'];
+    /**
+     * type 为 object 时的元素字段 Schema（一层）。
+     * 用于强制数组元素必须含关键标识（如 voices[].voiceId）。
+     */
+    fields?: Record<string, ContractFieldSchema>;
+  };
 }
 
 /** 能力契约 */

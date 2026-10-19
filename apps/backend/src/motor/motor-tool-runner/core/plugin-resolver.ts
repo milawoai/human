@@ -66,12 +66,17 @@ export class PluginResolver {
   }
 
   /**
-   * 动态导入插件包，返回其导出对象。
+   * 动态导入插件包，返回其模块命名空间（不做展开）。
    *
    * - 以入口绝对路径的 file:// URL 导入，绕开调用方模块解析限制
    * - new Function 包裹防止打包器静态分析（沿用 pi-coding-provider 先例）
-   * - CJS 包被 import 后整体挂在 namespace.default，做一层展开
-   *   使「工厂对象 { create() }」「直接 provider 实例」两种形态都能被取出
+   * - 保留 namespace 原样返回：CJS 包经 import 后 module.exports 挂在
+   *   namespace.default（Node 亦会尽可能补出具名导出），ESM 包保持原生形态。
+   *   两种形态的语义差异由调用方（loadProviderFromModule）统一消化
+   *
+   * @returns 模块命名空间对象。约定：
+   *   - ESM 包：具名导出 + default 均可直接读取
+   *   - CJS 包：module.exports 位于 default（工厂对象、provider 实例均如此）
    */
   async importModule(specifier: string): Promise<Record<string, unknown>> {
     const entry = this.resolveEntry(specifier);
@@ -81,17 +86,7 @@ export class PluginResolver {
       );
     }
     const dynamicImport = new Function('u', 'return import(u)') as (u: string) => Promise<unknown>;
-    const mod = (await dynamicImport(pathToFileURL(entry).href)) as Record<string, unknown>;
-
-    // CJS 互操作：namespace 仅含 default 且为对象时展开
-    if (
-      mod.default &&
-      typeof mod.default === 'object' &&
-      Object.keys(mod).every((k) => k === 'default' || k.startsWith('_'))
-    ) {
-      return mod.default as Record<string, unknown>;
-    }
-    return mod;
+    return (await dynamicImport(pathToFileURL(entry).href)) as Record<string, unknown>;
   }
 
   /** 从单个插件根目录解析包入口 */
@@ -114,24 +109,46 @@ export class PluginResolver {
     return fs.existsSync(entry) ? entry : null;
   }
 
-  /** package.json → 入口：exports["."] > module > main > dist/index.js */
+  /**
+   * package.json → 入口：exports > module > main > dist/index.js。
+   *
+   * exports 支持两种合法形态（按 Node 解析规则近似）：
+   * - 点位条件：{ ".": "./index.js" } / { ".": { "import": "./e.mjs", "require": "./c.js" } }
+   * - 顶层条件：{ "import": "./e.mjs", "require": "./c.js" }（无 "." 键时整个 exports 即条件表）
+   * 条件取值顺序：import > node > default > require（宿主经动态 import 加载，import 优先）。
+   */
   private pickEntry(pkg: Record<string, unknown>): string | null {
     const exp = pkg.exports;
     if (typeof exp === 'string') return exp;
     if (exp && typeof exp === 'object') {
-      const dot = (exp as Record<string, unknown>)['.'];
+      const exportsObj = exp as Record<string, unknown>;
+      const dot = exportsObj['.'];
       if (typeof dot === 'string') return dot;
-      if (dot && typeof dot === 'object') {
-        const cond = (dot as Record<string, unknown>);
-        const picked = cond.import ?? cond.default ?? cond.require;
-        if (typeof picked === 'string') return picked;
-      }
+      // 点位条件 或 顶层条件（无 "." 键）
+      const picked = dot !== undefined ? this.pickCondition(dot) : this.pickCondition(exportsObj);
+      if (typeof picked === 'string') return picked;
     }
     const module_ = pkg.module;
     if (typeof module_ === 'string') return module_;
     const main = pkg.main;
     if (typeof main === 'string') return main;
     return 'dist/index.js';
+  }
+
+  /** 条件表 → 入口字符串；支持一层嵌套（如 node 条件内再含 import/default） */
+  private pickCondition(cond: unknown): string | null {
+    if (typeof cond === 'string') return cond;
+    if (!cond || typeof cond !== 'object') return null;
+    const obj = cond as Record<string, unknown>;
+    for (const key of ['import', 'node', 'default', 'require']) {
+      const value = obj[key];
+      if (typeof value === 'string') return value;
+      if (value && typeof value === 'object') {
+        const nested = this.pickCondition(value);
+        if (nested) return nested;
+      }
+    }
+    return null;
   }
 }
 

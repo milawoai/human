@@ -18,7 +18,7 @@
     "verify:brain-init-config": "ts-node scripts/brain-init-config-smoke.ts",
     "verify:model-config-profiles": "ts-node scripts/model-config-profiles-smoke.ts",
     "verify:memory-smoke": "ts-node scripts/memory-smoke.ts",
-    "verify:contracts": "ts-node scripts/contracts-smoke.ts",
+    "verify:contracts": "ts-node -r tsconfig-paths/register scripts/contracts-smoke.ts",
     "clean": "rm -rf dist",
     "test": "jest"
   },

@@ -42,8 +42,18 @@ export const TTS_CONTRACT_V1: ToolContract = {
         voices: {
           type: 'array',
           required: true,
-          items: { type: 'object' },
-          description: '音色列表，元素建议含 voiceId/name/language 等字段',
+          items: {
+            type: 'object',
+            fields: {
+              voiceId: {
+                type: 'string',
+                required: true,
+                minLength: 1,
+                description: '音色标识（可传给 tts.synthesize 的 voiceId）',
+              },
+            },
+          },
+          description: '音色列表，元素须含非空 voiceId，建议另含 name/language 等字段',
         },
       },
     },
