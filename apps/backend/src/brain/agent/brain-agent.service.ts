@@ -71,7 +71,7 @@ const PI_AGENT_CORE_MODULE = '@earendil-works/pi-agent-core';
 const dynamicImport = <T = unknown>(specifier: string): Promise<T> =>
   new Function('s', 'return import(s)')(specifier) as Promise<T>;
 
-type ToolPreset = 'default' | 'coding' | 'coding_only';
+type ToolPreset = 'none' | 'default' | 'coding' | 'coding_only';
 
 @Injectable()
 export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
@@ -263,6 +263,7 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
     toolPreset: ToolPreset;
     codingCwd?: string;
   }): Promise<AgentTool[]> {
+    if (options.toolPreset === 'none') return [];
     // 注入当前工作目录到 context metadata，供 builtin 工具使用
     const hooks = {
       beforeToolCall: async (context: any) => {
@@ -303,6 +304,7 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
     enableCodingTools: boolean | undefined,
   ): ToolPreset {
     if (forcedToolPreset) return forcedToolPreset;
+    if (requestedToolPreset === 'none') return 'none';
     if (requestedToolPreset === 'coding') return 'coding';
     if (requestedToolPreset === 'coding_only') return 'coding_only';
     if (enableCodingTools) return 'coding';

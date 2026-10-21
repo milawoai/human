@@ -1,0 +1,621 @@
+diff --git a/apps/body/package.json b/apps/body/package.json
+index 33e9ba1..1065940 100644
+--- a/apps/body/package.json
++++ b/apps/body/package.json
+@@ -12,6 +12,7 @@
+     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
+     "typecheck": "yarn typecheck:node && yarn typecheck:web",
+     "test:tts": "node --experimental-strip-types --test src/main/services/live2d/tts.test.ts",
++    "test:agent": "node --experimental-strip-types --test src/shared/agent-panel.test.ts src/main/services/agent/bridge.test.ts",
+     "start": "yarn electron-vite preview",
+     "dev": "yarn electron-vite dev",
+     "build": "yarn typecheck && yarn electron-vite build",
+diff --git a/apps/body/src/shared/datas/ipc.ts b/apps/body/src/shared/datas/ipc.ts
+index 2bad235..f27341b 100644
+--- a/apps/body/src/shared/datas/ipc.ts
++++ b/apps/body/src/shared/datas/ipc.ts
+@@ -8,6 +8,12 @@
+  */
+ 
+ export const defineHandlers = {
++  agent: {
++    openPanel: { desc: '打开 Agent 测试面板' },
++    run: { desc: '执行 Pi Agent 任务' },
++    listSessions: { desc: '查询 Agent 会话列表' },
++    getSession: { desc: '读取 Agent 会话历史' }
++  },
+   common: {
+     basicTest: {
+       desc: '测试'
+diff --git a/apps/body/src/renderer/src/router/index.ts b/apps/body/src/renderer/src/router/index.ts
+index 10874b4..d72fa74 100644
+--- a/apps/body/src/renderer/src/router/index.ts
++++ b/apps/body/src/renderer/src/router/index.ts
+@@ -9,6 +9,11 @@
+ import { createRouter, createWebHashHistory } from 'vue-router'
+ 
+ const routes = [
++  {
++    path: '/agent-panel',
++    name: 'agent-panel',
++    component: () => import('@renderer/pages/agent-panel/index.vue')
++  },
+   {
+     path: '/',
+     name: 'pet-settings-home',
+diff --git a/apps/body/src/renderer/src/pages/pet/index.vue b/apps/body/src/renderer/src/pages/pet/index.vue
+index 4f46873..b8a58d7 100644
+--- a/apps/body/src/renderer/src/pages/pet/index.vue
++++ b/apps/body/src/renderer/src/pages/pet/index.vue
+@@ -711,6 +711,16 @@ onMounted(() => {
+   >
+     <canvas id="canvas" class="live2d-canvas" />
+ 
++    <button
++      class="pet-tts-launcher pet-agent-launcher"
++      type="button"
++      data-pet-interactive
++      :disabled="passthrough"
++      @pointerdown.stop
++      @pointerup.stop
++      @click.stop="ipc.agent.openPanel()"
++    >Agent 测试</button>
++
+     <button
+       class="pet-tts-launcher"
+       type="button"
+@@ -863,6 +873,10 @@ onMounted(() => {
+   -webkit-app-region: no-drag;
+ }
+ 
++.pet-agent-launcher {
++  top: 52px;
++}
++
+ .pet-tts-overlay {
+   position: absolute;
+   inset: 0;
+diff --git a/apps/body/src/shared/agent-panel.ts b/apps/body/src/shared/agent-panel.ts
+new file mode 100644
+index 0000000..7f832ec
+--- /dev/null
++++ b/apps/body/src/shared/agent-panel.ts
+@@ -0,0 +1,101 @@
++export interface AgentRunInput {
++  sessionId: string
++  userText: string
++  profileName?: string
++  toolPreset?: string
++}
++
++export interface AgentDisplayMessage {
++  role: string
++  text: string
++  thinking: string
++}
++
++export interface AgentToolDisplay {
++  id: string
++  name: string
++  args: string
++  result: string
++  status: 'running' | 'done' | 'error'
++}
++
++export interface AgentPanelState {
++  sessionId: string
++  requestId: string
++  messages: AgentDisplayMessage[]
++  tools: AgentToolDisplay[]
++  status: 'idle' | 'running' | 'done' | 'error'
++  error: string
++  activeMessage?: number
++}
++
++export function buildAgentRequest(input: AgentRunInput) {
++  if (!/^[a-zA-Z0-9_-]{1,128}$/.test(input.sessionId || '')) throw new Error('会话 ID 不合法')
++  const userText = typeof input.userText === 'string' ? input.userText.trim() : ''
++  if (!userText || userText.length > 32_000) throw new Error('请输入任务，最多 32000 字')
++  const toolPreset = input.toolPreset ?? 'none'
++  if (!['none', 'default', 'coding_only'].includes(toolPreset)) throw new Error('工具模式不合法')
++  const profileName = input.profileName?.trim()
++  return { sessionId: input.sessionId, userText, toolPreset, ...(profileName ? { profileName } : {}) }
++}
++
++export function unwrapAgentResponse(response: any, allowLastError = false): any {
++  if (!response?.success) throw new Error(response?.msg || 'Agent 请求失败')
++  if (!response.data || typeof response.data !== 'object') throw new Error('后端未返回执行结果，请确认 Agent 能力已注册')
++  if (!allowLastError && response.data.lastError) throw new Error(response.data.lastError)
++  return response.data
++}
++
++export function agentDisplayJson(value: unknown): string {
++  return (typeof value === 'string' ? value : JSON.stringify(value ?? null, null, 2)).slice(0, 20_000)
++}
++
++export function readAgentMessage(message: any): AgentDisplayMessage {
++  const content = message?.content
++  const blocks = Array.isArray(content) ? content : []
++  return {
++    role: String(message?.role || 'assistant'),
++    text: typeof content === 'string' ? content : blocks.map((b: any) => {
++      if (b.type === 'text') return b.text || ''
++      if (b.type === 'toolCall') return `[调用 ${b.name}]\n${agentDisplayJson(b.arguments)}`
++      if (b.type === 'image') return '[图片]'
++      return ''
++    }).filter(Boolean).join('\n'),
++    thinking: blocks.filter((b: any) => b.type === 'thinking').map((b: any) => b.thinking || '').join('\n')
++  }
++}
++
++/** Pi message_update carries a complete snapshot; never append the same delta twice. */
++export function applyAgentEvent(state: AgentPanelState, payload: any): void {
++  if (payload?.sessionId !== state.sessionId || !payload?.requestId) return
++  if (state.requestId && payload.requestId !== state.requestId) return
++  state.requestId = payload.requestId
++  const event = payload.event
++  if (!event?.type) return
++  if (['message_start', 'message_update', 'message_end'].includes(event.type) && event.message?.role === 'assistant') {
++    if (event.type === 'message_start' || state.activeMessage === undefined) {
++      state.activeMessage = state.messages.length
++      state.messages.push(readAgentMessage(event.message))
++    } else {
++      state.messages[state.activeMessage] = readAgentMessage(event.message)
++    }
++    if (event.message.errorMessage) {
++      state.error = event.message.errorMessage
++      state.status = 'error'
++    }
++    if (event.type === 'message_end') state.activeMessage = undefined
++  }
++  if (event.type.startsWith('tool_execution_')) {
++    let tool = state.tools.find((item) => item.id === event.toolCallId)
++    if (!tool) {
++      tool = { id: event.toolCallId, name: event.toolName, args: agentDisplayJson(event.args), result: '', status: 'running' }
++      state.tools.push(tool)
++    }
++    if (event.type === 'tool_execution_update') tool.result = agentDisplayJson(event.partialResult)
++    if (event.type === 'tool_execution_end') {
++      tool.result = agentDisplayJson(event.result)
++      tool.status = event.isError ? 'error' : 'done'
++    }
++  }
++  if (event.type === 'agent_end') state.status = state.error ? 'error' : 'done'
++}
+diff --git a/apps/body/src/shared/agent-panel.test.ts b/apps/body/src/shared/agent-panel.test.ts
+new file mode 100644
+index 0000000..22212b5
+--- /dev/null
++++ b/apps/body/src/shared/agent-panel.test.ts
+@@ -0,0 +1,58 @@
++import assert from 'node:assert/strict'
++import { test } from 'node:test'
++// @ts-expect-error Node strip-types needs .ts extensions.
++import { buildAgentRequest, unwrapAgentResponse, applyAgentEvent, readAgentMessage } from './agent-panel.ts'
++
++test('builds an explicit safe Agent request and rejects missing session or text', () => {
++  assert.deepEqual(buildAgentRequest({ sessionId: 's', userText: ' hi ' }), {
++    sessionId: 's', userText: 'hi', toolPreset: 'none'
++  })
++  assert.throws(() => buildAgentRequest({ sessionId: '', userText: 'hi' }), /会话/)
++  assert.throws(() => buildAgentRequest({ sessionId: 's', userText: ' ' }), /任务/)
++  assert.throws(() => buildAgentRequest({ sessionId: '../bad', userText: 'hi' }), /会话/)
++  assert.throws(() => buildAgentRequest({ sessionId: 's', userText: 'hi', toolPreset: 'oops' }), /工具/)
++  assert.equal(buildAgentRequest({ sessionId: 's', userText: 'hi', toolPreset: 'coding_only', profileName: ' local ' }).profileName, 'local')
++})
++
++test('unwraps actual Neural internal results, detects unrouted and nested errors', () => {
++  assert.deepEqual(unwrapAgentResponse({ success: true, data: { answer: 'ok' } }), { answer: 'ok' })
++  assert.throws(() => unwrapAgentResponse({ success: true, sentTo: 0 }), /未返回/)
++  assert.throws(() => unwrapAgentResponse({ success: false, msg: '模型失败' }), /模型失败/)
++  assert.throws(() => unwrapAgentResponse({ success: true, data: { lastError: '额度不足' } }), /额度不足/)
++  assert.deepEqual(unwrapAgentResponse({ success: true, data: { lastError: '额度不足', messages: [] } }, true), { lastError: '额度不足', messages: [] })
++})
++
++test('reduces full message snapshots without duplicating deltas and isolates session/run', () => {
++  const state: any = { sessionId: 's', requestId: '', messages: [], tools: [], status: 'running', error: '' }
++  const apply = (event: any, sessionId = 's', requestId = 'r') =>
++    applyAgentEvent(state, { sessionId, requestId, event })
++  apply({ type: 'message_update', message: { role: 'assistant', content: [{ type: 'text', text: 'wrong' }] } }, 'other')
++  assert.equal(state.messages.length, 0)
++  apply({ type: 'message_start', message: { role: 'assistant', content: [] } })
++  apply({ type: 'message_update', message: { role: 'assistant', content: [{ type: 'text', text: 'hello' }, { type: 'thinking', thinking: 'check' }] } })
++  apply({ type: 'message_update', message: { role: 'assistant', content: [{ type: 'text', text: 'hello' }, { type: 'thinking', thinking: 'check' }] } })
++  apply({ type: 'message_end', message: { role: 'assistant', content: [{ type: 'text', text: 'hello' }] } })
++  assert.equal(state.messages.length, 1)
++  assert.equal(state.messages[0].text, 'hello')
++  apply({ type: 'message_start', message: { role: 'assistant', content: [] } }, 's', 'old')
++  assert.equal(state.messages.length, 1)
++  apply({ type: 'tool_execution_start', toolCallId: 't', toolName: 'test', args: { a: 1 } })
++  apply({ type: 'tool_execution_end', toolCallId: 't', toolName: 'test', result: { content: [{ type: 'text', text: 'done' }] }, isError: false })
++  assert.equal(state.tools[0].status, 'done')
++  assert.match(state.tools[0].result, /done/)
++  apply({ type: 'agent_end' })
++  assert.equal(state.status, 'done')
++})
++
++test('reads user strings, thinking, tool calls, images and backend errors without HTML execution', () => {
++  assert.equal(readAgentMessage({ role: 'user', content: '你好' }).text, '你好')
++  const msg = readAgentMessage({ role: 'assistant', content: [{ type: 'text', text: '<script>x</script>' }, { type: 'thinking', thinking: '分析' }, { type: 'toolCall', name: 'read', arguments: {} }] })
++  assert.ok(msg.text.startsWith('<script>x</script>'))
++  assert.match(msg.text, /调用 read/)
++  assert.equal(msg.thinking, '分析')
++  assert.match(msg.text, /script/)
++  const state: any = { sessionId: 's', requestId: '', messages: [], tools: [], status: 'running', error: '' }
++  applyAgentEvent(state, { sessionId: 's', requestId: 'r', event: { type: 'message_end', message: { role: 'assistant', content: [], stopReason: 'error', errorMessage: 'boom' } } })
++  assert.equal(state.error, 'boom')
++  assert.equal(state.status, 'error')
++})
+diff --git a/apps/body/src/main/services/agent/bridge.ts b/apps/body/src/main/services/agent/bridge.ts
+new file mode 100644
+index 0000000..d594758
+--- /dev/null
++++ b/apps/body/src/main/services/agent/bridge.ts
+@@ -0,0 +1,26 @@
++// @ts-expect-error Node strip-types tests require a .ts import.
++import { buildAgentRequest, unwrapAgentResponse } from '../../../shared/agent-panel.ts'
++import type { AgentRunInput } from '../../../shared/agent-panel'
++
++interface AgentDependencies {
++  observe: (receive: (message: any) => void) => Promise<() => void>
++  trigger: (request: { kind: string; topic: string; payload: unknown }) => Promise<any>
++  emit: (payload: any) => void
++}
++
++export async function executeAgentRun(input: AgentRunInput, deps: AgentDependencies): Promise<any> {
++  const payload = buildAgentRequest(input)
++  let requestId = ''
++  const cleanup = await deps.observe((message) => {
++    if (message?.topic !== 'brain.agent.run.event' || message.payload?.sessionId !== payload.sessionId) return
++    const id = message.payload.requestId
++    if (!id || (requestId && requestId !== id)) return
++    requestId = id
++    deps.emit(message.payload)
++  })
++  try {
++    return unwrapAgentResponse(await deps.trigger({ kind: 'command', topic: 'brain.agent.run', payload }))
++  } finally {
++    cleanup()
++  }
++}
+diff --git a/apps/body/src/main/services/agent/bridge.test.ts b/apps/body/src/main/services/agent/bridge.test.ts
+new file mode 100644
+index 0000000..f4e682c
+--- /dev/null
++++ b/apps/body/src/main/services/agent/bridge.test.ts
+@@ -0,0 +1,43 @@
++import assert from 'node:assert/strict'
++import { test } from 'node:test'
++// @ts-expect-error Node strip-types requires .ts.
++import { executeAgentRun } from './bridge.ts'
++
++test('waits for event subscription before execution, filters other sessions and cleans up', async () => {
++  const order: string[] = []
++  const seen: any[] = []
++  const result = await executeAgentRun({ sessionId: 's', userText: ' hi ' }, {
++    observe: async (receive: any) => {
++      order.push('subscribed')
++      receive({ topic: 'brain.agent.run.event', payload: { sessionId: 'other', requestId: 'r', event: {} } })
++      receive({ topic: 'brain.agent.run.event', payload: { sessionId: 's', requestId: 'r', event: { type: 'agent_start' } } })
++      return () => { order.push('cleanup') }
++    },
++    trigger: async (request: any) => {
++      order.push('run')
++      assert.equal(request.topic, 'brain.agent.run')
++      assert.equal(request.payload.toolPreset, 'none')
++      return { success: true, data: { sessionId: 's' } }
++    },
++    emit: (event: any) => { seen.push(event) }
++  })
++  assert.deepEqual(order, ['subscribed', 'run', 'cleanup'])
++  assert.equal(seen.length, 1)
++  assert.equal(result.sessionId, 's')
++})
++
++test('cleans subscriptions on HTTP failure and never executes if observation fails', async () => {
++  let cleaned = 0
++  let ran = 0
++  const deps = {
++    observe: async () => () => { cleaned++ },
++    trigger: async () => { ran++; throw new Error('HTTP failed') },
++    emit: () => {}
++  }
++  await assert.rejects(executeAgentRun({ sessionId: 's', userText: 'hi' }, deps), /HTTP failed/)
++  assert.equal(cleaned, 1)
++  await assert.rejects(executeAgentRun({ sessionId: 's', userText: 'hi' }, {
++    ...deps, observe: async () => { throw new Error('subscribe failed') }
++  }), /subscribe failed/)
++  assert.equal(ran, 1)
++})
+diff --git a/apps/body/src/main/services/agent/index.ts b/apps/body/src/main/services/agent/index.ts
+new file mode 100644
+index 0000000..5f06378
+--- /dev/null
++++ b/apps/body/src/main/services/agent/index.ts
+@@ -0,0 +1,108 @@
++import { BrowserWindow, shell } from 'electron'
++import { is } from '@electron-toolkit/utils'
++import { join } from 'node:path'
++import { io } from 'socket.io-client'
++import { neuralTrigger } from '../neural/impl/neural-http'
++import { executeAgentRun } from './bridge'
++import { unwrapAgentResponse } from '../../../shared/agent-panel'
++import type { AgentRunInput } from '../../../shared/agent-panel'
++
++let panel: BrowserWindow | null = null
++let running = false
++
++const failure = (error: unknown) => ({ success: false, msg: error instanceof Error ? error.message : String(error) })
++
++export async function openPanel() {
++  if (panel && !panel.isDestroyed()) {
++    panel.show()
++    panel.focus()
++    return { success: true }
++  }
++  const window = new BrowserWindow({
++    title: 'Human · Agent 测试', width: 900, height: 760, minWidth: 640, minHeight: 560,
++    show: false, autoHideMenuBar: true,
++    webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: false }
++  })
++  panel = window
++  window.on('close', (event) => {
++    if (running) {
++      event.preventDefault()
++      window.webContents.send('agent:notice', '任务仍在运行；当前版本不支持取消，请等待结束后关闭。')
++    }
++  })
++  window.on('closed', () => { if (panel === window) panel = null })
++  window.webContents.setWindowOpenHandler(({ url }) => {
++    if (/^https?:\/\//.test(url)) void shell.openExternal(url)
++    return { action: 'deny' }
++  })
++  window.once('ready-to-show', () => window.show())
++  if (is.dev && process.env.ELECTRON_RENDERER_URL) {
++    await window.loadURL(`${process.env.ELECTRON_RENDERER_URL}/#/agent-panel`)
++  } else {
++    await window.loadFile(join(__dirname, '../renderer/index.html'), { hash: '/agent-panel' })
++  }
++  return { success: true }
++}
++
++/** One short-lived observer per run, independent of hearing's shared Body actor. */
++async function observe(receive: (message: any) => void): Promise<() => void> {
++  const socket = io('http://localhost:12002/neural', { transports: ['websocket'], reconnection: false, autoConnect: false })
++  let heartbeat: ReturnType<typeof setInterval> | undefined
++  const cleanup = () => {
++    clearInterval(heartbeat)
++    socket.removeAllListeners()
++    socket.disconnect()
++  }
++  return new Promise((resolve, reject) => {
++    const timer = setTimeout(() => fail(new Error('Agent 事件订阅超时，请确认后端已启动')), 8000)
++    const fail = (error: Error) => { clearTimeout(timer); cleanup(); reject(error) }
++    socket.once('connect_error', fail)
++    socket.once('error', (data) => fail(new Error(data?.payload?.error || 'Agent 事件订阅失败')))
++    socket.on('connect', () => socket.emit('register', {
++      actor: { actorId: `body-agent-${crypto.randomUUID()}`, runtime: 'electron', system: 'body', module: 'agent-test' }
++    }))
++    socket.once('registered', () => socket.emit('subscribe', { topics: ['brain.agent.run.event'], kinds: ['event'] }))
++    socket.once('subscribed', (data) => {
++      if (!data?.success) return fail(new Error('Agent 事件订阅失败'))
++      clearTimeout(timer)
++      heartbeat = setInterval(() => socket.emit('heartbeat'), 30_000)
++      resolve(cleanup)
++    })
++    socket.on('message', receive)
++    socket.on('disconnect', () => {
++      clearInterval(heartbeat)
++      if (running && panel && !panel.isDestroyed()) panel.webContents.send('agent:notice', '事件连接已断开；等待执行结果，完成后会重新读取会话。')
++    })
++    socket.connect()
++  })
++}
++
++export async function run(input: AgentRunInput) {
++  if (running) return { success: false, msg: '已有 Agent 任务运行中，请等待完成' }
++  running = true
++  const owner = panel
++  try {
++    const data = await executeAgentRun(input, {
++      observe, trigger: neuralTrigger,
++      emit: (payload) => { if (owner && !owner.isDestroyed()) owner.webContents.send('agent:event', payload) }
++    })
++    return { success: true, data }
++  } catch (error) {
++    return failure(error)
++  } finally {
++    running = false
++  }
++}
++
++export async function listSessions() {
++  try {
++    return { success: true, data: unwrapAgentResponse(await neuralTrigger({ kind: 'query', topic: 'brain.agent.session.list', payload: { limit: 50 } })) }
++  } catch (error) { return failure(error) }
++}
++
++export async function getSession(input: { sessionId: string }) {
++  if (!/^[a-zA-Z0-9_-]{1,128}$/.test(input?.sessionId || '')) return { success: false, msg: '会话 ID 不合法' }
++  try {
++    return { success: true, data: unwrapAgentResponse(await neuralTrigger({ kind: 'query', topic: 'brain.agent.session.get', payload: { sessionId: input.sessionId, includeMessages: true } }), true) }
++  } catch (error) { return failure(error) }
++}
+diff --git a/apps/body/src/renderer/src/pages/agent-panel/index.vue b/apps/body/src/renderer/src/pages/agent-panel/index.vue
+new file mode 100644
+index 0000000..23da1ef
+--- /dev/null
++++ b/apps/body/src/renderer/src/pages/agent-panel/index.vue
+@@ -0,0 +1,172 @@
++<script setup lang="ts">
++import { computed, inject, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
++import type { IpcProxy } from '@renderer/plugin/ipc'
++import { applyAgentEvent, readAgentMessage } from '@shared/agent-panel'
++import type { AgentPanelState } from '@shared/agent-panel'
++
++const ipc = inject<IpcProxy>('ipc')!
++const state = reactive<AgentPanelState>({ sessionId: crypto.randomUUID(), requestId: '', messages: [], tools: [], status: 'idle', error: '' })
++const sessions = ref<any[]>([])
++const task = ref('')
++const profile = ref('')
++const toolPreset = ref('none')
++const busy = ref(false)
++const loading = ref(false)
++const notice = ref('')
++const log = ref<HTMLElement>()
++let disposed = false
++let loadId = 0
++const statusLabel = computed(() => ({ idle: '等待任务', running: '运行中', done: '已完成', error: '执行失败' })[state.status])
++const scrollEnd = async () => { await nextTick(); if (log.value) log.value.scrollTop = log.value.scrollHeight }
++
++const onEvent = (_event: unknown, payload: any) => {
++  if (!busy.value) return
++  applyAgentEvent(state, payload)
++  void scrollEnd()
++}
++const onNotice = (_event: unknown, message: string) => { notice.value = message }
++
++async function refreshSessions() {
++  const result = await ipc.agent.listSessions()
++  if (disposed) return
++  if (!result.success) throw new Error(result.msg || '加载会话失败')
++  sessions.value = Array.isArray(result.data?.sessions) ? result.data.sessions : []
++}
++
++async function loadSession(sessionId: string, finalRefresh = false) {
++  if (busy.value && !finalRefresh) return
++  const id = ++loadId
++  loading.value = true
++  try {
++    const result = await ipc.agent.getSession({ sessionId })
++    if (disposed || id !== loadId) return
++    if (!result.success) throw new Error(result.msg || '读取会话失败')
++    state.sessionId = sessionId
++    state.messages = (result.data?.messages || []).map(readAgentMessage)
++    state.activeMessage = undefined
++    if (!finalRefresh) {
++      state.tools = []
++      state.requestId = ''
++      state.error = result.data?.lastError || ''
++      state.status = state.error ? 'error' : 'idle'
++      profile.value = result.data?.profileName || ''
++      toolPreset.value = 'none'
++    }
++    await scrollEnd()
++  } finally { if (id === loadId) loading.value = false }
++}
++
++function newSession() {
++  if (busy.value || loading.value) return
++  ++loadId
++  Object.assign(state, { sessionId: crypto.randomUUID(), requestId: '', messages: [], tools: [], status: 'idle', error: '', activeMessage: undefined })
++  task.value = ''
++  toolPreset.value = 'none'
++  notice.value = ''
++}
++
++async function submit() {
++  if (busy.value || loading.value || !task.value.trim()) return
++  const text = task.value.trim()
++  const sessionId = state.sessionId
++  busy.value = true
++  state.requestId = ''
++  state.activeMessage = undefined
++  state.status = 'running'
++  state.error = ''
++  state.tools = []
++  notice.value = ''
++  state.messages.push(readAgentMessage({ role: 'user', content: text }))
++  task.value = ''
++  void scrollEnd()
++  try {
++    const result = await ipc.agent.run({ sessionId, userText: text, profileName: profile.value, toolPreset: toolPreset.value })
++    if (disposed) return
++    if (!result.success) throw new Error(result.msg || 'Agent 执行失败')
++    state.status = state.error ? 'error' : 'done'
++    await loadSession(sessionId, true)
++  } catch (error) {
++    if (!disposed) {
++      state.error = error instanceof Error ? error.message : String(error)
++      state.status = 'error'
++      task.value = text
++    }
++  } finally {
++    if (!disposed) {
++      busy.value = false
++      try { await refreshSessions() } catch (error) { notice.value = String(error) }
++    }
++  }
++}
++
++async function selectSession(event: Event) {
++  const sessionId = (event.target as HTMLSelectElement).value
++  if (!sessionId) return
++  try { await loadSession(sessionId) } catch (error) { state.error = String(error) }
++}
++
++onMounted(async () => {
++  window.electron.ipcRenderer.on('agent:event', onEvent)
++  window.electron.ipcRenderer.on('agent:notice', onNotice)
++  try { await refreshSessions() } catch (error) { notice.value = String(error) }
++})
++onUnmounted(() => {
++  disposed = true
++  window.electron.ipcRenderer.off('agent:event', onEvent)
++  window.electron.ipcRenderer.off('agent:notice', onNotice)
++})
++</script>
++
++<template>
++  <main class="agent-panel">
++    <header><div><h1>Agent 测试</h1><p>Pi Agent · 模型推理与工具调用循环</p></div><span role="status" :class="state.status">{{ statusLabel }}</span></header>
++    <section class="controls" aria-label="会话与模型">
++      <button :disabled="busy || loading" @click="newSession">新会话</button>
++      <select aria-label="恢复会话" :disabled="busy || loading" :value="sessions.some(s => s.sessionId === state.sessionId) ? state.sessionId : ''" @change="selectSession">
++        <option value="">恢复最近会话…</option>
++        <option v-for="s in sessions" :key="s.sessionId" :value="s.sessionId">{{ s.lastUserText?.slice(0, 40) || s.sessionId }}</option>
++      </select>
++      <input v-model="profile" aria-label="模型 profile" placeholder="模型 profile（留空使用默认）" :disabled="busy || loading" />
++      <select v-model="toolPreset" aria-label="工具模式" :disabled="busy || loading">
++        <option value="none">不使用工具（默认）</option><option value="default">全部已注册工具</option><option value="coding_only">编码与会话工具</option>
++      </select>
++    </section>
++    <p class="session-id">会话 {{ state.sessionId }}</p>
++    <p v-if="toolPreset !== 'none'" class="warning">已允许模型调用所选工具，可能修改文件或运行命令。请仅执行你信任的测试任务。</p>
++    <p v-if="notice" class="notice">{{ notice }}</p>
++    <p v-if="state.error" role="alert" class="error">{{ state.error }}</p>
++    <section ref="log" class="messages" aria-label="Agent 执行记录" aria-live="polite">
++      <p v-if="!state.messages.length" class="empty">先发送一个简单任务验证模型连接，再开启工具测试。支持多轮对话和历史会话恢复。</p>
++      <article v-for="(message, index) in state.messages" :key="index" :class="['message', message.role]">
++        <strong>{{ message.role === 'user' ? '你' : message.role === 'assistant' ? 'Agent' : message.role === 'system' ? '系统' : '工具结果' }}</strong>
++        <details v-if="message.thinking"><summary>模型思考</summary><pre>{{ message.thinking }}</pre></details>
++        <pre>{{ message.text || (busy ? '处理中…' : '（无文本内容）') }}</pre>
++      </article>
++      <section v-if="state.tools.length" class="tools" aria-label="工具执行过程">
++        <h2>本轮工具执行</h2>
++        <details v-for="tool in state.tools" :key="tool.id" :open="tool.status === 'running'">
++          <summary>{{ tool.name }} · {{ { running: '执行中', done: '完成', error: '失败' }[tool.status] }}</summary>
++          <pre>参数：{{ tool.args }}\n结果：{{ tool.result }}</pre>
++        </details>
++      </section>
++    </section>
++    <form @submit.prevent="submit">
++      <textarea v-model="task" aria-label="Agent 任务" placeholder="输入任务；Ctrl / ⌘ + Enter 发送" maxlength="32000" :disabled="busy || loading" @keydown.enter="($event.ctrlKey || $event.metaKey) && ($event.preventDefault(), submit())" />
++      <div class="footer"><small>当前使用 pi-agent-core；不支持取消或崩溃后恢复执行。</small><button type="submit" :disabled="busy || loading || !task.trim()">{{ busy ? '执行中…' : '发送任务' }}</button></div>
++    </form>
++  </main>
++</template>
++
++<style scoped>
++.agent-panel { height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; padding: 22px; color: #e4eaf5; background: #141b29; font: 14px/1.5 system-ui, sans-serif; }
++header, .controls, .footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
++h1 { margin: 0; font-size: 22px; } h2 { font-size: 15px; } p { margin: 0; } header p, small, .session-id { color: #9baac0; } .session-id { font-size: 12px; }
++.controls { flex-wrap: wrap; justify-content: flex-start; } input { flex: 1; min-width: 160px; } select { max-width: 280px; }
++button, input, select, textarea { font: inherit; border: 1px solid #3c4d66; border-radius: 8px; padding: 8px 10px; background: #202c40; color: inherit; } button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
++button[type=submit] { background: #345ecd; flex-shrink: 0; } :focus-visible { outline: 2px solid #90b4ff; outline-offset: 2px; }
++.messages { flex: 1; min-height: 80px; overflow: auto; } .message { margin-bottom: 12px; padding: 12px; border-radius: 10px; background: #1d2738; } .message.user { background: #25375a; }
++pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; margin: 8px 0 0; } details { margin-top: 8px; } summary { cursor: pointer; color: #adcbff; }
++.empty { padding: 32px 10px; color: #99a8bd; text-align: center; } .tools { border-top: 1px solid #3c4d66; padding: 8px; }
++.warning { color: #f5c57c; } .error { color: #ff9a9a; white-space: pre-wrap; } .notice { color: #a9c7fc; }
++textarea { resize: vertical; box-sizing: border-box; width: 100%; min-height: 80px; max-height: 180px; } .footer { margin-top: 8px; } .running { color: #f5c57c; } .done { color: #8ee3ba; }
++</style>
