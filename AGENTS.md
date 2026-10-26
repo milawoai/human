@@ -12,6 +12,30 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+<!-- BEGIN DOC LIFECYCLE -->
+## Feature Documentation Lifecycle (MANDATORY)
+
+所有新功能开发遵循**「提出 → 讨论 → 实施 → 实现 → 结果」五阶段文档链**。双库分工：动机/讨论/结论在 Obsidian（思考的家），实施/实现在本仓库（与代码同版本演进）。
+
+### 规则（对任何 code agent 生效）
+
+1. **开工新功能前**：
+   - 用 `bd create` 建跟踪 issue（见上文 beads 约定）
+   - 在 Obsidian 文档库写提出记录：`功能/<功能名>/<功能名>-提出.md`（为什么做、痛点、最初想法，几段话即可），并在 `功能/README.md` 表格登记一行
+2. **设计讨论**：写 `功能/<功能名>/<功能名>-讨论稿.md`（多轮迭代，文内带修订记录）；讨论稿不进本仓库
+3. **写代码前**：在本仓库 `docs/plans/YYYY-MM-DD-<功能名>.md` 写实施稿（任务分解、接口定义、改动点清单）
+4. **实现完成后**：在同一实施稿内更新「实现记录」节（实际改动清单 + 验证输出 smoke/E2E）。代码是真相，文档记结论
+5. **功能交付**：大功能在 `docs/milestones/` 写交付记录；同时更新 Obsidian `功能/README.md` 状态行
+
+### 文档库位置
+
+- **Obsidian 文档库**（提出/讨论/结果/系统说明）：`/Users/zhou/Desktop/obsidian/work/工程/规划中/秘书自动化/`，导航入口为该库 `README.md`
+- **修改任何系统的行为时，必须同步更新 Obsidian 中对应的 `<system>-system/说明文档.md`**（sensory / neural / brain / memory / motor / body 六份）
+- 本仓库文档：`docs/plans/`（实施稿）、`docs/milestones/`（交付记录）、`doc/`（模块修改规范）
+
+完整约定（含各阶段模板与示例）见 Obsidian 库 `功能/README.md`。
+<!-- END DOC LIFECYCLE -->
+
 ## Non-Interactive Shell Commands
 
 **ALWAYS use non-interactive flags** with file operations to avoid hanging on confirmation prompts.
