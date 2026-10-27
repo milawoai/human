@@ -8,6 +8,14 @@
 
 **Tech Stack:** NestJS/TypeScript、现有 pi-agent-core、Motor tts@1.0、Electron/Vue、Node assert smoke。
 
+## 来源与关联需求
+
+- 主需求：`human-op5`，Obsidian `功能/进行/P1-TTS插件化-261019/TTS 插件化-提出.md`，设计见同目录 `TTS 插件化-讨论稿.md` 及 `TTS 插件化与类别契约设计（讨论稿）.md`。
+- 本次子阶段：P3「会话总结播报」`human-6mb`；实现基线提交 `9df0484`。P3 是分期编号，不是 P3 低优先级。
+- 使用：`human-ylm` 已交付的 `tts@1.0` 插件能力（同步 synthesize/voices.list）及 `human-9iz` 已交付的 Body perform/音频/口型通路；两项直接前置在 Beads 登记为已完成。
+- 关联但不阻塞：`human-bf1` Job 状态层只服务后续 P5；`human-6ag` 声明式交互运行时不是当前手写开关的前置。
+- 文档导航：Obsidian 同目录 `TTS 插件化-实现稿.md`；正式术语见文档库 `名词字典.md`。以下实现细节以代码为准，不另建需求状态源。
+
 ## 范围与依赖
 
 硬前置：既有 tts@1.0 契约、外部插件加载、Qwen3-MLX 同步合成与 Body perform（均已实现）。human-op5 的 P5 与 human-bf1 Job 层不是本次前置；不实现异步克隆或流式分句。现有 apps/body 是缺失独立 Git 元数据的 gitlink，沿用 patches/ 的交付方式，保留可重放增量补丁，不改 gitlink 结构。
@@ -55,3 +63,11 @@ Files: `apps/body/src/shared/session-speech.ts` 及测试、`shared/agent-panel.
 - 审查后的补充验证：模型 error/aborted/length 均零合成；异步准备中租约失效的单测通过；真实 IPC 失效令牌返回 audioPlayed=false 且零新增播放。最初尝试用 AudioContext.resume 挂起冷启动的探针不成立（旧驱动不等待 resume，音频已开始），已删除该不确定探针，不将其声称为冷启动实测证据。冷启动后置检查由实际播放前 gate 与可控异步单测覆盖。
 
 运维：只启动并关闭本次测试后端、Electron、TTS worker 与 cmux 事件子进程；没有改动已安装插件或模型配置。测试会话保留在最近会话中，音频由插件缓存策略管理；临时 Body 基线在 `/private/tmp/human-tts-body-7VLcpU`，不是交付依赖。后续正常启动 `yarn start:backend` 与 `yarn start:electron` 即可使用。
+
+## 详细实现稿入口
+
+面向人类与后续 AI 的详细实现正文统一存放在 Obsidian：
+
+`/Users/zhou/Desktop/obsidian/work/工程/规划中/秘书自动化/功能/进行/P1-TTS插件化-261019/TTS 插件化-实现稿.md`
+
+其中包含源码职责表、实际调用时序、提示词与传输协议、状态持久化、播放令牌、修改索引及排错流程。本文件保留原实施计划和代码侧验证记录，不再复制详细实现正文。
