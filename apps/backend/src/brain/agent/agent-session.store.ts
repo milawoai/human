@@ -22,6 +22,7 @@ interface PersistedSessionFile {
   sessionId: string;
   profileName: string;
   systemPrompt: string;
+  speechSummaryEnabled?: boolean;
   messages: unknown[];
   createdAt: number;
   updatedAt: number;
@@ -37,6 +38,7 @@ interface UpsertSessionInput {
   sessionId: string;
   profileName: string;
   systemPrompt: string;
+  speechSummaryEnabled?: boolean;
   messages: unknown[];
   requestId?: string;
   eventCount?: number;
@@ -123,6 +125,7 @@ export class AgentSessionStore {
     return {
       ...meta,
       systemPrompt: file?.systemPrompt,
+      speechSummaryEnabled: file?.speechSummaryEnabled === true,
       messages: file?.messages ?? [],
       lastRun: file?.lastRun,
     };
@@ -140,6 +143,7 @@ export class AgentSessionStore {
       sessionId: input.sessionId,
       profileName: input.profileName,
       systemPrompt: input.systemPrompt,
+      speechSummaryEnabled: input.speechSummaryEnabled ?? existing?.speechSummaryEnabled ?? false,
       messages: input.messages,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,

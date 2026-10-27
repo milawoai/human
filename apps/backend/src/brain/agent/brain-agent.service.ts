@@ -13,6 +13,8 @@ import { ModelConfigService } from '../language-center/model-config.service';
 import { ProviderAuthService } from '../language-center/provider-auth.service';
 import { AgentSessionStore } from './agent-session.store';
 import { ToolAdapterService } from '../../motor/motor-tool-runner/core/tool-adapter.service';
+import { BrainSpeechService } from '../speech/brain-speech.service';
+import { speechSystemPrompt, splitSpeechSummary, speechDisplayMessage } from '../speech/speech-summary';
 
 const BRAIN_AGENT_ACTOR = {
   actorId: 'brain-main',
@@ -86,6 +88,7 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
     private readonly providerAuthService: ProviderAuthService,
     private readonly sessionStore: AgentSessionStore,
     private readonly toolAdapterService: ToolAdapterService,
+    private readonly speechService: BrainSpeechService,
   ) {}
 
   onModuleInit() {
@@ -143,6 +146,7 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
 
     const resolved = await this.llmService.resolveModel(this.readString(payload.profileName));
     const persisted = this.sessionStore.loadSessionFile(sessionId);
+    const speechSummaryEnabled = this.readBoolean(payload.speechSummaryEnabled) ?? persisted?.speechSummaryEnabled === true;
     const systemPrompt =
       this.readString(payload.systemPrompt) ??
       persisted?.systemPrompt ??
@@ -162,6 +166,9 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
       codingCwd,
     });
     const { Agent } = await this.getAgentCore();
+    const speechInstruction: AgentMessage = {
+      role: 'system', content: speechSystemPrompt('', true), timestamp: Date.now(),
+    };
     const agent = new Agent({
       initialState: {
         systemPrompt,
@@ -171,6 +178,9 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
       },
       streamFn: (model, context, opts) =>
         this.llmService.streamSimple(model, context, opts),
+      // Request-only context: works with restored Pi system messages without
+      // persisting the narration instruction or changing continue() semantics.
+      transformContext: speechSummaryEnabled ? async (messages) => [...messages, speechInstruction] : undefined,
       getApiKey: async () =>
         await this.providerAuthService.resolveApiKey(
           resolved.profileName,
@@ -186,10 +196,17 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
     const requestId = message.id;
     agent.subscribe((event) => {
       events.push(event);
+      const publicEvent: any = speechSummaryEnabled ? { ...event } : event;
+      if (speechSummaryEnabled) {
+        if ('message' in publicEvent) publicEvent.message = speechDisplayMessage(publicEvent.message);
+        if (Array.isArray(publicEvent.messages)) publicEvent.messages = publicEvent.messages.map(speechDisplayMessage);
+        // Raw deltas contain the transport block; the panel uses sanitized snapshots.
+        delete publicEvent.assistantMessageEvent;
+      }
       this.publishEvent('brain.agent.run.event', {
         requestId,
         sessionId,
-        event,
+        event: publicEvent,
       });
     });
 
@@ -200,17 +217,25 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
     }
     await agent.waitForIdle();
 
-    const messages = agent.state.messages as unknown[];
+    const rawMessages = agent.state.messages as unknown[];
+    const rawLast = rawMessages[rawMessages.length - 1] as any;
+    const finalText = rawLast?.role === 'assistant' && rawLast.stopReason === 'stop' && !agent.state.errorMessage
+      ? (rawLast.content ?? []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('') : '';
+    const { summary } = splitSpeechSummary(finalText, speechSummaryEnabled);
+    const history = rawMessages.filter(m => m !== speechInstruction);
+    const messages = speechSummaryEnabled ? history.map(speechDisplayMessage) : history;
     const lastAssistant = this.findLastAssistant(messages);
     const persistedMeta = this.sessionStore.upsertSession({
       sessionId,
       profileName: resolved.profileName,
       systemPrompt,
+      speechSummaryEnabled,
       messages,
       requestId,
       eventCount: events.length,
       lastError: agent.state.errorMessage,
     });
+    const speech = summary ? await this.speechService.synthesize(summary, sessionId) : undefined;
 
     return {
       success: true,
@@ -224,6 +249,8 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
         lastError: agent.state.errorMessage,
         lastAssistant,
         sessionMeta: persistedMeta,
+        speechSummaryEnabled,
+        speech,
       },
     };
   }

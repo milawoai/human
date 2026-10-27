@@ -28,7 +28,11 @@ curl -sS --max-time 190 http://127.0.0.1:12002/neural/trigger \
 
 克隆音色使用 `voiceId: "clone:my-voice"`；素材在插件目录的 `voices/my-voice/reference.wav` 和 `reference.txt`。用 `tts.voices.list` 获取当前音色，不在 Brain 中维护引擎音色枚举。
 
-插件负责合成并返回 Body 可访问的 HTTP URL，Brain 的自动回复播报与 Body 播放编排不在本次实现中。
+插件负责合成并返回 Body 可访问的 HTTP URL。2026-10-27 起，Brain/Body 支持会话级总结播报：在 AI 会话或 Agent 面板开启「总结播报」，下一轮只读模型额外生成的简短总结（最多80字符），不读全文；默认关闭、新会话关闭，使用当前插件默认音色。此能力不改变插件包或宿主 TTS 契约。
+
+正文与播报文本在 Brain 分离，开启时才注入临时总结提示；缺失/无效摘要或合成失败只提示，不回退全文。关闭开关或后续问题使旧的待播放结果失效，不中断已开始的音频。新建普通聊天会话只重置当前窗口和播报偏好，不表示 Cortex 已具备统一的持久会话上下文。
+
+实施与验证见 `docs/plans/2026-10-27-tts-session-summary.md`；后端 `yarn workspace backend verify:speech-summary`，桌面 `yarn workspace electron_with_serve test:speech`。Body 增量源码保存在 `patches/body-session-speech-summary.patch`，应用顺序见 `patches/README.md`。
 
 ## 验证与样本
 

@@ -20,6 +20,7 @@
     "verify:memory-smoke": "ts-node scripts/memory-smoke.ts",
     "verify:contracts": "ts-node -r tsconfig-paths/register scripts/contracts-smoke.ts",
     "verify:agent-panel": "ts-node -r tsconfig-paths/register scripts/agent-panel-smoke.ts",
+    "verify:speech-summary": "ts-node -r tsconfig-paths/register scripts/speech-summary-smoke.ts",
     "clean": "rm -rf dist",
     "test": "jest"
   },

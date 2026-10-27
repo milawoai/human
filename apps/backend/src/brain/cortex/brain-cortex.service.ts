@@ -9,6 +9,8 @@ import { LlmService } from '../language-center/llm.service';
 import { ModelConfigService } from '../language-center/model-config.service';
 import { ProviderAuthService } from '../language-center/provider-auth.service';
 import { MemoryService } from '../hippocampus/memory.service';
+import { BrainSpeechService } from '../speech/brain-speech.service';
+import { speechSystemPrompt, splitSpeechSummary, visibleSpeechAnswer } from '../speech/speech-summary';
 
 const BRAIN_CORTEX_ACTOR = {
   actorId: 'brain-main',
@@ -120,6 +122,7 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
     private readonly modelConfigService: ModelConfigService,
     private readonly providerAuthService: ProviderAuthService,
     private readonly memoryService: MemoryService,
+    private readonly speechService: BrainSpeechService,
   ) {}
 
   onModuleInit() {
@@ -281,6 +284,7 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
 
   private async handleAskRequested(message: BusMessage) {
     const payload = this.ensureObject(message.payload);
+    const speechEnabled = payload.speechSummaryEnabled === true;
     const confirmedQuestion =
       this.readString(payload.confirmedQuestion) ??
       this.readString(payload.text) ??
@@ -312,6 +316,7 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
         },
       );
 
+      if (speechEnabled) context.systemPrompt = speechSystemPrompt(context.systemPrompt ?? '', true);
       const stream = await this.llmService.stream({
         profileName: this.readString(payload.profileName),
         context,
@@ -323,8 +328,24 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
       let parseBuffer = '';
       let fullThink = '';
       let fullAnswer = '';
+      let emittedAnswer = '';
+      const publishAnswer = () => {
+        const visible = speechEnabled ? visibleSpeechAnswer(fullAnswer) : fullAnswer;
+        const content = visible.slice(emittedAnswer.length);
+        emittedAnswer = visible;
+        if (content) this.publishEvent(TOPIC.BRAIN_CORTEX_ANSWER_STREAM_CHUNK, {
+          requestId, content, source: payload.source ?? 'brain.cortex',
+        });
+      };
 
       for await (const event of stream) {
+        if (event.type === 'thinking_delta') {
+          fullThink += event.delta;
+          this.publishEvent(TOPIC.BRAIN_CORTEX_ANSWER_STREAM_THINK, {
+            requestId, content: event.delta, source: payload.source ?? 'brain.cortex',
+          });
+          continue;
+        }
         const delta = this.extractTextFromStreamEvent(event);
         if (!delta) continue;
         const parsed = this.consumeTextByThinkTags(parseBuffer + delta, parserMode);
@@ -341,11 +362,7 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
         }
         if (parsed.answerDelta) {
           fullAnswer += parsed.answerDelta;
-          this.publishEvent(TOPIC.BRAIN_CORTEX_ANSWER_STREAM_CHUNK, {
-            requestId,
-            content: parsed.answerDelta,
-            source: payload.source ?? 'brain.cortex',
-          });
+          publishAnswer();
         }
       }
 
@@ -359,18 +376,16 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
           });
         } else {
           fullAnswer += parseBuffer;
-          this.publishEvent(TOPIC.BRAIN_CORTEX_ANSWER_STREAM_CHUNK, {
-            requestId,
-            content: parseBuffer,
-            source: payload.source ?? 'brain.cortex',
-          });
+          publishAnswer();
         }
       }
 
       const finalMessage = await stream.result();
       const finalRawText = this.extractAssistantText(finalMessage).trim();
       const thinkText = fullThink.trim() || this.extractThinkText(finalRawText);
-      const answerText = fullAnswer.trim() || this.stripThinkingTags(finalRawText);
+      const { answer: answerText, summary } = splitSpeechSummary(
+        this.stripThinkingTags(finalRawText) || fullAnswer.trim(), speechEnabled,
+      );
 
       this.publishEvent(TOPIC.BRAIN_CORTEX_ANSWER_COMPLETED, {
         requestId,
@@ -379,6 +394,8 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
         source: payload.source ?? 'brain.cortex',
       });
 
+      const speech = summary && finalMessage.stopReason === 'stop' && !finalMessage.errorMessage
+        ? await this.speechService.synthesize(summary, this.readString(payload.sessionId) ?? requestId) : undefined;
       return {
         success: true,
         data: {
@@ -386,6 +403,7 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
           confirmedQuestion,
           think: thinkText,
           answer: answerText,
+          speech,
         },
       };
     } catch (error) {
@@ -656,6 +674,10 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
   private extractTextFromStreamEvent(event: unknown): string {
     if (!event || typeof event !== 'object') return '';
     const obj = event as Record<string, any>;
+
+    // Pi's *_end events carry complete snapshots, not deltas. In particular,
+    // thinking_* content must never become answer text or narration input.
+    if (typeof obj.type === 'string' && obj.type !== 'text_delta') return '';
 
     if (typeof obj.text === 'string') return obj.text;
     if (typeof obj.delta === 'string') return obj.delta;

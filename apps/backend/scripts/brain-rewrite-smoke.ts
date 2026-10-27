@@ -94,6 +94,7 @@ async function main() {
     modelConfigService,
     providerAuthService,
     new MemoryStub() as any,
+    undefined as any, // Rewriting never synthesizes speech.
   );
 
   assert.equal(cortex.canHandle(TOPIC.BRAIN_CORTEX_REWRITE_REQUESTED), true);

@@ -63,3 +63,19 @@ yarn workspace electron_with_serve build:no-lint
 桌面端到端脚本 `node scripts/verify-agent-panel.cjs` 需要 Electron 以 `--remote-debugging-port=19222 --remote-debugging-address=127.0.0.1` 启动。它会通过实际按钮和 IPC，向默认模型发送两轮无工具测试消息，验证会话记忆、恢复、重复提交锁定及无效 profile 错误恢复，并保存截图至 `/private/tmp/human-agent-panel.png`。运行可能产生模型调用费用。验收后应关闭调试实例，正常重启 Electron。
 
 补丁生成器 `scripts/archive-body-agent-patch.cjs` 只用于对照本次修改前保留的四个文件生成机械差异；它不是插件安装器。Body 子仓库元数据问题继续由 `human-ryp` 跟踪。
+
+## 会话总结播报（2026-10-27）
+
+`body-session-speech-summary.patch` 基于已应用上面两个补丁的 Body；本机源码已应用。它保存两个面板的会话级开关、持久化、请求参数与摘要播放，以及测试。配套后端实现必须一起部署。
+
+```bash
+# 本机已应用：
+git apply --reverse --check patches/body-session-speech-summary.patch
+# 尚未应用的对应基线：
+git apply --check patches/body-session-speech-summary.patch
+git apply patches/body-session-speech-summary.patch
+```
+
+AI 会话标题栏的「总结播报」和 Agent 面板的「回复总结播报」均默认关闭，新会话也关闭。开启后下一轮起用同一次模型生成的短总结（最多80字符）播报，完整文字仍正常展示；只消费 Brain 返回的 `speech` 字段，不在 Body 截正文或二次总结。开关在本机按会话即时保存，Agent 运行时还保存到后端会话文件；本机明确设置优先于后端恢复值。关闭后不会启动该轮待播放结果，但不会中断已经开始的音频。
+
+`yarn workspace electron_with_serve test:speech` 覆盖偏好隔离、恢复、过期请求及播放失败；`node scripts/verify-speech-summary.cjs` 用真实 Electron/default 模型/已启用 TTS 验证两条链路，会调用模型并播放声音，需要本地调试端口19222。机械归档器：`node scripts/archive-body-speech-patch.cjs <修改前Body目录>`。

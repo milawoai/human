@@ -1,0 +1,611 @@
+diff --git a/apps/body/package.json b/apps/body/package.json
+index 1065940..9067fbc 100644
+--- a/apps/body/package.json
++++ b/apps/body/package.json
+@@ -12,6 +12,7 @@
+     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
+     "typecheck": "yarn typecheck:node && yarn typecheck:web",
+     "test:tts": "node --experimental-strip-types --test src/main/services/live2d/tts.test.ts",
++    "test:speech": "node --experimental-strip-types --test src/shared/session-speech.test.ts src/shared/speech-playback.test.ts",
+     "test:agent": "node --experimental-strip-types --test src/shared/agent-panel.test.ts src/main/services/agent/bridge.test.ts",
+     "start": "yarn electron-vite preview",
+     "dev": "yarn electron-vite dev",
+diff --git a/apps/body/src/shared/agent-panel.ts b/apps/body/src/shared/agent-panel.ts
+index 7f832ec..08e4a2b 100644
+--- a/apps/body/src/shared/agent-panel.ts
++++ b/apps/body/src/shared/agent-panel.ts
+@@ -3,6 +3,7 @@ export interface AgentRunInput {
+   userText: string
+   profileName?: string
+   toolPreset?: string
++  speechSummaryEnabled?: boolean
+ }
+ 
+ export interface AgentDisplayMessage {
+@@ -36,7 +37,8 @@ export function buildAgentRequest(input: AgentRunInput) {
+   const toolPreset = input.toolPreset ?? 'none'
+   if (!['none', 'default', 'coding_only'].includes(toolPreset)) throw new Error('工具模式不合法')
+   const profileName = input.profileName?.trim()
+-  return { sessionId: input.sessionId, userText, toolPreset, ...(profileName ? { profileName } : {}) }
++  return { sessionId: input.sessionId, userText, toolPreset, ...(profileName ? { profileName } : {}),
++    ...(typeof input.speechSummaryEnabled === 'boolean' ? { speechSummaryEnabled: input.speechSummaryEnabled } : {}) }
+ }
+ 
+ export function unwrapAgentResponse(response: any, allowLastError = false): any {
+diff --git a/apps/body/src/shared/agent-panel.test.ts b/apps/body/src/shared/agent-panel.test.ts
+index 22212b5..1f54a24 100644
+--- a/apps/body/src/shared/agent-panel.test.ts
++++ b/apps/body/src/shared/agent-panel.test.ts
+@@ -3,6 +3,12 @@ import { test } from 'node:test'
+ // @ts-expect-error Node strip-types needs .ts extensions.
+ import { buildAgentRequest, unwrapAgentResponse, applyAgentEvent, readAgentMessage } from './agent-panel.ts'
+ 
++test('forwards explicit per-session narration preference and preserves an absent preference', () => {
++  assert.equal(buildAgentRequest({ sessionId: 's', userText: 'hi', speechSummaryEnabled: true }).speechSummaryEnabled, true)
++  assert.equal(buildAgentRequest({ sessionId: 's', userText: 'hi', speechSummaryEnabled: false }).speechSummaryEnabled, false)
++  assert.equal(buildAgentRequest({ sessionId: 's', userText: 'hi' }).speechSummaryEnabled, undefined)
++})
++
+ test('builds an explicit safe Agent request and rejects missing session or text', () => {
+   assert.deepEqual(buildAgentRequest({ sessionId: 's', userText: ' hi ' }), {
+     sessionId: 's', userText: 'hi', toolPreset: 'none'
+diff --git a/apps/body/src/shared/session-speech.ts b/apps/body/src/shared/session-speech.ts
+new file mode 100644
+index 0000000..68ca537
+--- /dev/null
++++ b/apps/body/src/shared/session-speech.ts
+@@ -0,0 +1,31 @@
++interface PreferenceStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }
++const key = (sessionId: string) => `human:speech-summary:${sessionId}`
++
++export function readSpeechPreference(storage: PreferenceStorage, sessionId: string, fallback = false): boolean {
++  try {
++    const value = storage.getItem(key(sessionId))
++    return value === null ? fallback === true : value === 'true'
++  } catch { return false }
++}
++
++export function saveSpeechPreference(storage: PreferenceStorage, sessionId: string, enabled: boolean): void {
++  storage.setItem(key(sessionId), enabled === true ? 'true' : 'false')
++}
++
++/** Only the caller's still-current request may play; speech never changes text success. */
++export async function playSessionSpeech(
++  speech: any,
++  isCurrent: () => boolean,
++  perform: (payload: { text: string; audioUrl: string }) => Promise<any>
++): Promise<string> {
++  if (!isCurrent() || !speech) return ''
++  if (speech.status === 'failed') return `总结播报失败：${speech.error || '语音合成失败'}`
++  if (speech.status !== 'ready' || typeof speech.summary !== 'string' || !speech.summary.trim() || Array.from(speech.summary).length > 80) return ''
++  try {
++    const url = new URL(speech.audioUrl)
++    if (!['http:', 'https:'].includes(url.protocol)) return ''
++    const result = await perform({ text: speech.summary, audioUrl: url.href })
++    if (result?.data?.audioPlayed === false) return `总结播报失败：${result.data.audioError || '音频未能播放'}`
++    return result?.success === false ? `总结播报失败：${result.msg || '播放失败'}` : ''
++  } catch (error) { return `总结播报失败：${error instanceof Error ? error.message : String(error)}` }
++}
+diff --git a/apps/body/src/shared/session-speech.test.ts b/apps/body/src/shared/session-speech.test.ts
+new file mode 100644
+index 0000000..03aac54
+--- /dev/null
++++ b/apps/body/src/shared/session-speech.test.ts
+@@ -0,0 +1,32 @@
++import assert from 'node:assert/strict'
++import test from 'node:test'
++// @ts-expect-error Node strip-types tests require explicit .ts extensions.
++import { readSpeechPreference, saveSpeechPreference, playSessionSpeech } from './session-speech.ts'
++
++test('preferences default off, persist independently, and explicit local off overrides backend on', () => {
++  const values = new Map<string, string>()
++  const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value) } }
++  assert.equal(readSpeechPreference(storage, 'a'), false)
++  saveSpeechPreference(storage, 'a', true)
++  assert.equal(readSpeechPreference(storage, 'a'), true)
++  assert.equal(readSpeechPreference(storage, 'b'), false)
++  saveSpeechPreference(storage, 'a', false)
++  assert.equal(readSpeechPreference(storage, 'a', true), false)
++  assert.equal(readSpeechPreference(storage, 'b', true), true)
++})
++
++test('only current enabled request plays a valid independent speech field; failures are nonfatal', async () => {
++  let calls = 0
++  const perform = async () => { calls++; return { success: true } }
++  const speech = { status: 'ready', summary: '已完成。', audioUrl: 'http://localhost/a.wav' }
++  await playSessionSpeech(speech, () => false, perform)
++  await playSessionSpeech({ ...speech, summary: '' }, () => true, perform)
++  await playSessionSpeech({ ...speech, audioUrl: 'file:///tmp/a.wav' }, () => true, perform)
++  await playSessionSpeech(undefined, () => true, perform)
++  assert.equal(calls, 0)
++  await playSessionSpeech(speech, () => true, perform)
++  assert.equal(calls, 1)
++  assert.match(await playSessionSpeech(speech, () => true, async () => { throw new Error('offline') }), /offline/)
++  assert.match(await playSessionSpeech(speech, () => true, async () => ({ success: true, data: { audioPlayed: false, audioError: 'decode failed' } })), /decode failed/)
++  assert.match(await playSessionSpeech({ status: 'failed', error: 'engine failed' }, () => true, perform), /engine failed/)
++})
+diff --git a/apps/body/src/shared/speech-playback.ts b/apps/body/src/shared/speech-playback.ts
+new file mode 100644
+index 0000000..676610d
+--- /dev/null
++++ b/apps/body/src/shared/speech-playback.ts
+@@ -0,0 +1,24 @@
++export interface SpeechPlaybackTicket { scope: string; token: string }
++
++/** Main-process lease state. Empty token invalidates pending, not already playing, audio. */
++export class SpeechPlaybackGate {
++  private tokens = new Map<string, string>()
++  set(ticket: SpeechPlaybackTicket): void {
++    if (!['chat-panel', 'agent-panel'].includes(ticket?.scope) || typeof ticket.token !== 'string' || ticket.token.length > 200) throw new Error('播报令牌不合法')
++    this.tokens.set(ticket.scope, ticket.token)
++  }
++  current(ticket: SpeechPlaybackTicket): boolean {
++    return !!ticket?.token && this.tokens.get(ticket.scope) === ticket.token
++  }
++}
++
++/** Call at the actual playback boundary, after all asynchronous preparation. */
++export async function startSpeechPlayback(
++  ticket: SpeechPlaybackTicket | undefined,
++  isCurrent: (ticket: SpeechPlaybackTicket) => Promise<boolean>,
++  start: () => Promise<void>
++): Promise<boolean> {
++  if (ticket && !await isCurrent(ticket)) return false
++  await start()
++  return true
++}
+diff --git a/apps/body/src/shared/speech-playback.test.ts b/apps/body/src/shared/speech-playback.test.ts
+new file mode 100644
+index 0000000..bc95625
+--- /dev/null
++++ b/apps/body/src/shared/speech-playback.test.ts
+@@ -0,0 +1,27 @@
++import assert from 'node:assert/strict'
++import test from 'node:test'
++// @ts-expect-error Node strip-types needs a .ts extension.
++import { SpeechPlaybackGate, startSpeechPlayback } from './speech-playback.ts'
++
++test('a lease invalidated during asynchronous preparation never starts audio', async () => {
++  const gate = new SpeechPlaybackGate()
++  const ticket = { scope: 'chat-panel', token: 'session:one' }
++  gate.set(ticket)
++  let played = 0
++  let release!: () => void
++  const preparation = new Promise<void>(resolve => { release = resolve })
++  const pending = (async () => {
++    await preparation
++    return startSpeechPlayback(ticket, async t => gate.current(t), async () => { played++ })
++  })()
++  gate.set({ scope: 'chat-panel', token: '' })
++  release()
++  assert.equal(await pending, false)
++  assert.equal(played, 0)
++  gate.set({ scope: 'chat-panel', token: 'session:two' })
++  assert.equal(gate.current(ticket), false)
++  assert.equal(await startSpeechPlayback({ scope: 'chat-panel', token: 'session:two' }, async t => gate.current(t), async () => { played++ }), true)
++  assert.equal(played, 1)
++  await startSpeechPlayback(undefined, async () => false, async () => { played++ })
++  assert.equal(played, 2, 'ordinary/manual perform remains unaffected')
++})
+diff --git a/apps/body/src/shared/live2dPerformance.ts b/apps/body/src/shared/live2dPerformance.ts
+index 6bb7b8b..6a5e848 100644
+--- a/apps/body/src/shared/live2dPerformance.ts
++++ b/apps/body/src/shared/live2dPerformance.ts
+@@ -6,6 +6,7 @@ export interface Live2DPerformancePayload {
+   }
+   expression?: string
+   audioUrl?: string
++  speechPlayback?: { scope: string; token: string }
+ }
+ 
+ export type Live2DPerformanceResult =
+@@ -37,6 +38,13 @@ export const parseLive2DPerformancePayload = (
+   const text = trimString(raw.text)
+   const expression = trimString(raw.expression)
+   const audioUrl = trimString(raw.audioUrl)
++  if (raw.speechPlayback !== undefined) {
++    const ticket = raw.speechPlayback as { scope?: unknown; token?: unknown }
++    if (!ticket || !['chat-panel', 'agent-panel'].includes(String(ticket.scope)) || typeof ticket.token !== 'string' || !ticket.token || ticket.token.length > 200) {
++      return { success: false, error: 'speechPlayback 不合法' }
++    }
++    payload.speechPlayback = { scope: String(ticket.scope), token: ticket.token }
++  }
+ 
+   if (text) payload.text = text
+   if (expression) payload.expression = expression
+diff --git a/apps/body/src/shared/datas/ipc.ts b/apps/body/src/shared/datas/ipc.ts
+index f27341b..d7da350 100644
+--- a/apps/body/src/shared/datas/ipc.ts
++++ b/apps/body/src/shared/datas/ipc.ts
+@@ -130,6 +130,8 @@ export const defineHandlers = {
+     }
+   },
+   live2d: {
++    setSpeechPlaybackState: { desc: '更新会话播报令牌或使待播放语音失效' },
++    isSpeechPlaybackCurrent: { desc: '实际开始播放前核实会话播报令牌' },
+     synthesizeTts: {
+       desc: '通过已安装的 TTS 插件合成语音'
+     },
+diff --git a/apps/body/src/main/services/live2d/index.ts b/apps/body/src/main/services/live2d/index.ts
+index b66313f..0e0051a 100644
+--- a/apps/body/src/main/services/live2d/index.ts
++++ b/apps/body/src/main/services/live2d/index.ts
+@@ -8,6 +8,15 @@ import { getLive2DPetModelsResponse } from '@shared/live2dPetModels'
+ import { WindowManager } from '../../windowManager'
+ import { neuralTrigger } from '../neural/impl/neural-http'
+ import { requestTtsSynthesis } from './tts'
++import { SpeechPlaybackGate } from '../../../shared/speech-playback'
++import type { SpeechPlaybackTicket } from '../../../shared/speech-playback'
++
++const speechPlaybackGate = new SpeechPlaybackGate()
++export const setSpeechPlaybackState = async (ticket: SpeechPlaybackTicket) => {
++  try { speechPlaybackGate.set(ticket); return { success: true } }
++  catch (error) { return { success: false, msg: String(error) } }
++}
++export const isSpeechPlaybackCurrent = async (ticket: SpeechPlaybackTicket) => ({ success: true, data: { current: speechPlaybackGate.current(ticket) } })
+ 
+ export const synthesizeTts = async (params: { text: string }) => {
+   try {
+@@ -105,6 +114,9 @@ export const perform = async (payload: Live2DPerformancePayload) => {
+   if (!parsed.success) {
+     throw new Error(parsed.error)
+   }
++  if (parsed.payload.speechPlayback && !speechPlaybackGate.current(parsed.payload.speechPlayback)) {
++    return { audioPlayed: false, audioError: '播报请求已过期' }
++  }
+ 
+   if (parsed.payload.audioUrl) {
+     // Keep original string. Renderer will resolve local paths for playback.
+diff --git a/apps/body/src/renderer/src/pages/pet/index.vue b/apps/body/src/renderer/src/pages/pet/index.vue
+index b8a58d7..dde2f23 100644
+--- a/apps/body/src/renderer/src/pages/pet/index.vue
++++ b/apps/body/src/renderer/src/pages/pet/index.vue
+@@ -15,6 +15,7 @@ import {
+   resolveHitAreaMotion
+ } from '@renderer/adapters/live2dTapMotion'
+ import type { Live2DPerformancePayload } from '@shared/live2dPerformance'
++import { startSpeechPlayback } from '@shared/speech-playback'
+ import { getDefaultLive2DPetModel, live2dPetModels } from '@shared/live2dPetModels'
+ 
+ const ipc = inject<IpcProxy>('ipc')!
+@@ -434,17 +435,18 @@ const startAudioLipSyncDriver = async (audio: HTMLAudioElement) => {
+   }
+ }
+ 
+-const playPerformanceAudio = async (audioUrl: string) => {
++const playPerformanceAudio = async (audioUrl: string, speechPlayback?: Live2DPerformancePayload['speechPlayback']) => {
+   currentPerformanceAudio?.pause()
+   stopAudioLipSyncDriver()
+   const resolved = await resolveAudioUrlForRenderer(audioUrl)
+-  currentPerformanceAudio = new Audio()
++  const audio = new Audio()
++  currentPerformanceAudio = audio
+   // The TTS cache is served by the backend on a different origin. WebAudio
+   // requires CORS mode to analyse the audio for lip sync without silencing it.
+-  if (/^https?:/i.test(resolved.url)) currentPerformanceAudio.crossOrigin = 'anonymous'
+-  currentPerformanceAudio.src = resolved.url
+-  await startAudioLipSyncDriver(currentPerformanceAudio)
+-  currentPerformanceAudio.addEventListener(
++  if (/^https?:/i.test(resolved.url)) audio.crossOrigin = 'anonymous'
++  audio.src = resolved.url
++  await startAudioLipSyncDriver(audio)
++  audio.addEventListener(
+     'ended',
+     () => {
+       stopAudioLipSyncDriver()
+@@ -452,7 +454,7 @@ const playPerformanceAudio = async (audioUrl: string) => {
+     },
+     { once: true }
+   )
+-  currentPerformanceAudio.addEventListener(
++  audio.addEventListener(
+     'error',
+     () => {
+       stopAudioLipSyncDriver()
+@@ -462,9 +464,12 @@ const playPerformanceAudio = async (audioUrl: string) => {
+   )
+ 
+   try {
+-    await currentPerformanceAudio.play()
++    const started = await startSpeechPlayback(speechPlayback,
++      async ticket => (await ipc.live2d.isSpeechPlaybackCurrent(ticket))?.data?.current === true,
++      () => audio.play())
++    if (!started) throw new Error('播报请求已过期')
+   } catch (error) {
+-    stopAudioLipSyncDriver()
++    if (currentPerformanceAudio === audio) stopAudioLipSyncDriver()
+     resolved.revoke?.()
+     throw error
+   }
+@@ -472,6 +477,9 @@ const playPerformanceAudio = async (audioUrl: string) => {
+ 
+ const performLive2D = async (payload: Live2DPerformancePayload) => {
+   await startLive2D()
++  if (payload.speechPlayback && (await ipc.live2d.isSpeechPlaybackCurrent(payload.speechPlayback))?.data?.current !== true) {
++    return { textShown: false, motionPlayed: false, expressionPlayed: false, audioPlayed: false, audioError: '播报请求已过期' }
++  }
+ 
+   const result: {
+     textShown: boolean
+@@ -504,7 +512,7 @@ const performLive2D = async (payload: Live2DPerformancePayload) => {
+ 
+   if (payload.audioUrl) {
+     try {
+-      await playPerformanceAudio(payload.audioUrl)
++      await playPerformanceAudio(payload.audioUrl, payload.speechPlayback)
+       result.audioPlayed = true
+     } catch (error) {
+       result.audioError = error instanceof Error ? error.message : String(error)
+diff --git a/apps/body/src/main/services/sense/impl/hearing/index.ts b/apps/body/src/main/services/sense/impl/hearing/index.ts
+index 04919d7..3d80e68 100644
+--- a/apps/body/src/main/services/sense/impl/hearing/index.ts
++++ b/apps/body/src/main/services/sense/impl/hearing/index.ts
+@@ -393,6 +393,7 @@ export const submitCompanionQuestion = async (params: {
+   question: string
+   requestId?: string
+   sessionId?: string
++  speechSummaryEnabled?: boolean
+ }): Promise<BaseResponse> => {
+   const question = params.question.trim()
+   if (!question) return { success: false, msg: '问题为空，无法提交' }
+@@ -401,6 +402,7 @@ export const submitCompanionQuestion = async (params: {
+     requestId: params.requestId || crypto.randomUUID(),
+     sessionId: params.sessionId || '',
+     confirmedQuestion: question,
++    speechSummaryEnabled: params.speechSummaryEnabled === true,
+     source: 'body.chat-panel',
+     createdAt: Date.now(),
+   }
+diff --git a/apps/body/src/renderer/src/pages/agent-panel/index.vue b/apps/body/src/renderer/src/pages/agent-panel/index.vue
+index 23da1ef..5c245db 100644
+--- a/apps/body/src/renderer/src/pages/agent-panel/index.vue
++++ b/apps/body/src/renderer/src/pages/agent-panel/index.vue
+@@ -3,6 +3,7 @@ import { computed, inject, nextTick, onMounted, onUnmounted, reactive, ref } fro
+ import type { IpcProxy } from '@renderer/plugin/ipc'
+ import { applyAgentEvent, readAgentMessage } from '@shared/agent-panel'
+ import type { AgentPanelState } from '@shared/agent-panel'
++import { readSpeechPreference, saveSpeechPreference, playSessionSpeech } from '@shared/session-speech'
+ 
+ const ipc = inject<IpcProxy>('ipc')!
+ const state = reactive<AgentPanelState>({ sessionId: crypto.randomUUID(), requestId: '', messages: [], tools: [], status: 'idle', error: '' })
+@@ -13,6 +14,18 @@ const toolPreset = ref('none')
+ const busy = ref(false)
+ const loading = ref(false)
+ const notice = ref('')
++const speechEnabled = ref(false)
++const speechNotice = ref('')
++let speechEpoch = 0
++const updatePlayback = (token = '') => { void ipc.live2d.setSpeechPlaybackState({ scope: 'agent-panel', token }).catch(() => {}) }
++const beforeUnloadSpeech = () => { ++speechEpoch; updatePlayback() }
++function changeSpeech() {
++  ++speechEpoch
++  updatePlayback()
++  speechNotice.value = ''
++  try { saveSpeechPreference(localStorage, state.sessionId, speechEnabled.value) }
++  catch { speechEnabled.value = false; speechNotice.value = '无法保存播报设置，已保持关闭' }
++}
+ const log = ref<HTMLElement>()
+ let disposed = false
+ let loadId = 0
+@@ -42,6 +55,12 @@ async function loadSession(sessionId: string, finalRefresh = false) {
+     if (disposed || id !== loadId) return
+     if (!result.success) throw new Error(result.msg || '读取会话失败')
+     state.sessionId = sessionId
++    if (!finalRefresh) {
++      ++speechEpoch
++      updatePlayback()
++      speechEnabled.value = readSpeechPreference(localStorage, sessionId, result.data?.speechSummaryEnabled === true)
++      speechNotice.value = ''
++    }
+     state.messages = (result.data?.messages || []).map(readAgentMessage)
+     state.activeMessage = undefined
+     if (!finalRefresh) {
+@@ -61,6 +80,10 @@ function newSession() {
+   ++loadId
+   Object.assign(state, { sessionId: crypto.randomUUID(), requestId: '', messages: [], tools: [], status: 'idle', error: '', activeMessage: undefined })
+   task.value = ''
++  ++speechEpoch
++  speechEnabled.value = false
++  updatePlayback()
++  speechNotice.value = ''
+   toolPreset.value = 'none'
+   notice.value = ''
+ }
+@@ -69,6 +92,12 @@ async function submit() {
+   if (busy.value || loading.value || !task.value.trim()) return
+   const text = task.value.trim()
+   const sessionId = state.sessionId
++  const epoch = ++speechEpoch
++  const narrate = speechEnabled.value
++  const speechPlayback = { scope: 'agent-panel', token: crypto.randomUUID() }
++  updatePlayback(narrate ? speechPlayback.token : '')
++  const currentSpeech = () => !disposed && state.sessionId === sessionId && speechEpoch === epoch && speechEnabled.value && narrate
++  speechNotice.value = ''
+   busy.value = true
+   state.requestId = ''
+   state.activeMessage = undefined
+@@ -80,11 +109,15 @@ async function submit() {
+   task.value = ''
+   void scrollEnd()
+   try {
+-    const result = await ipc.agent.run({ sessionId, userText: text, profileName: profile.value, toolPreset: toolPreset.value })
++    const result = await ipc.agent.run({ sessionId, userText: text, profileName: profile.value, toolPreset: toolPreset.value, speechSummaryEnabled: narrate })
+     if (disposed) return
+     if (!result.success) throw new Error(result.msg || 'Agent 执行失败')
+     state.status = state.error ? 'error' : 'done'
+     await loadSession(sessionId, true)
++    if (currentSpeech()) {
++      const message = result.data?.speech ? await playSessionSpeech(result.data.speech, currentSpeech, payload => ipc.live2d.perform({ ...payload, speechPlayback })) : '本轮未生成有效的播报摘要，已保留文字回复'
++      if (currentSpeech()) speechNotice.value = message
++    }
+   } catch (error) {
+     if (!disposed) {
+       state.error = error instanceof Error ? error.message : String(error)
+@@ -106,12 +139,16 @@ async function selectSession(event: Event) {
+ }
+ 
+ onMounted(async () => {
++  window.addEventListener('beforeunload', beforeUnloadSpeech)
+   window.electron.ipcRenderer.on('agent:event', onEvent)
+   window.electron.ipcRenderer.on('agent:notice', onNotice)
+   try { await refreshSessions() } catch (error) { notice.value = String(error) }
+ })
+ onUnmounted(() => {
++  window.removeEventListener('beforeunload', beforeUnloadSpeech)
+   disposed = true
++  ++speechEpoch
++  updatePlayback()
+   window.electron.ipcRenderer.off('agent:event', onEvent)
+   window.electron.ipcRenderer.off('agent:notice', onNotice)
+ })
+@@ -130,10 +167,12 @@ onUnmounted(() => {
+       <select v-model="toolPreset" aria-label="工具模式" :disabled="busy || loading">
+         <option value="none">不使用工具（默认）</option><option value="default">全部已注册工具</option><option value="coding_only">编码与会话工具</option>
+       </select>
++      <label><input v-model="speechEnabled" type="checkbox" :disabled="loading" @change="changeSpeech" />回复总结播报</label>
+     </section>
+     <p class="session-id">会话 {{ state.sessionId }}</p>
+     <p v-if="toolPreset !== 'none'" class="warning">已允许模型调用所选工具，可能修改文件或运行命令。请仅执行你信任的测试任务。</p>
+     <p v-if="notice" class="notice">{{ notice }}</p>
++    <p v-if="speechNotice" class="notice" role="status">{{ speechNotice }}</p>
+     <p v-if="state.error" role="alert" class="error">{{ state.error }}</p>
+     <section ref="log" class="messages" aria-label="Agent 执行记录" aria-live="polite">
+       <p v-if="!state.messages.length" class="empty">先发送一个简单任务验证模型连接，再开启工具测试。支持多轮对话和历史会话恢复。</p>
+diff --git a/apps/body/src/renderer/src/pages/chat-panel/index.vue b/apps/body/src/renderer/src/pages/chat-panel/index.vue
+index 812285f..eef71fe 100644
+--- a/apps/body/src/renderer/src/pages/chat-panel/index.vue
++++ b/apps/body/src/renderer/src/pages/chat-panel/index.vue
+@@ -4,6 +4,7 @@ import type { ChatReasoning } from '@tdesign-vue-next/chat'
+ import type { IpcProxy } from '@renderer/plugin/ipc'
+ import Button from 'primevue/button'
+ import { computed, inject, onMounted, onUnmounted, ref, nextTick } from 'vue'
++import { readSpeechPreference, saveSpeechPreference, playSessionSpeech } from '@shared/session-speech'
+ 
+ const ipc = inject<IpcProxy>('ipc')!
+ 
+@@ -35,6 +36,35 @@ const voiceDraft = ref('')
+ const voiceError = ref('')
+ const currentVoiceSessionId = ref('')
+ const currentRewriteRequestId = ref('')
++const chatSessionKey = 'human:chat-panel:session-id'
++const chatSessionId = ref(localStorage.getItem(chatSessionKey) || crypto.randomUUID())
++localStorage.setItem(chatSessionKey, chatSessionId.value)
++const speechEnabled = ref(readSpeechPreference(localStorage, chatSessionId.value))
++const speechNotice = ref('')
++let speechEpoch = 0
++let latestRequestId = ''
++let disposed = false
++const updatePlayback = (token = '') => { void ipc.live2d.setSpeechPlaybackState({ scope: 'chat-panel', token }).catch(() => {}) }
++const beforeUnloadSpeech = () => { ++speechEpoch; updatePlayback() }
++const changeSpeech = () => {
++  ++speechEpoch
++  updatePlayback()
++  speechNotice.value = ''
++  try { saveSpeechPreference(localStorage, chatSessionId.value, speechEnabled.value) }
++  catch { speechEnabled.value = false; speechNotice.value = '无法保存播报设置，已保持关闭' }
++}
++const newChatSession = () => {
++  if (isAILoading.value) return
++  ++speechEpoch
++  latestRequestId = ''
++  updatePlayback()
++  chatSessionId.value = crypto.randomUUID()
++  localStorage.setItem(chatSessionKey, chatSessionId.value)
++  speechEnabled.value = false
++  speechNotice.value = ''
++  messageList.value = []
++  statusLabel.value = '等待提问'
++}
+ 
+ // ──────────────────────────────────────────────
+ // 计算属性
+@@ -92,6 +122,14 @@ const sendQuestion = async (text?: string) => {
+   if (!question) return
+ 
+   const requestId = crypto.randomUUID()
++  latestRequestId = requestId
++  const sessionId = chatSessionId.value
++  const narrate = speechEnabled.value
++  const epoch = ++speechEpoch
++  const speechPlayback = { scope: 'chat-panel', token: crypto.randomUUID() }
++  updatePlayback(narrate ? speechPlayback.token : '')
++  const currentSpeech = () => !disposed && latestRequestId === requestId && chatSessionId.value === sessionId && speechEpoch === epoch && speechEnabled.value && narrate
++  speechNotice.value = ''
+   statusLabel.value = '回答中'
+   errorMessage.value = ''
+   isAILoading.value = true
+@@ -124,8 +162,11 @@ const sendQuestion = async (text?: string) => {
+ 
+   const result = await ipc.sense.submitCompanionQuestion({
+     question,
+-    requestId
++    requestId,
++    sessionId,
++    speechSummaryEnabled: narrate
+   })
++  if (disposed || latestRequestId !== requestId) return
+ 
+   if (!result?.success) {
+     errorMessage.value = result?.msg || '提问失败'
+@@ -150,6 +191,11 @@ const sendQuestion = async (text?: string) => {
+     statusLabel.value = '回答完成'
+     isAILoading.value = false
+   }
++  if (currentSpeech()) {
++    const speech = result?.data?.data?.speech
++    const message = speech ? await playSessionSpeech(speech, currentSpeech, payload => ipc.live2d.perform({ ...payload, speechPlayback })) : '本轮未生成有效的播报摘要，已保留文字回复'
++    if (currentSpeech()) speechNotice.value = message
++  }
+ }
+ 
+ const handleHearingEvent = (_event: any, data: any) => {
+@@ -186,6 +232,7 @@ const handleHearingEvent = (_event: any, data: any) => {
+ 
+   const targetMsg = requestId ? findMessageById(requestId) : activeAssistantMessage.value
+   if (!targetMsg) return
++  if (topic.startsWith('brain.cortex.answer.') && requestId !== latestRequestId) return
+ 
+   if (topic === 'brain.cortex.answer.stream.think') {
+     const content = String(payload?.content || '')
+@@ -315,10 +362,13 @@ const stopAndRewriteVoice = async () => {
+ }
+ 
+ const closePanel = async () => {
++  ++speechEpoch
++  updatePlayback()
+   await ipc.sense.closeChatPanel()
+ }
+ 
+ onMounted(() => {
++  window.addEventListener('beforeunload', beforeUnloadSpeech)
+   ipc.sense.consumePendingHearingConfirmed().then((result) => {
+     const items = Array.isArray(result?.data) ? result.data : []
+     for (const item of items) {
+@@ -330,6 +380,10 @@ onMounted(() => {
+ })
+ 
+ onUnmounted(() => {
++  window.removeEventListener('beforeunload', beforeUnloadSpeech)
++  disposed = true
++  ++speechEpoch
++  updatePlayback()
+   window.electron.ipcRenderer.off('sense:hearing-event', handleHearingEvent)
+   window.electron.ipcRenderer.off('sense:hearing-confirmed', handleConfirmed)
+ })
+@@ -343,6 +397,8 @@ onUnmounted(() => {
+         AI 助手
+       </span>
+       <div class="header-actions">
++        <label><input v-model="speechEnabled" type="checkbox" @change="changeSpeech" />总结播报</label>
++        <Button size="small" text :disabled="isAILoading" @click="newChatSession">新会话</Button>
+         <span class="status-pill">{{ statusLabel }}</span>
+         <Button icon="pi pi-times" size="small" text class="close-btn" @click="closePanel" />
+       </div>
+@@ -358,6 +414,7 @@ onUnmounted(() => {
+       />
+ 
+       <div class="input-area">
++        <p v-if="speechNotice" role="status">{{ speechNotice }}</p>
+         <section v-if="isVoiceActive || voiceDraft || voiceError" class="voice-panel">
+           <div class="voice-panel-header">
+             <span>
