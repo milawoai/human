@@ -97,3 +97,16 @@ git apply patches/body-model-config.patch
 ```bash
 git apply --reverse --check patches/body-model-config.patch
 ```
+
+## Agent 运行管理（2026-10-30，human-152）
+
+`body-agent-run-management.patch` 是总结播报基线之后的7文件增量：停止/查询IPC、短超时控制查询、运行状态映射、请求runId、页面停止与刷新恢复观察。与同日模型配置补丁可组合，特意排除并行modelConfig IPC改动。上面的“没有取消接口”描述仅代表旧测试面板基线；本期仍不提供后端崩溃恢复。
+
+```bash
+git apply --reverse --check patches/body-agent-run-management.patch
+# 尚未应用时，在对应Body基线上：
+git apply --check patches/body-agent-run-management.patch
+git apply patches/body-agent-run-management.patch
+```
+
+生成并独立重放：`node scripts/archive-body-agent-runs-patch.cjs <修改前Body目录>`。需保存本次精确前置目录，不能用旧基线覆盖后来新增的代码。测试：`yarn workspace backend verify:agent-runs`、`yarn workspace electron_with_serve test:agent`。Electron E2E需先在12002启动 `apps/backend/scripts/agent-run-desktop-fixture.ts`，再以19222调试端口启动Electron，运行 `node scripts/verify-agent-run-management.cjs`；脚本检查fixture标识，拒绝向真实后端发送fixture任务，不调用云模型。详细证据见 `docs/plans/2026-10-30-agent-run-management.md`。

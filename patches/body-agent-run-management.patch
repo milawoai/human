@@ -1,0 +1,307 @@
+diff --git a/apps/body/src/shared/agent-panel.ts b/apps/body/src/shared/agent-panel.ts
+index 08e4a2b..b9fab3c 100644
+--- a/apps/body/src/shared/agent-panel.ts
++++ b/apps/body/src/shared/agent-panel.ts
+@@ -1,3 +1,4 @@
+ export interface AgentRunInput {
++  runId?: string
+   sessionId: string
+   userText: string
+@@ -26,5 +27,5 @@ export interface AgentPanelState {
+   messages: AgentDisplayMessage[]
+   tools: AgentToolDisplay[]
+-  status: 'idle' | 'running' | 'done' | 'error'
++  status: 'idle' | 'running' | 'cancelling' | 'cancelled' | 'unknown' | 'done' | 'error'
+   error: string
+   activeMessage?: number
+@@ -32,4 +33,5 @@ export interface AgentPanelState {
+ 
+ export function buildAgentRequest(input: AgentRunInput) {
++  if (input.runId && !/^[a-zA-Z0-9_-]{1,128}$/.test(input.runId)) throw new Error('运行 ID 不合法')
+   if (!/^[a-zA-Z0-9_-]{1,128}$/.test(input.sessionId || '')) throw new Error('会话 ID 不合法')
+   const userText = typeof input.userText === 'string' ? input.userText.trim() : ''
+@@ -38,8 +40,18 @@ export function buildAgentRequest(input: AgentRunInput) {
+   if (!['none', 'default', 'coding_only'].includes(toolPreset)) throw new Error('工具模式不合法')
+   const profileName = input.profileName?.trim()
+-  return { sessionId: input.sessionId, userText, toolPreset, ...(profileName ? { profileName } : {}),
++  return { sessionId: input.sessionId, userText, toolPreset, ...(input.runId ? { runId: input.runId } : {}), ...(profileName ? { profileName } : {}),
+     ...(typeof input.speechSummaryEnabled === 'boolean' ? { speechSummaryEnabled: input.speechSummaryEnabled } : {}) }
+ }
+ 
++export function readRunObservation(data: any, sessionId: string, runId = '') {
++  if (!data || typeof data !== 'object') throw new Error('无效的运行查询响应')
++  const run = data.run
++  if (!run && data.status === 'unknown') return { busy: false, status: 'unknown' as const, runId, error: '' }
++  if (!run || run.sessionId !== sessionId || (runId && run.runId !== runId)) return null
++  const statuses = { running: 'running', cancelling: 'cancelling', succeeded: 'done', failed: 'error', cancelled: 'cancelled' } as const
++  if (!(run.status in statuses)) throw new Error('未知的运行状态')
++  return { busy: ['running', 'cancelling'].includes(run.status), status: statuses[run.status as keyof typeof statuses], runId: String(run.runId), error: run.error || '' }
++}
++
+ export function unwrapAgentResponse(response: any, allowLastError = false): any {
+   if (!response?.success) throw new Error(response?.msg || 'Agent 请求失败')
+diff --git a/apps/body/src/shared/agent-panel.test.ts b/apps/body/src/shared/agent-panel.test.ts
+index 1f54a24..97a850e 100644
+--- a/apps/body/src/shared/agent-panel.test.ts
++++ b/apps/body/src/shared/agent-panel.test.ts
+@@ -2,5 +2,14 @@ import assert from 'node:assert/strict'
+ import { test } from 'node:test'
+ // @ts-expect-error Node strip-types needs .ts extensions.
+-import { buildAgentRequest, unwrapAgentResponse, applyAgentEvent, readAgentMessage } from './agent-panel.ts'
++import { buildAgentRequest, unwrapAgentResponse, applyAgentEvent, readAgentMessage, readRunObservation } from './agent-panel.ts'
++
++test('run observations distinguish cancellation confirmation, unknown and stale executions', () => {
++  assert.deepEqual(readRunObservation({ run: { runId: 'r', sessionId: 's', status: 'cancelling' } }, 's', 'r'), { busy: true, status: 'cancelling', runId: 'r', error: '' })
++  assert.equal(readRunObservation({ run: { runId: 'r', sessionId: 's', status: 'cancelled' } }, 's', 'r')?.busy, false)
++  assert.equal(readRunObservation({ run: null, status: 'unknown' }, 's', 'r')?.status, 'unknown')
++  assert.equal(readRunObservation({ run: { runId: 'old', sessionId: 's', status: 'succeeded' } }, 's', 'r'), null)
++  assert.equal(readRunObservation({ run: { runId: 'r', sessionId: 'other', status: 'succeeded' } }, 's', 'r'), null)
++  assert.throws(() => readRunObservation({ run: { runId: 'r', sessionId: 's', status: 'nonsense' } }, 's', 'r'))
++})
+ 
+ test('forwards explicit per-session narration preference and preserves an absent preference', () => {
+diff --git a/apps/body/src/main/services/agent/index.ts b/apps/body/src/main/services/agent/index.ts
+index 5f06378..5667a1d 100644
+--- a/apps/body/src/main/services/agent/index.ts
++++ b/apps/body/src/main/services/agent/index.ts
+@@ -28,5 +28,5 @@ export async function openPanel() {
+     if (running) {
+       event.preventDefault()
+-      window.webContents.send('agent:notice', '任务仍在运行；当前版本不支持取消，请等待结束后关闭。')
++      window.hide()
+     }
+   })
+@@ -107,2 +107,16 @@ export async function getSession(input: { sessionId: string }) {
+   } catch (error) { return failure(error) }
+ }
++
++export async function getRun(input: { sessionId: string; runId?: string }) {
++  if (!/^[a-zA-Z0-9_-]{1,128}$/.test(input?.sessionId || '')) return failure('会话 ID 不合法')
++  try {
++    return { success: true, data: unwrapAgentResponse(await neuralTrigger({ kind: 'query', topic: 'brain.agent.run.get', payload: input }, { timeoutMs: 8000 })) }
++  } catch (error) { return failure(error) }
++}
++
++export async function cancelRun(input: { sessionId: string; runId: string }) {
++  if (!/^[a-zA-Z0-9_-]{1,128}$/.test(input?.sessionId || '') || !/^[a-zA-Z0-9_-]{1,128}$/.test(input?.runId || '')) return failure('会话或运行 ID 不合法')
++  try {
++    return { success: true, data: unwrapAgentResponse(await neuralTrigger({ kind: 'command', topic: 'brain.agent.run.cancel', payload: input }, { timeoutMs: 8000 })) }
++  } catch (error) { return failure(error) }
++}
+diff --git a/apps/body/src/main/services/agent/bridge.ts b/apps/body/src/main/services/agent/bridge.ts
+index d594758..8a824b5 100644
+--- a/apps/body/src/main/services/agent/bridge.ts
++++ b/apps/body/src/main/services/agent/bridge.ts
+@@ -11,5 +11,5 @@ interface AgentDependencies {
+ export async function executeAgentRun(input: AgentRunInput, deps: AgentDependencies): Promise<any> {
+   const payload = buildAgentRequest(input)
+-  let requestId = ''
++  let requestId = payload.runId || ''
+   const cleanup = await deps.observe((message) => {
+     if (message?.topic !== 'brain.agent.run.event' || message.payload?.sessionId !== payload.sessionId) return
+diff --git a/apps/body/src/shared/datas/ipc.ts b/apps/body/src/shared/datas/ipc.ts
+index d7da350..67daa81 100644
+--- a/apps/body/src/shared/datas/ipc.ts
++++ b/apps/body/src/shared/datas/ipc.ts
+@@ -12,4 +12,6 @@ export const defineHandlers = {
+     openPanel: { desc: '打开 Agent 测试面板' },
+     run: { desc: '执行 Pi Agent 任务' },
++    getRun: { desc: '查询 Pi Agent 运行状态' },
++    cancelRun: { desc: '取消指定 Pi Agent 运行' },
+     listSessions: { desc: '查询 Agent 会话列表' },
+     getSession: { desc: '读取 Agent 会话历史' }
+diff --git a/apps/body/src/renderer/src/pages/agent-panel/index.vue b/apps/body/src/renderer/src/pages/agent-panel/index.vue
+index 5c245db..1b56cc9 100644
+--- a/apps/body/src/renderer/src/pages/agent-panel/index.vue
++++ b/apps/body/src/renderer/src/pages/agent-panel/index.vue
+@@ -2,5 +2,5 @@
+ import { computed, inject, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
+ import type { IpcProxy } from '@renderer/plugin/ipc'
+-import { applyAgentEvent, readAgentMessage } from '@shared/agent-panel'
++import { applyAgentEvent, readAgentMessage, readRunObservation } from '@shared/agent-panel'
+ import type { AgentPanelState } from '@shared/agent-panel'
+ import { readSpeechPreference, saveSpeechPreference, playSessionSpeech } from '@shared/session-speech'
+@@ -30,5 +30,9 @@ const log = ref<HTMLElement>()
+ let disposed = false
+ let loadId = 0
+-const statusLabel = computed(() => ({ idle: '等待任务', running: '运行中', done: '已完成', error: '执行失败' })[state.status])
++let pollTimer: ReturnType<typeof setTimeout> | undefined
++let querying = false
++let submittingRunId = ''
++const rememberSession = () => { try { localStorage.setItem('human:agent:last-session', state.sessionId) } catch {} }
++const statusLabel = computed(() => ({ idle: '等待任务', running: '运行中', cancelling: '正在取消', cancelled: '已取消', unknown: '状态未知', done: '已完成', error: '执行失败' })[state.status])
+ const scrollEnd = async () => { await nextTick(); if (log.value) log.value.scrollTop = log.value.scrollHeight }
+ 
+@@ -56,4 +60,5 @@ async function loadSession(sessionId: string, finalRefresh = false) {
+     if (!result.success) throw new Error(result.msg || '读取会话失败')
+     state.sessionId = sessionId
++    rememberSession()
+     if (!finalRefresh) {
+       ++speechEpoch
+@@ -87,4 +92,58 @@ function newSession() {
+   toolPreset.value = 'none'
+   notice.value = ''
++  rememberSession()
++}
++
++async function checkRun() {
++  if (querying || disposed) return
++  querying = true
++  const sessionId = state.sessionId
++  const runId = state.requestId
++  try {
++    const result = await ipc.agent.getRun({ sessionId, ...(runId ? { runId } : {}) })
++    if (disposed || sessionId !== state.sessionId || runId !== state.requestId) return
++    if (!result.success) throw new Error(result.msg || '查询运行状态失败')
++    const observed = readRunObservation(result.data, sessionId, runId)
++    if (!observed) return
++    if (observed.status === 'unknown' && submittingRunId === runId && runId) {
++      notice.value = '后端尚无此运行记录；请求仍等待中，不会自动重发。'
++      return
++    }
++    const wasBusy = busy.value
++    busy.value = observed.busy
++    state.status = observed.status
++    state.requestId = observed.runId
++    state.error = observed.error
++    if (observed.status === 'unknown') notice.value = '后端未找到运行记录（可能重启或记录已过期），无法确认此前任务结果；不要直接重发写任务。'
++    else if (observed.status === 'cancelling') notice.value = '已请求取消，等待执行真正结束；不能撤销已经完成的工具操作。'
++    else if (observed.status === 'cancelled') notice.value = '执行已结束；取消不能撤销之前的副作用。'
++    if (wasBusy && !observed.busy && observed.status !== 'unknown') {
++      try { await loadSession(sessionId, true) }
++      catch { notice.value = '已确认运行结束，但没有可恢复的会话历史（可能在初始化阶段失败）。' }
++      await refreshSessions()
++    }
++  } catch (error) {
++    if (!disposed && sessionId === state.sessionId) notice.value = `无法确认后端状态：${String(error)}；不会自动重发任务。`
++  } finally { querying = false }
++}
++
++async function cancelRun() {
++  if (!state.requestId || !busy.value) return
++  const sessionId = state.sessionId, runId = state.requestId
++  ++speechEpoch
++  updatePlayback()
++  try {
++    const result = await ipc.agent.cancelRun({ sessionId, runId })
++    if (!result.success) throw new Error(result.msg || '取消请求失败')
++    if (!disposed && state.sessionId === sessionId && state.requestId === runId) await checkRun()
++  } catch (error) { notice.value = `未确认取消：${String(error)}` }
++}
++
++function schedulePoll() {
++  pollTimer = setTimeout(async () => {
++    if (disposed) return
++    if (busy.value) await checkRun()
++    schedulePoll()
++  }, 2000)
+ }
+ 
+@@ -93,4 +152,6 @@ async function submit() {
+   const text = task.value.trim()
+   const sessionId = state.sessionId
++  const runId = crypto.randomUUID()
++  const ownsRun = () => !disposed && state.sessionId === sessionId && state.requestId === runId
+   const epoch = ++speechEpoch
+   const narrate = speechEnabled.value
+@@ -100,5 +161,8 @@ async function submit() {
+   speechNotice.value = ''
+   busy.value = true
+-  state.requestId = ''
++  state.requestId = runId
++  submittingRunId = runId
++  rememberSession()
++  try { localStorage.setItem('human:agent:last-run', JSON.stringify({ sessionId, runId })) } catch {}
+   state.activeMessage = undefined
+   state.status = 'running'
+@@ -110,22 +174,23 @@ async function submit() {
+   void scrollEnd()
+   try {
+-    const result = await ipc.agent.run({ sessionId, userText: text, profileName: profile.value, toolPreset: toolPreset.value, speechSummaryEnabled: narrate })
+-    if (disposed) return
++    const result = await ipc.agent.run({ sessionId, runId, userText: text, profileName: profile.value, toolPreset: toolPreset.value, speechSummaryEnabled: narrate })
++    if (!ownsRun()) return
+     if (!result.success) throw new Error(result.msg || 'Agent 执行失败')
+-    state.status = state.error ? 'error' : 'done'
++    state.status = result.data?.runStatus === 'cancelled' ? 'cancelled' : state.error ? 'error' : 'done'
+     await loadSession(sessionId, true)
+-    if (currentSpeech()) {
++    if (currentSpeech() && result.data?.runStatus !== 'cancelled') {
+       const message = result.data?.speech ? await playSessionSpeech(result.data.speech, currentSpeech, payload => ipc.live2d.perform({ ...payload, speechPlayback })) : '本轮未生成有效的播报摘要，已保留文字回复'
+       if (currentSpeech()) speechNotice.value = message
+     }
+   } catch (error) {
+-    if (!disposed) {
+-      state.error = error instanceof Error ? error.message : String(error)
+-      state.status = 'error'
+-      task.value = text
++    if (ownsRun()) {
++      notice.value = `请求未正常返回：${String(error)}；正在检查实际状态，不会自动重发。`
++      submittingRunId = ''
++      await checkRun()
+     }
+   } finally {
+-    if (!disposed) {
+-      busy.value = false
++    if (submittingRunId === runId) submittingRunId = ''
++    if (ownsRun()) {
++      await checkRun()
+       try { await refreshSessions() } catch (error) { notice.value = String(error) }
+     }
+@@ -136,5 +201,5 @@ async function selectSession(event: Event) {
+   const sessionId = (event.target as HTMLSelectElement).value
+   if (!sessionId) return
+-  try { await loadSession(sessionId) } catch (error) { state.error = String(error) }
++  try { await loadSession(sessionId); await checkRun() } catch (error) { state.error = String(error) }
+ }
+ 
+@@ -144,8 +209,23 @@ onMounted(async () => {
+   window.electron.ipcRenderer.on('agent:notice', onNotice)
+   try { await refreshSessions() } catch (error) { notice.value = String(error) }
++  try {
++    const remembered = localStorage.getItem('human:agent:last-session')
++    if (remembered && /^[a-zA-Z0-9_-]{1,128}$/.test(remembered)) {
++      state.sessionId = remembered
++      // An active first run may not have a persisted history file yet.
++      try { await loadSession(remembered) } catch { /* query live ownership below */ }
++      try {
++        const saved = JSON.parse(localStorage.getItem('human:agent:last-run') || 'null')
++        if (saved?.sessionId === remembered && /^[a-zA-Z0-9_-]{1,128}$/.test(saved.runId || '')) state.requestId = saved.runId
++      } catch { /* corrupt storage must not prevent live status queries */ }
++      await checkRun()
++    }
++  } catch { /* local storage is optional */ }
++  schedulePoll()
+ })
+ onUnmounted(() => {
+   window.removeEventListener('beforeunload', beforeUnloadSpeech)
+   disposed = true
++  clearTimeout(pollTimer)
+   ++speechEpoch
+   updatePlayback()
+@@ -160,4 +240,5 @@ onUnmounted(() => {
+     <section class="controls" aria-label="会话与模型">
+       <button :disabled="busy || loading" @click="newSession">新会话</button>
++      <button :disabled="loading" @click="checkRun">检查运行状态</button>
+       <select aria-label="恢复会话" :disabled="busy || loading" :value="sessions.some(s => s.sessionId === state.sessionId) ? state.sessionId : ''" @change="selectSession">
+         <option value="">恢复最近会话…</option>
+@@ -192,5 +273,5 @@ onUnmounted(() => {
+     <form @submit.prevent="submit">
+       <textarea v-model="task" aria-label="Agent 任务" placeholder="输入任务；Ctrl / ⌘ + Enter 发送" maxlength="32000" :disabled="busy || loading" @keydown.enter="($event.ctrlKey || $event.metaKey) && ($event.preventDefault(), submit())" />
+-      <div class="footer"><small>当前使用 pi-agent-core；不支持取消或崩溃后恢复执行。</small><button type="submit" :disabled="busy || loading || !task.trim()">{{ busy ? '执行中…' : '发送任务' }}</button></div>
++      <div class="footer"><small>取消需等待执行结束；后端重启不支持恢复执行。</small><button v-if="busy" type="button" :disabled="!state.requestId || state.status === 'cancelling'" @click="cancelRun">{{ state.status === 'cancelling' ? '等待取消…' : '停止任务' }}</button><button type="submit" :disabled="busy || loading || !task.trim()">{{ busy ? '执行中…' : '发送任务' }}</button></div>
+     </form>
+   </main>
+diff --git a/apps/body/src/main/services/neural/impl/neural-http.ts b/apps/body/src/main/services/neural/impl/neural-http.ts
+index 8faf033..c5bca02 100644
+--- a/apps/body/src/main/services/neural/impl/neural-http.ts
++++ b/apps/body/src/main/services/neural/impl/neural-http.ts
+@@ -20,6 +20,6 @@ export const neuralTrigger = async (params: {
+   payload?: any
+   target?: any
+-}): Promise<any> => {
+-  const res = await neuralHttp.post('/trigger', params)
++}, options?: { timeoutMs: number }): Promise<any> => {
++  const res = await neuralHttp.post('/trigger', params, options ? { timeout: options.timeoutMs } : undefined)
+   return res.data
+ }

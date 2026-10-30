@@ -18,7 +18,7 @@ async function main() {
   let modelTurns = 0;
   let toolRuns = 0;
   let persisted: any;
-  service.publishEvent = (_topic: string, payload: any) => events.push(payload);
+  service.publishEvent = (topic: string, payload: any) => { if (topic === 'brain.agent.run.event') events.push(payload); };
   service.providerAuthService = { resolveApiKey: async () => undefined };
   service.sessionStore = {
     loadSessionFile: () => null,
