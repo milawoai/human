@@ -38,3 +38,9 @@
 - 独立只读审查覆盖锁、settle取消、HTTP/刷新观察、旧事件/响应隔离和补丁范围，未发现阻断交付的P1/P2缺陷。最终构建重跑Electron E2E通过，测试fixture与Electron均已关闭。
 
 限制：重启/记录淘汰后unknown，不支持持久恢复；非合作插件可能保持cancelling，不承诺强杀进程树、撤销文件副作用、TTS计算取消或多用户公网鉴权。Durable/公共Job/外部代理仍归human-bjb/human-bf1/human-ogp。Body元数据问题human-ryp保留。
+
+## 人类自测入口（2026-10-30补记）
+
+完整操作文档：`/Users/zhou/Desktop/obsidian/work/工程/规划中/秘书自动化/功能/完成/P1-Agent测试与运行管理-261026/Agent测试与运行管理-自测指南.md`。
+
+包含真实模型手动测试、无云模型smoke、受控fixture的Electron自动验收三条路线，逐项说明启动命令、按钮步骤、预期状态、取消/重启边界与安全收尾。关联补充任务human-a7g；本次只补文档及反链，未修改行为或重新执行运行时测试。
