@@ -10,7 +10,7 @@
 
 ## 来源与关联需求
 
-- 主需求：`human-op5`，Obsidian `功能/进行/P1-TTS插件化-261019/TTS 插件化-提出.md`，设计见同目录 `TTS 插件化-讨论稿.md` 及 `TTS 插件化与类别契约设计（讨论稿）.md`。
+- 主需求：`human-op5`，Obsidian `功能/完成/P1-TTS插件化-261019/TTS 插件化-提出.md`，设计见同目录 `TTS 插件化-讨论稿.md` 及 `TTS 插件化与类别契约设计（讨论稿）.md`。
 - 本次子阶段：P3「会话总结播报」`human-6mb`；实现基线提交 `9df0484`。P3 是分期编号，不是 P3 低优先级。
 - 使用：`human-ylm` 已交付的 `tts@1.0` 插件能力（同步 synthesize/voices.list）及 `human-9iz` 已交付的 Body perform/音频/口型通路；两项直接前置在 Beads 登记为已完成。
 - 关联但不阻塞：`human-bf1` Job 状态层只服务后续 P5；`human-6ag` 声明式交互运行时不是当前手写开关的前置。
@@ -68,6 +68,6 @@ Files: `apps/body/src/shared/session-speech.ts` 及测试、`shared/agent-panel.
 
 面向人类与后续 AI 的详细实现正文统一存放在 Obsidian：
 
-`/Users/zhou/Desktop/obsidian/work/工程/规划中/秘书自动化/功能/进行/P1-TTS插件化-261019/TTS 插件化-实现稿.md`
+`/Users/zhou/Desktop/obsidian/work/工程/规划中/秘书自动化/功能/完成/P1-TTS插件化-261019/TTS 插件化-实现稿.md`
 
 其中包含源码职责表、实际调用时序、提示词与传输协议、状态持久化、播放令牌、修改索引及排错流程。本文件保留原实施计划和代码侧验证记录，不再复制详细实现正文。
