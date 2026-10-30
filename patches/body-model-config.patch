@@ -1,0 +1,764 @@
+diff --git a/apps/body/src/renderer/src/router/index.ts b/apps/body/src/renderer/src/router/index.ts
+index d72fa74..726377d 100644
+--- a/apps/body/src/renderer/src/router/index.ts
++++ b/apps/body/src/renderer/src/router/index.ts
+@@ -43,6 +43,11 @@ const routes = [
+     path: '/chat-panel',
+     name: 'chat-panel',
+     component: () => import('@renderer/pages/chat-panel/index.vue')
++  },
++  {
++    path: '/config',
++    name: 'config',
++    component: () => import('@renderer/pages/config/index.vue')
+   }
+ ]
+ 
+diff --git a/apps/body/src/shared/datas/ipc.ts b/apps/body/src/shared/datas/ipc.ts
+index 67daa81..29e8f08 100644
+--- a/apps/body/src/shared/datas/ipc.ts
++++ b/apps/body/src/shared/datas/ipc.ts
+@@ -197,7 +197,27 @@ export const defineHandlers = {
+       desc: '获取 ASR 模型列表'
+     }
+   },
++  modelConfig: {
++    list: {
++      desc: '列出模型档案与当前默认（human-48b 可视化模型配置）'
++    },
++    switchModel: {
++      desc: '切换默认档案/模型（写回 config.json 与 profiles.json）'
++    },
++    remoteModels: {
++      desc: '服务端代理拉取档案通道的可用模型清单（密钥不出后端）'
++    },
++    probe: {
++      desc: '无密钥探测 baseUrl（OpenAI 兼容 /models 或 Ollama /api/tags）'
++    },
++    validateAll: {
++      desc: '校验全部档案配置与连通'
++    }
++  },
+   window: {
++    openConfigWindow: {
++      desc: '打开模型配置窗口'
++    },
+     createPetWindow: {
+       desc: '创建Pet窗口'
+     },
+diff --git a/apps/body/src/main/windowManager.ts b/apps/body/src/main/windowManager.ts
+index 65c7904..2d87c98 100644
+--- a/apps/body/src/main/windowManager.ts
++++ b/apps/body/src/main/windowManager.ts
+@@ -162,6 +162,23 @@ export class WindowManager {
+     this.mainWindow.focus()
+   }
+ 
++  /** 打开模型配置窗口（human-48b）：单例，已开则聚焦 */
++  openConfigWindow(): void {
++    const existing = this.childWindows.get('config-window')
++    if (existing && !existing.isDestroyed()) {
++      existing.show()
++      existing.focus()
++      return
++    }
++    this.createChildWindow({
++      windowId: 'config-window',
++      width: 1040,
++      height: 680,
++      resizable: true,
++      routePath: '/config'
++    })
++  }
++
+   createChildWindow(options: ChildWindowOptions) {
+     try {
+       const {
+diff --git a/apps/body/src/main/services/window/index.ts b/apps/body/src/main/services/window/index.ts
+index c28fbe1..239c4c4 100644
+--- a/apps/body/src/main/services/window/index.ts
++++ b/apps/body/src/main/services/window/index.ts
+@@ -27,3 +27,7 @@ export const movePetWindowBy = async (deltaX: number, deltaY: number) => {
+ export const getPetCursorPosition = async () => {
+   return WindowManager.getInstance().getPetCursorPosition()
+ }
++
++export const openConfigWindow = async () => {
++  return WindowManager.getInstance().openConfigWindow()
++}
+diff --git a/apps/body/src/main/trayManager.ts b/apps/body/src/main/trayManager.ts
+index 6551a68..c5f672d 100644
+--- a/apps/body/src/main/trayManager.ts
++++ b/apps/body/src/main/trayManager.ts
+@@ -50,6 +50,10 @@ export const refreshTrayMenu = async () => {
+           await toggleServerFromTray(serverIsOn)
+         }
+       },
++      {
++        label: '模型设置',
++        click: () => windowManager.showMainWindow('/config')
++      },
+       {
+         label: '配置页',
+         click: openSettingsWindow
+diff --git a/apps/body/src/renderer/src/pages/chat-panel/index.vue b/apps/body/src/renderer/src/pages/chat-panel/index.vue
+index eef71fe..8caffa5 100644
+--- a/apps/body/src/renderer/src/pages/chat-panel/index.vue
++++ b/apps/body/src/renderer/src/pages/chat-panel/index.vue
+@@ -367,8 +367,82 @@ const closePanel = async () => {
+   await ipc.sense.closeChatPanel()
+ }
+ 
++// ──────────────────────────────────────────────
++// 模型快切器（human-48b）
++// ──────────────────────────────────────────────
++
++interface ModelProfile {
++  name: string
++  model?: string
++  models?: string[]
++  defaultModel?: string
++  baseUrl?: string
++}
++const RECENT_MODELS_KEY = 'human.recentModels'
++const modelMenuOpen = ref(false)
++const defaultProfile = ref('')
++const modelProfiles = ref<ModelProfile[]>([])
++const recentModels = ref<string[]>(JSON.parse(localStorage.getItem(RECENT_MODELS_KEY) ?? '[]'))
++const modelToast = ref('')
++let modelToastTimer: ReturnType<typeof setTimeout> | undefined
++
++const currentModelLabel = computed(() => {
++  const p = modelProfiles.value.find((x) => x.name === defaultProfile.value)
++  return p?.model || defaultProfile.value || '未配置'
++})
++
++const showModelToast = (msg: string) => {
++  modelToast.value = msg
++  if (modelToastTimer) clearTimeout(modelToastTimer)
++  modelToastTimer = setTimeout(() => (modelToast.value = ''), 3000)
++}
++
++const loadModels = async () => {
++  try {
++    const result = await ipc.modelConfig.list()
++    const data = result?.data ?? {}
++    modelProfiles.value = Array.isArray(data.profiles) ? data.profiles : []
++    defaultProfile.value = typeof data.defaultProfile === 'string' ? data.defaultProfile : ''
++  } catch {
++    /* 快切器失败静默：不干扰聊天主功能 */
++  }
++}
++
++const toggleModelMenu = () => {
++  modelMenuOpen.value = !modelMenuOpen.value
++  if (modelMenuOpen.value) void loadModels()
++}
++
++const rememberRecent = (label: string) => {
++  const next = [label, ...recentModels.value.filter((m) => m !== label)].slice(0, 3)
++  recentModels.value = next
++  localStorage.setItem(RECENT_MODELS_KEY, JSON.stringify(next))
++}
++
++const doSwitchModel = async (profile: string, model: string) => {
++  try {
++    const result = await ipc.modelConfig.switchModel({ profile, model })
++    if (result?.success) {
++      defaultProfile.value = profile
++      rememberRecent(`${profile}::${model}`)
++      modelMenuOpen.value = false
++      showModelToast(`已切换到 ${model}，下轮对话生效`)
++    } else {
++      showModelToast(result?.msg || '切换失败')
++    }
++  } catch (error) {
++    showModelToast(`切换失败: ${(error as Error).message}`)
++  }
++}
++
++const openConfigWindow = () => {
++  modelMenuOpen.value = false
++  void ipc.window.openConfigWindow()
++}
++
+ onMounted(() => {
+   window.addEventListener('beforeunload', beforeUnloadSpeech)
++  void loadModels()
+   ipc.sense.consumePendingHearingConfirmed().then((result) => {
+     const items = Array.isArray(result?.data) ? result.data : []
+     for (const item of items) {
+@@ -397,6 +471,47 @@ onUnmounted(() => {
+         AI 助手
+       </span>
+       <div class="header-actions">
++        <div class="model-switcher">
++          <button class="model-chip" @click="toggleModelMenu">
++            <span class="model-dot" />
++            {{ currentModelLabel }}
++            <i class="pi pi-chevron-down" />
++          </button>
++          <div v-if="modelMenuOpen" class="model-menu">
++            <div v-if="recentModels.length" class="menu-group-label">最近使用</div>
++            <button
++              v-for="item in recentModels"
++              :key="item"
++              class="menu-item"
++              @click="doSwitchModel(item.split('::')[0], item.split('::')[1])"
++            >
++              <i class="pi pi-history" />
++              {{ item.split('::')[1] }}
++              <span class="menu-sub">{{ item.split('::')[0] }}</span>
++            </button>
++            <div class="menu-group-label">全部档案</div>
++            <template v-for="p in modelProfiles" :key="p.name">
++              <div class="menu-profile">{{ p.name }}<span v-if="p.name === defaultProfile"> ★</span></div>
++              <button
++                v-for="m in (p.models && p.models.length ? p.models : (p.model ? [p.model] : []))"
++                :key="p.name + m"
++                class="menu-item"
++                :class="{ current: p.name === defaultProfile && m === p.model }"
++                @click="doSwitchModel(p.name, m)"
++              >
++                {{ m }}
++                <i v-if="p.name === defaultProfile && m === p.model" class="pi pi-check" />
++              </button>
++            </template>
++            <div class="menu-sep" />
++            <button class="menu-item" @click="openConfigWindow">
++              <i class="pi pi-cog" /> 模型设置…
++            </button>
++          </div>
++          <Transition name="fade">
++            <div v-if="modelToast" class="model-toast">{{ modelToast }}</div>
++          </Transition>
++        </div>
+         <label><input v-model="speechEnabled" type="checkbox" @change="changeSpeech" />总结播报</label>
+         <Button size="small" text :disabled="isAILoading" @click="newChatSession">新会话</Button>
+         <span class="status-pill">{{ statusLabel }}</span>
+@@ -728,6 +843,66 @@ onUnmounted(() => {
+   }
+ }
+ 
++.model-switcher { position: relative; }
++.model-chip {
++  display: inline-flex;
++  align-items: center;
++  gap: 6px;
++  padding: 4px 10px;
++  border-radius: 14px;
++  border: 1px solid #4b4c55;
++  background: #2f3039;
++  color: inherit;
++  font-size: 12px;
++  cursor: pointer;
++}
++.model-dot { width: 7px; height: 7px; border-radius: 50%; background: #3fb96f; }
++.model-menu {
++  position: absolute;
++  top: calc(100% + 6px);
++  left: 0;
++  z-index: 30;
++  width: 260px;
++  max-height: 380px;
++  overflow: auto;
++  background: #26272e;
++  border: 1px solid #4b4c55;
++  border-radius: 10px;
++  box-shadow: 0 8px 28px #0009;
++  padding: 6px;
++}
++.menu-group-label { font-size: 11px; color: #8b8d97; padding: 6px 8px 2px; }
++.menu-profile { font-size: 11px; color: #a6a8b3; padding: 6px 8px 2px; }
++.menu-item {
++  display: flex;
++  align-items: center;
++  gap: 6px;
++  width: 100%;
++  text-align: left;
++  padding: 6px 8px;
++  background: transparent;
++  border: 0;
++  color: inherit;
++  font-size: 12px;
++  border-radius: 6px;
++  cursor: pointer;
++}
++.menu-item:hover { background: #34353e; }
++.menu-item.current { color: #8fa7ff; }
++.menu-sub { margin-left: auto; color: #8b8d97; font-size: 10px; }
++.menu-sep { height: 1px; background: #3a3b44; margin: 6px 4px; }
++.model-toast {
++  position: fixed;
++  bottom: 84px;
++  left: 50%;
++  transform: translateX(-50%);
++  background: #34353e;
++  border: 1px solid #4b4c55;
++  padding: 8px 16px;
++  border-radius: 8px;
++  font-size: 12px;
++  z-index: 40;
++}
+ .send-btn {
+   margin-left: 8px;
+   margin-bottom: 2px;
+diff --git a/Users/zhou/Desktop/human/apps/body/src/renderer/src/pages/config/index.vue b/apps/body/src/renderer/src/pages/config/index.vue
+new file mode 100644
+index 0000000..197fa47
+--- /dev/null
++++ b/apps/body/src/renderer/src/pages/config/index.vue
+@@ -0,0 +1,422 @@
++<script setup lang="ts">
++/**
++ * 模型配置窗口（human-48b 可视化模型配置）
++ *
++ * 档案 → 模型两级管理：查看默认、一键切换、连通测试、通道新模型对比、Ollama 探测。
++ * 密钥不经过本页面（全部能力走 backend 代理）。
++ */
++import { computed, inject, onMounted, ref } from 'vue'
++import type { IpcProxy } from '@renderer/plugin/ipc'
++
++// 与 chat-panel 相同：经应用插件注入的 IPC 代理（config 窗口加载同一 SPA 入口）
++const ipc = inject<IpcProxy>('ipc')!
++
++interface ProfileItem {
++  name: string
++  model?: string
++  models?: string[]
++  defaultModel?: string
++  baseUrl?: string
++  apiKeyEnv?: string
++}
++
++type TestState = 'unknown' | 'testing' | 'ok' | 'fail'
++
++const profiles = ref<ProfileItem[]>([])
++const defaultProfile = ref('')
++const selected = ref('')
++const testState = ref<Record<string, TestState>>({})
++const testMessage = ref<Record<string, string>>({})
++const remoteModels = ref<Record<string, string[]>>({})
++const ollamaUrl = ref('http://127.0.0.1:11434')
++const ollamaState = ref<{ ok: boolean; models: string[]; error?: string } | null>(null)
++const ollamaLoading = ref(false)
++const toast = ref('')
++let toastTimer: ReturnType<typeof setTimeout> | undefined
++
++const showToast = (msg: string) => {
++  toast.value = msg
++  if (toastTimer) clearTimeout(toastTimer)
++  toastTimer = setTimeout(() => (toast.value = ''), 3200)
++}
++
++const selectedProfile = computed(
++  () => profiles.value.find((p) => p.name === selected.value) ?? null
++)
++const isDefault = (name: string) => name === defaultProfile.value
++
++const localModels = (p: ProfileItem): string[] => {
++  if (Array.isArray(p.models) && p.models.length > 0) return p.models
++  return p.model ? [p.model] : []
++}
++
++const newRemoteModels = (p: ProfileItem): string[] => {
++  const remote = remoteModels.value[p.name]
++  if (!remote) return []
++  const local = new Set(localModels(p))
++  return remote.filter((m) => !local.has(m))
++}
++
++const loadProfiles = async () => {
++  try {
++    const result = await ipc.modelConfig.list()
++    const data = result?.data ?? {}
++    profiles.value = Array.isArray(data.profiles) ? data.profiles : []
++    defaultProfile.value = typeof data.defaultProfile === 'string' ? data.defaultProfile : ''
++    if (!selected.value || !profiles.value.some((p) => p.name === selected.value)) {
++      selected.value = defaultProfile.value || profiles.value[0]?.name || ''
++    }
++  } catch (error) {
++    showToast(`加载档案失败: ${(error as Error).message}`)
++  }
++}
++
++const testProfile = async (p: ProfileItem) => {
++  testState.value = { ...testState.value, [p.name]: 'testing' }
++  try {
++    const result = await ipc.modelConfig.remoteModels({ profile: p.name })
++    if (result?.success) {
++      const models: string[] = result.data?.models ?? []
++      remoteModels.value = { ...remoteModels.value, [p.name]: models }
++      testState.value = { ...testState.value, [p.name]: 'ok' }
++      testMessage.value = { ...testMessage.value, [p.name]: `连通正常 · 通道 ${models.length} 个模型` }
++    } else {
++      testState.value = { ...testState.value, [p.name]: 'fail' }
++      testMessage.value = { ...testMessage.value, [p.name]: result?.msg || '连通失败' }
++    }
++  } catch (error) {
++    testState.value = { ...testState.value, [p.name]: 'fail' }
++    testMessage.value = { ...testMessage.value, [p.name]: (error as Error).message }
++  }
++}
++
++const switchProfile = async (p: ProfileItem) => {
++  try {
++    const result = await ipc.modelConfig.switchModel({ profile: p.name })
++    if (result?.success) {
++      defaultProfile.value = p.name
++      showToast(`默认档案已切换：${p.name} → ${result.data?.model ?? ''}，下轮对话生效`)
++    } else {
++      showToast(result?.msg || '切换失败')
++    }
++  } catch (error) {
++    showToast(`切换失败: ${(error as Error).message}`)
++  }
++}
++
++const switchModel = async (p: ProfileItem, model: string) => {
++  try {
++    const result = await ipc.modelConfig.switchModel({ profile: p.name, model })
++    if (result?.success) {
++      if (p.name === defaultProfile.value) {
++        // 同档案内换默认模型：刷新本地视图
++        await loadProfiles()
++      }
++      showToast(`已切换到 ${model}${p.name === defaultProfile.value ? '，下轮对话生效' : ''}`)
++    } else {
++      showToast(result?.msg || '切换失败')
++    }
++  } catch (error) {
++    showToast(`切换失败: ${(error as Error).message}`)
++  }
++}
++
++const probeOllama = async () => {
++  ollamaLoading.value = true
++  ollamaState.value = null
++  try {
++    const result = await ipc.modelConfig.probe({ baseUrl: ollamaUrl.value })
++    const data = result?.data ?? {}
++    ollamaState.value = { ok: Boolean(data.ok), models: data.models ?? [], error: data.error }
++  } catch (error) {
++    ollamaState.value = { ok: false, models: [], error: (error as Error).message }
++  } finally {
++    ollamaLoading.value = false
++  }
++}
++
++const copyText = async (text: string) => {
++  try {
++    await navigator.clipboard.writeText(text)
++    showToast(`已复制 ${text}`)
++  } catch {
++    showToast('复制失败')
++  }
++}
++
++const closeWindow = () => window.close()
++
++const dotClass = (name: string) => {
++  const s = testState.value[name] ?? 'unknown'
++  return { unknown: s === 'unknown', testing: s === 'testing', ok: s === 'ok', fail: s === 'fail' }
++}
++
++onMounted(() => {
++  void loadProfiles()
++})
++</script>
++
++<template>
++  <main class="config-page">
++    <header class="page-header">
++      <h1><i class="pi pi-cog" /> 模型设置</h1>
++      <div class="header-actions">
++        <button class="btn ghost" @click="loadProfiles">刷新</button>
++        <button class="btn ghost" @click="closeWindow">关闭</button>
++      </div>
++    </header>
++
++    <div class="layout">
++      <!-- 左：档案列表 -->
++      <aside class="profile-list">
++        <div
++          v-for="p in profiles"
++          :key="p.name"
++          class="profile-item"
++          :class="{ active: p.name === selected }"
++          @click="selected = p.name"
++        >
++          <span class="dot" :class="dotClass(p.name)" />
++          <span class="profile-name">{{ p.name }}</span>
++          <span v-if="isDefault(p.name)" class="star" title="默认档案">★</span>
++        </div>
++        <button class="add-provider" disabled title="v1.x 支持，敬请期待">+ 添加供应商</button>
++      </aside>
++
++      <!-- 右：档案详情 -->
++      <section v-if="selectedProfile" class="detail">
++        <div class="detail-header">
++          <div>
++            <h2>
++              {{ selectedProfile.name }}
++              <span v-if="isDefault(selectedProfile.name)" class="badge default">默认档案</span>
++            </h2>
++            <p class="meta">
++              {{ selectedProfile.baseUrl || '（内置通道，无自定义 baseUrl）' }}
++              <span v-if="selectedProfile.apiKeyEnv"> · 密钥 {{ selectedProfile.apiKeyEnv }}</span>
++            </p>
++          </div>
++          <div class="detail-actions">
++            <button
++              v-if="selectedProfile.baseUrl"
++              class="btn"
++              :disabled="testState[selectedProfile.name] === 'testing'"
++              @click="testProfile(selectedProfile)"
++            >
++              {{ testState[selectedProfile.name] === 'testing' ? '测试中…' : '测试连通' }}
++            </button>
++            <button v-if="!isDefault(selectedProfile.name)" class="btn primary" @click="switchProfile(selectedProfile)">
++              设为默认档案
++            </button>
++          </div>
++        </div>
++
++        <p v-if="testMessage[selectedProfile.name]" class="test-msg" :class="testState[selectedProfile.name]">
++          {{ testMessage[selectedProfile.name] }}
++        </p>
++
++        <table class="model-table">
++          <thead>
++            <tr><th>模型</th><th>状态</th><th>操作</th></tr>
++          </thead>
++          <tbody>
++            <tr v-for="m in localModels(selectedProfile)" :key="m">
++              <td class="mono">{{ m }}</td>
++              <td>
++                <span v-if="m === selectedProfile.model" class="badge default">⭐ 默认</span>
++                <span v-else class="badge">可切换</span>
++              </td>
++              <td>
++                <button
++                  v-if="m !== selectedProfile.model"
++                  class="btn small"
++                  @click="switchModel(selectedProfile, m)"
++                >
++                  设为默认
++                </button>
++              </td>
++            </tr>
++          </tbody>
++        </table>
++
++        <details v-if="selectedProfile.baseUrl && remoteModels[selectedProfile.name]" class="remote-box">
++          <summary>通道新模型（{{ newRemoteModels(selectedProfile).length }}）</summary>
++          <p v-if="newRemoteModels(selectedProfile).length === 0" class="meta">本地配置已覆盖通道全部模型 ✓</p>
++          <div v-for="m in newRemoteModels(selectedProfile)" :key="m" class="remote-row">
++            <span class="mono">{{ m }}</span>
++            <span class="badge">未配置</span>
++            <button class="btn small ghost" @click="copyText(m)">复制</button>
++          </div>
++          <p class="meta">一键添加将在后续版本支持；当前可复制后加入 profiles.json 的 models 列表</p>
++        </details>
++        <p v-else-if="!selectedProfile.baseUrl" class="meta">该档案为内置通道，不支持通道清单对比。</p>
++      </section>
++    </div>
++
++    <!-- Ollama 本地探测 -->
++    <section class="ollama-card">
++      <h3>本地 Ollama</h3>
++      <div class="ollama-row">
++        <input v-model="ollamaUrl" class="text-input" spellcheck="false" />
++        <button class="btn" :disabled="ollamaLoading" @click="probeOllama">
++          {{ ollamaLoading ? '探测中…' : '探测' }}
++        </button>
++      </div>
++      <p v-if="ollamaState?.ok" class="test-msg ok">
++        已连通（{{ ollamaState.models.length }} 个本地模型）：{{ ollamaState.models.join('、') }}
++      </p>
++      <p v-else-if="ollamaState" class="test-msg fail">
++        未连通{{ ollamaState.error ? `（${ollamaState.error}）` : '' }}。请确认 Ollama 已启动（`ollama serve`）。
++      </p>
++      <p class="meta">本地模型一键建档将在后续版本支持。</p>
++    </section>
++
++    <Transition name="fade">
++      <div v-if="toast" class="toast">{{ toast }}</div>
++    </Transition>
++  </main>
++</template>
++
++<style scoped>
++.config-page {
++  display: flex;
++  flex-direction: column;
++  height: 100vh;
++  padding: 16px 20px;
++  box-sizing: border-box;
++  font-family: inherit;
++  color: #e8e8ed;
++  background: #1e1f24;
++  gap: 12px;
++  overflow: auto;
++}
++.page-header {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++}
++.page-header h1 {
++  font-size: 18px;
++  margin: 0;
++  display: flex;
++  gap: 8px;
++  align-items: center;
++}
++.header-actions { display: flex; gap: 8px; }
++.layout {
++  display: flex;
++  gap: 16px;
++  flex: 1;
++  min-height: 0;
++}
++.profile-list {
++  width: 220px;
++  flex-shrink: 0;
++  display: flex;
++  flex-direction: column;
++  gap: 4px;
++}
++.profile-item {
++  display: flex;
++  align-items: center;
++  gap: 8px;
++  padding: 10px 12px;
++  border-radius: 8px;
++  cursor: pointer;
++  background: #26272e;
++}
++.profile-item.active { background: #34353e; outline: 1px solid #4b6bfb66; }
++.profile-name { flex: 1; }
++.star { color: #f5c542; }
++.dot { width: 8px; height: 8px; border-radius: 50%; background: #6b6d76; }
++.dot.ok { background: #3fb96f; }
++.dot.fail { background: #e05555; }
++.dot.testing { background: #f5c542; animation: pulse 1s infinite; }
++@keyframes pulse { 50% { opacity: 0.35; } }
++.add-provider {
++  margin-top: 8px;
++  padding: 10px;
++  border-radius: 8px;
++  border: 1px dashed #4b4c55;
++  background: transparent;
++  color: #8b8d97;
++  cursor: not-allowed;
++}
++.detail {
++  flex: 1;
++  background: #26272e;
++  border-radius: 10px;
++  padding: 16px 18px;
++  display: flex;
++  flex-direction: column;
++  gap: 12px;
++  min-width: 0;
++}
++.detail-header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
++.detail-header h2 { margin: 0 0 4px; font-size: 16px; display: flex; gap: 8px; align-items: center; }
++.meta { color: #8b8d97; font-size: 12px; margin: 2px 0; word-break: break-all; }
++.detail-actions { display: flex; gap: 8px; flex-shrink: 0; }
++.badge {
++  font-size: 11px;
++  padding: 2px 8px;
++  border-radius: 10px;
++  background: #33343d;
++  color: #a6a8b3;
++}
++.badge.default { background: #4b6bfb33; color: #8fa7ff; }
++.test-msg { font-size: 12px; margin: 0; padding: 8px 10px; border-radius: 6px; }
++.test-msg.ok { background: #3fb96f1f; color: #6fd39a; }
++.test-msg.fail { background: #e055551f; color: #f08c8c; }
++.model-table { width: 100%; border-collapse: collapse; font-size: 13px; }
++.model-table th, .model-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #33343d; }
++.mono { font-family: ui-monospace, Menlo, monospace; }
++.remote-box { font-size: 13px; }
++.remote-box summary { cursor: pointer; color: #8fa7ff; }
++.remote-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
++.ollama-card {
++  background: #26272e;
++  border-radius: 10px;
++  padding: 14px 18px;
++}
++.ollama-card h3 { margin: 0 0 8px; font-size: 14px; }
++.ollama-row { display: flex; gap: 8px; }
++.text-input {
++  flex: 1;
++  max-width: 420px;
++  background: #1b1c21;
++  border: 1px solid #3a3b44;
++  border-radius: 6px;
++  padding: 8px 10px;
++  color: inherit;
++  font-family: ui-monospace, Menlo, monospace;
++  font-size: 12px;
++}
++.btn {
++  border: 1px solid #4b4c55;
++  background: #2f3039;
++  color: inherit;
++  border-radius: 6px;
++  padding: 6px 14px;
++  cursor: pointer;
++  font-size: 13px;
++}
++.btn:hover { background: #3a3b45; }
++.btn.primary { background: #4b6bfb; border-color: #4b6bfb; color: #fff; }
++.btn.small { padding: 3px 10px; font-size: 12px; }
++.btn.ghost { background: transparent; }
++.btn:disabled { opacity: 0.5; cursor: not-allowed; }
++.toast {
++  position: fixed;
++  bottom: 24px;
++  left: 50%;
++  transform: translateX(-50%);
++  background: #34353e;
++  border: 1px solid #4b4c55;
++  padding: 10px 18px;
++  border-radius: 8px;
++  font-size: 13px;
++  box-shadow: 0 6px 24px #0008;
++}
++.fade-enter-active, .fade-leave-active { transition: opacity 0.25s; }
++.fade-enter-from, .fade-leave-to { opacity: 0; }
++</style>
+diff --git a/Users/zhou/Desktop/human/apps/body/src/main/services/modelConfig/index.ts b/apps/body/src/main/services/modelConfig/index.ts
+new file mode 100644
+index 0000000..7742eae
+--- /dev/null
++++ b/apps/body/src/main/services/modelConfig/index.ts
+@@ -0,0 +1,25 @@
++/**
++ * 模型配置服务（主进程）
++ *
++ * 可视化模型配置（human-48b）：渲染层经 IPC 调用这里，
++ * 这里统一经 Neural HTTP 触发 backend 的 brain.language.* topic。
++ * 密钥不出 backend——本服务不接触任何 key。
++ */
++import { neuralTrigger } from '../neural/impl/neural-http'
++
++const trigger = (kind: string, topic: string, payload?: unknown) =>
++  neuralTrigger({ kind, topic, payload })
++
++export const list = async () => trigger('query', 'brain.language.models.list', {})
++
++export const switchModel = async (params: { profile: string; model?: string }) =>
++  trigger('command', 'brain.language.model.switch', params)
++
++export const remoteModels = async (params: { profile: string }) =>
++  trigger('query', 'brain.language.providers.remote_models', params)
++
++export const probe = async (params: { baseUrl: string }) =>
++  trigger('command', 'brain.language.providers.probe', params)
++
++export const validateAll = async () =>
++  trigger('query', 'brain.language.models.validate', { strictEnv: false })

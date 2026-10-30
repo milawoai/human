@@ -250,6 +250,8 @@
         "module": "agent"
       },
       "capabilities": [
+        { "id": "brain.agent.run.get", "topic": "brain.agent.run.get", "kinds": ["query"], "mode": "once" },
+        { "id": "brain.agent.run.cancel", "topic": "brain.agent.run.cancel", "kinds": ["command"], "mode": "once" },
         {
           "id": "brain.agent.run",
           "topic": "brain.agent.run",
@@ -281,6 +283,9 @@
         "run":          { "kind": "command", "direction": "body → nest", "description": "执行 Agent 一轮推理与工具调用" },
         "coding_run":   { "kind": "command", "direction": "body → nest", "description": "执行 Coding Agent 工具链（read/bash/edit/write）" },
         "run_event":    { "kind": "event",   "direction": "nest → subscribers", "description": "Agent 运行过程事件流" },
+        "run_get":      { "kind": "query", "direction": "body → nest", "description": "查询进程内Agent运行状态" },
+        "run_cancel":   { "kind": "command", "direction": "body → nest", "description": "请求取消指定运行，等待实际结束" },
+        "run_state":    { "kind": "event", "direction": "nest → subscribers", "description": "进程内运行状态快照" },
         "session_get":  { "kind": "query",   "direction": "body → nest", "description": "读取指定会话详情" },
         "session_list": { "kind": "query",   "direction": "body → nest", "description": "读取会话列表" }
       }

@@ -12,6 +12,7 @@ import { LlmService } from '../language-center/llm.service';
 import { ModelConfigService } from '../language-center/model-config.service';
 import { ProviderAuthService } from '../language-center/provider-auth.service';
 import { AgentSessionStore } from './agent-session.store';
+import { AgentRunRegistry } from './agent-run-registry';
 import { ToolAdapterService } from '../../motor/motor-tool-runner/core/tool-adapter.service';
 import { BrainSpeechService } from '../speech/brain-speech.service';
 import { speechSystemPrompt, splitSpeechSummary, speechDisplayMessage } from '../speech/speech-summary';
@@ -28,9 +29,16 @@ const TOPIC = {
   BRAIN_AGENT_CODING_RUN: 'brain.agent.coding.run',
   BRAIN_AGENT_SESSION_GET: 'brain.agent.session.get',
   BRAIN_AGENT_SESSION_LIST: 'brain.agent.session.list',
+  BRAIN_AGENT_RUN_GET: 'brain.agent.run.get',
+  BRAIN_AGENT_RUN_CANCEL: 'brain.agent.run.cancel',
 } as const;
 
 const AGENT_CAPABILITIES: Capability[] = [
+  ...(['brain.agent.run.get', 'brain.agent.run.cancel'] as const).map(topic => ({
+    id: topic, actor: BRAIN_AGENT_ACTOR, topic,
+    kinds: [topic.endsWith('get') ? 'query' : 'command'] as Capability['kinds'],
+    mode: 'once' as const, enabled: true, online: true,
+  })),
   {
     id: 'brain.agent.run',
     actor: BRAIN_AGENT_ACTOR,
@@ -78,6 +86,8 @@ type ToolPreset = 'none' | 'default' | 'coding' | 'coding_only';
 @Injectable()
 export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
   private readonly logger = new Logger(BrainAgentService.name);
+  private runRegistry?: AgentRunRegistry;
+  private get runs(): AgentRunRegistry { return this.runRegistry ??= new AgentRunRegistry(); }
 
   constructor(
     private readonly coreService: NeuralCoreService,
@@ -119,6 +129,9 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
           return this.handleSessionGet(message);
         case TOPIC.BRAIN_AGENT_SESSION_LIST:
           return this.handleSessionList(message);
+        case TOPIC.BRAIN_AGENT_RUN_GET:
+        case TOPIC.BRAIN_AGENT_RUN_CANCEL:
+          return this.handleRunControl(message);
         default:
           return { success: false, msg: `BrainAgent 无法处理 topic: ${message.topic}` };
       }
@@ -138,11 +151,20 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
   ) {
     const payload = this.ensureObject(message.payload);
     const sessionId = this.readString(payload.sessionId) ?? crypto.randomUUID();
+    if (!/^[a-zA-Z0-9_-]{1,128}$/.test(sessionId)) throw new Error('payload.sessionId is invalid');
     const continueMode = Boolean(payload.continue);
     const userText = this.readString(payload.userText);
     if (!continueMode && !userText) {
       throw new Error('payload.userText is required when continue=false');
     }
+
+    const runId = this.readString(payload.runId) ?? message.id;
+    if (!/^[a-zA-Z0-9_-]{1,128}$/.test(runId)) throw new Error('payload.runId is invalid');
+    this.runs.begin(runId, sessionId); // Acquire before any async initialization.
+    let runError: string | undefined;
+    try {
+    this.publishRunState(runId);
+    if (this.runs.cancelling(runId)) throw new Error('Agent run cancelled');
 
     const resolved = await this.llmService.resolveModel(this.readString(payload.profileName));
     const persisted = this.sessionStore.loadSessionFile(sessionId);
@@ -166,6 +188,7 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
       codingCwd,
     });
     const { Agent } = await this.getAgentCore();
+    if (this.runs.cancelling(runId)) throw new Error('Agent run cancelled');
     const speechInstruction: AgentMessage = {
       role: 'system', content: speechSystemPrompt('', true), timestamp: Date.now(),
     };
@@ -191,9 +214,10 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
           ? 'sequential'
           : 'parallel',
     });
+    this.runs.attach(runId, () => agent.abort());
 
     const events: AgentEvent[] = [];
-    const requestId = message.id;
+    const requestId = runId;
     agent.subscribe((event) => {
       events.push(event);
       const publicEvent: any = speechSummaryEnabled ? { ...event } : event;
@@ -216,6 +240,7 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
       await agent.prompt(userText as string);
     }
     await agent.waitForIdle();
+    runError = agent.state.errorMessage;
 
     const rawMessages = agent.state.messages as unknown[];
     const rawLast = rawMessages[rawMessages.length - 1] as any;
@@ -235,11 +260,14 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
       eventCount: events.length,
       lastError: agent.state.errorMessage,
     });
-    const speech = summary ? await this.speechService.synthesize(summary, sessionId) : undefined;
+    let speech = summary && !this.runs.cancelling(runId) ? await this.speechService.synthesize(summary, sessionId) : undefined;
+    if (this.runs.cancelling(runId)) speech = undefined;
 
     return {
       success: true,
       data: {
+        runId,
+        runStatus: this.runs.cancelling(runId) ? 'cancelled' : runError ? 'failed' : 'succeeded',
         sessionId,
         profileName: resolved.profileName,
         toolPreset,
@@ -253,6 +281,34 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
         speech,
       },
     };
+    } catch (error) {
+      runError = error instanceof Error ? error.message : String(error);
+      throw error;
+    } finally {
+      this.runs.finish(runId, runError);
+      this.publishRunState(runId);
+    }
+  }
+
+  private handleRunControl(message: BusMessage) {
+    const payload = this.ensureObject(message.payload);
+    const runId = this.readString(payload.runId);
+    const sessionId = this.readString(payload.sessionId);
+    if (!runId && !sessionId) throw new Error('payload.runId or sessionId is required');
+    let run = this.runs.get(runId, sessionId);
+    if (message.topic === TOPIC.BRAIN_AGENT_RUN_CANCEL) {
+      if (!runId) throw new Error('取消必须指定 runId，防止取消后续新任务');
+      if (run) { run = this.runs.cancel(runId); this.publishRunState(runId); }
+    }
+    return { success: true, data: { instanceId: this.runs.instanceId, status: run?.status ?? 'unknown', run } };
+  }
+
+  private publishRunState(runId: string): void {
+    const run = this.runs.get(runId);
+    // Observation failures must never leak the session lock or alter execution results.
+    try {
+      if (run) this.publishEvent('brain.agent.run.state', { instanceId: this.runs.instanceId, run });
+    } catch (error) { this.logger?.warn(`Agent 状态通知失败: ${String(error)}`); }
   }
 
   private handleSessionGet(message: BusMessage) {

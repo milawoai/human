@@ -12,6 +12,35 @@ import { MemoryService } from '../hippocampus/memory.service';
 import { BrainSpeechService } from '../speech/brain-speech.service';
 import { speechSystemPrompt, splitSpeechSummary, visibleSpeechAnswer } from '../speech/speech-summary';
 
+/** 带超时的 JSON GET（模型配置可视化用：通道 /models、Ollama /api/tags） */
+async function fetchJsonWithTimeout(
+  url: string,
+  headers: Record<string, string> = {},
+  timeoutMs = 8000,
+): Promise<any> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { headers, signal: controller.signal });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** OpenAI 兼容 /models → 模型 id 列表（排序去重） */
+async function fetchOpenAICompatModels(baseUrl: string, apiKey?: string): Promise<string[]> {
+  const headers: Record<string, string> = apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
+  const json = await fetchJsonWithTimeout(`${baseUrl.replace(/\/+$/, '')}/models`, headers);
+  const ids: string[] = Array.isArray(json?.data)
+    ? json.data.map((m: { id?: string }) => String(m.id ?? '')).filter(Boolean)
+    : [];
+  return Array.from(new Set<string>(ids)).sort();
+}
+
 const BRAIN_CORTEX_ACTOR = {
   actorId: 'brain-main',
   runtime: 'nest' as const,
@@ -31,6 +60,9 @@ const TOPIC = {
   BRAIN_CORTEX_ANSWER_FAILED: 'brain.cortex.answer.failed',
   BRAIN_LANGUAGE_MODELS_LIST: 'brain.language.models.list',
   BRAIN_LANGUAGE_MODELS_VALIDATE: 'brain.language.models.validate',
+  BRAIN_LANGUAGE_MODEL_SWITCH: 'brain.language.model.switch',
+  BRAIN_LANGUAGE_PROVIDERS_REMOTE_MODELS: 'brain.language.providers.remote_models',
+  BRAIN_LANGUAGE_PROVIDERS_PROBE: 'brain.language.providers.probe',
   BRAIN_LANGUAGE_OAUTH_PROVIDERS: 'brain.language.oauth.providers',
   BRAIN_LANGUAGE_OAUTH_LOGIN: 'brain.language.oauth.login',
 } as const;
@@ -91,6 +123,33 @@ const CORTEX_CAPABILITIES: Capability[] = [
     online: true,
   },
   {
+    id: 'brain.language.model.switch',
+    actor: BRAIN_CORTEX_ACTOR,
+    topic: TOPIC.BRAIN_LANGUAGE_MODEL_SWITCH,
+    kinds: ['command'],
+    mode: 'once',
+    enabled: true,
+    online: true,
+  },
+  {
+    id: 'brain.language.providers.remote_models',
+    actor: BRAIN_CORTEX_ACTOR,
+    topic: TOPIC.BRAIN_LANGUAGE_PROVIDERS_REMOTE_MODELS,
+    kinds: ['query'],
+    mode: 'once',
+    enabled: true,
+    online: true,
+  },
+  {
+    id: 'brain.language.providers.probe',
+    actor: BRAIN_CORTEX_ACTOR,
+    topic: TOPIC.BRAIN_LANGUAGE_PROVIDERS_PROBE,
+    kinds: ['command'],
+    mode: 'once',
+    enabled: true,
+    online: true,
+  },
+  {
     id: 'brain.language.oauth.providers',
     actor: BRAIN_CORTEX_ACTOR,
     topic: TOPIC.BRAIN_LANGUAGE_OAUTH_PROVIDERS,
@@ -138,6 +197,8 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
       topic.startsWith('brain.cortex.rewrite') ||
       topic.startsWith('brain.cortex.ask') ||
       topic.startsWith('brain.language.models') ||
+      topic.startsWith('brain.language.model.switch') ||
+      topic.startsWith('brain.language.providers') ||
       topic.startsWith('brain.language.oauth')
     );
   }
@@ -159,6 +220,12 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
           return this.handleModelsList();
         case TOPIC.BRAIN_LANGUAGE_MODELS_VALIDATE:
           return this.handleModelsValidate(message);
+        case TOPIC.BRAIN_LANGUAGE_MODEL_SWITCH:
+          return this.handleModelSwitch(message);
+        case TOPIC.BRAIN_LANGUAGE_PROVIDERS_REMOTE_MODELS:
+          return await this.handleProvidersRemoteModels(message);
+        case TOPIC.BRAIN_LANGUAGE_PROVIDERS_PROBE:
+          return await this.handleProvidersProbe(message);
         case TOPIC.BRAIN_LANGUAGE_OAUTH_PROVIDERS:
           return await this.handleOAuthProviders();
         case TOPIC.BRAIN_LANGUAGE_OAUTH_LOGIN:
@@ -422,7 +489,10 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
     const profiles = this.modelConfigService.listProfiles({ strictEnv: false });
     return {
       success: true,
-      data: profiles,
+      data: {
+        defaultProfile: this.modelConfigService.getDefaultProfileName(),
+        profiles,
+      },
     };
   }
 
@@ -460,6 +530,95 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
         warnings: [...validation.warnings, ...authWarnings],
       },
     };
+  }
+
+  /** 切换默认档案/模型（human-48b 可视化模型配置） */
+  private handleModelSwitch(message: BusMessage) {
+    const payload = this.ensureObject(message.payload);
+    const profile = typeof payload.profile === 'string' ? payload.profile.trim() : '';
+    const model = typeof payload.model === 'string' ? payload.model.trim() : '';
+    if (!profile) {
+      return { success: false, msg: 'profile is required' };
+    }
+    try {
+      const result = this.modelConfigService.setDefaultProfile(profile, model || undefined);
+      this.logger.log(`默认模型已切换: ${result.profile} → ${result.model}`);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        msg: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /** 服务端代理拉取档案通道的 /models（OpenAI 兼容）；密钥不出后端 */
+  private async handleProvidersRemoteModels(message: BusMessage) {
+    const payload = this.ensureObject(message.payload);
+    const profileName = typeof payload.profile === 'string' ? payload.profile.trim() : '';
+    if (!profileName) {
+      return { success: false, msg: 'profile is required' };
+    }
+    const conn = this.modelConfigService.getProfileConnection(profileName);
+    if (!conn) {
+      return { success: false, msg: `profile "${profileName}" not found` };
+    }
+    if (!conn.baseUrl) {
+      return { success: false, msg: `profile "${profileName}" has no baseUrl（不支持通道对比）` };
+    }
+    if (!conn.apiKey) {
+      return {
+        success: false,
+        msg: `profile "${profileName}" has no API key（env: ${conn.apiKeyEnv ?? '未配置'}）`,
+      };
+    }
+    try {
+      const models = await fetchOpenAICompatModels(conn.baseUrl, conn.apiKey);
+      return { success: true, data: { profile: profileName, models } };
+    } catch (error) {
+      return {
+        success: false,
+        msg: `拉取通道模型失败: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+  }
+
+  /** 无密钥探测 baseUrl：先试 OpenAI 兼容 /models，再试 Ollama /api/tags（human-48b） */
+  private async handleProvidersProbe(message: BusMessage) {
+    const payload = this.ensureObject(message.payload);
+    const baseUrl = (typeof payload.baseUrl === 'string' ? payload.baseUrl.trim() : '').replace(
+      /\/+$/,
+      '',
+    );
+    if (!/^https?:\/\//.test(baseUrl)) {
+      return { success: false, msg: 'baseUrl must be an http(s) URL' };
+    }
+    try {
+      const models = await fetchOpenAICompatModels(baseUrl);
+      return { success: true, data: { ok: true, source: 'openai' as const, models } };
+    } catch {
+      // fallthrough 到 Ollama
+    }
+    try {
+      const json = await fetchJsonWithTimeout(`${baseUrl}/api/tags`);
+      const models = Array.isArray(json?.models)
+        ? json.models.map((m: { name?: string }) => String(m.name ?? '')).filter(Boolean)
+        : [];
+      if (models.length === 0) {
+        return { success: true, data: { ok: false, source: 'none' as const, models: [] } };
+      }
+      return { success: true, data: { ok: true, source: 'ollama' as const, models } };
+    } catch (error) {
+      return {
+        success: true,
+        data: {
+          ok: false,
+          source: 'none' as const,
+          models: [],
+          error: error instanceof Error ? error.message : String(error),
+        },
+      };
+    }
   }
 
   private async handleOAuthProviders() {

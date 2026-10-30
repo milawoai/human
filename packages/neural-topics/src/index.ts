@@ -62,6 +62,9 @@ export const TOPIC = {
   BRAIN_LANGUAGE_MODELS_LIST: 'brain.language.models.list',
   BRAIN_LANGUAGE_MODELS_VALIDATE: 'brain.language.models.validate',
   BRAIN_LANGUAGE_MODEL_SWITCH: 'brain.language.model.switch',
+  // brain.language.providers — 可视化模型配置（human-48b）
+  BRAIN_LANGUAGE_PROVIDERS_REMOTE_MODELS: 'brain.language.providers.remote_models',
+  BRAIN_LANGUAGE_PROVIDERS_PROBE: 'brain.language.providers.probe',
   // brain.language.oauth — query/command
   BRAIN_LANGUAGE_OAUTH_PROVIDERS: 'brain.language.oauth.providers',
   BRAIN_LANGUAGE_OAUTH_LOGIN: 'brain.language.oauth.login',
@@ -69,6 +72,9 @@ export const TOPIC = {
   BRAIN_AGENT_RUN: 'brain.agent.run',
   BRAIN_AGENT_CODING_RUN: 'brain.agent.coding.run',
   BRAIN_AGENT_RUN_EVENT: 'brain.agent.run.event',
+  BRAIN_AGENT_RUN_GET: 'brain.agent.run.get',
+  BRAIN_AGENT_RUN_CANCEL: 'brain.agent.run.cancel',
+  BRAIN_AGENT_RUN_STATE: 'brain.agent.run.state',
   BRAIN_AGENT_SESSION_GET: 'brain.agent.session.get',
   BRAIN_AGENT_SESSION_LIST: 'brain.agent.session.list',
   // brain.hippocampus.memory — command/query
@@ -284,6 +290,14 @@ export const CAP = {
     mode: 'once' as const,
     enabled: true,
     online: true,
+  },
+  BRAIN_AGENT_RUN_GET: {
+    id: 'brain.agent.run.get', actor: ACTOR.BRAIN_AGENT, topic: TOPIC.BRAIN_AGENT_RUN_GET,
+    kinds: ['query'] as const, mode: 'once' as const, enabled: true, online: true,
+  },
+  BRAIN_AGENT_RUN_CANCEL: {
+    id: 'brain.agent.run.cancel', actor: ACTOR.BRAIN_AGENT, topic: TOPIC.BRAIN_AGENT_RUN_CANCEL,
+    kinds: ['command'] as const, mode: 'once' as const, enabled: true, online: true,
   },
   BRAIN_AGENT_SESSION_LIST: {
     id: 'brain.agent.session.list',

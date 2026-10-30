@@ -93,6 +93,97 @@ export class ModelConfigService {
     }));
   }
 
+  /** 当前默认档案名（无配置返回空串） */
+  getDefaultProfileName(): string {
+    const config = this.getConfig({ forceReload: false, strictEnv: false });
+    return typeof config.brain.defaultProfile === 'string' ? config.brain.defaultProfile : '';
+  }
+
+  /**
+   * 获取档案连接信息（仅后端使用，含密钥明文；禁止原样下发给渲染层）。
+   * 返回 null 表示档案不存在。
+   */  getProfileConnection(profileName: string): {
+    baseUrl?: string;
+    api?: string;
+    apiKeyEnv?: string;
+    apiKey?: string;
+  } | null {
+    this.loadSecretsEnvIfPresent();
+    const config = this.getConfig({ forceReload: false, strictEnv: false });
+    const profile = config.brain.profiles?.[profileName];
+    if (!profile) return null;
+    const baseUrl = typeof profile.baseUrl === 'string' ? profile.baseUrl : undefined;
+    const api = typeof profile.api === 'string' ? profile.api : undefined;
+    const apiKeyEnv = typeof profile.apiKeyEnv === 'string' ? profile.apiKeyEnv : undefined;
+    const apiKey = apiKeyEnv ? process.env[apiKeyEnv] : undefined;
+    return { baseUrl, api, apiKeyEnv, apiKey };
+  }
+
+  /**
+   * 切换默认档案与默认模型（可视化模型配置 human-48b）。
+   *
+   * - config.json：brain.defaultProfile = profileName
+   * - profiles.json：该档案 defaultModel = model（未指定则保持现值）；
+   *   model 不在 models 列表时追加，保留可切换历史。
+   *
+   * 两文件均原子写（tmp + rename）；写后失效内存缓存。
+   */
+  setDefaultProfile(profileName: string, model?: string): { profile: string; model: string } {
+    const config = this.getConfig({ forceReload: true, strictEnv: false });
+    const profiles = config.brain.profiles ?? {};
+    const profile = profiles[profileName];
+    if (!profile) {
+      throw new Error(`profile "${profileName}" not found`);
+    }
+
+    const resolved = this.resolveProfileModel(profileName, profile);
+    const targetModel = (model ?? resolved.model ?? '').trim();
+    if (!targetModel) {
+      throw new Error('target model is empty');
+    }
+    const modelList = Array.isArray(profile.models)
+      ? profile.models.filter((m) => typeof m === 'string' && m.trim())
+      : undefined;
+    if (modelList && modelList.length > 0 && !modelList.includes(targetModel)) {
+      throw new Error(`model "${targetModel}" is not in profile "${profileName}" models list`);
+    }
+
+    // 1) config.json：brain.defaultProfile
+    const configRaw = JSON.parse(fs.readFileSync(this.configPath, 'utf-8'));
+    if (!configRaw.brain || typeof configRaw.brain !== 'object') {
+      throw new Error('config.json brain section is invalid');
+    }
+    configRaw.brain.defaultProfile = profileName;
+    this.writeJsonAtomic(this.configPath, configRaw);
+
+    // 2) profiles.json：defaultModel（仅显式指定模型时写）
+    if (model && fs.existsSync(this.profilesPath)) {
+      const profilesRaw = JSON.parse(fs.readFileSync(this.profilesPath, 'utf-8'));
+      const target = profilesRaw.profiles?.[profileName];
+      if (target) {
+        target.defaultModel = targetModel;
+        if (Array.isArray(target.models)) {
+          if (!target.models.includes(targetModel)) {
+            target.models.push(targetModel);
+          }
+        } else {
+          target.models = [targetModel];
+        }
+        this.writeJsonAtomic(this.profilesPath, profilesRaw);
+      }
+    }
+
+    this.cachedConfig = null;
+    return { profile: profileName, model: targetModel };
+  }
+
+  /** JSON 原子写：先写临时文件再 rename，避免写一半被读 */
+  private writeJsonAtomic(filePath: string, data: unknown): void {
+    const tmp = `${filePath}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
+    fs.renameSync(tmp, filePath);
+  }
+
   validateConfig(
     raw: unknown,
     options?: { strictEnv?: boolean },

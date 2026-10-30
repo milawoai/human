@@ -79,3 +79,21 @@ git apply patches/body-session-speech-summary.patch
 AI 会话标题栏的「总结播报」和 Agent 面板的「回复总结播报」均默认关闭，新会话也关闭。开启后下一轮起用同一次模型生成的短总结（最多80字符）播报，完整文字仍正常展示；只消费 Brain 返回的 `speech` 字段，不在 Body 截正文或二次总结。开关在本机按会话即时保存，Agent 运行时还保存到后端会话文件；本机明确设置优先于后端恢复值。关闭后不会启动该轮待播放结果，但不会中断已经开始的音频。
 
 `yarn workspace electron_with_serve test:speech` 覆盖偏好隔离、恢复、过期请求及播放失败；`node scripts/verify-speech-summary.cjs` 用真实 Electron/default 模型/已启用 TTS 验证两条链路，会调用模型并播放声音，需要本地调试端口19222。机械归档器：`node scripts/archive-body-speech-patch.cjs <修改前Body目录>`。
+
+## 模型配置窗口与快切器（2026-10-30，human-48b）
+
+`body-model-config.patch` 保存本次 8 个 Body 文件改动：`pages/config/index.vue`（新，模型配置窗口：档案列表/模型表/测试连通/通道新模型对比/Ollama 探测）、`services/modelConfig/index.ts`（新，Neural trigger 封装）、chat-panel 顶栏模型快切器（最近使用 + 按档案分组 + 跳配置窗口）、`/config` 路由、`modelConfig` IPC 组、`windowManager.openConfigWindow` 单例窗口、托盘「模型设置」入口。
+
+依赖 backend `brain.language.model.switch / providers.remote_models / providers.probe`（已随本仓库同期提交实现）。验证：`yarn workspace electron_with_sense typecheck && build` 通过（workspace 名以根 package.json 为准）；E2E 切换实测见 `docs/plans/2026-10-30-可视化模型配置.md` 实现记录。
+
+应用（改动前版本上）：
+
+```bash
+git apply patches/body-model-config.patch
+```
+
+反向检查（本机已应用时）：
+
+```bash
+git apply --reverse --check patches/body-model-config.patch
+```
