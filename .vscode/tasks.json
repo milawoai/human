@@ -1,0 +1,38 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev:kill-backend-port",
+      "type": "shell",
+      "command": "lsof -ti tcp:12002 | xargs kill -9 >/dev/null 2>&1; exit 0",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "dev:kill-python-port",
+      "type": "shell",
+      "command": "lsof -ti tcp:12003 | xargs kill -9 >/dev/null 2>&1; exit 0",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "dev:kill-electron-ports",
+      "type": "shell",
+      "command": "lsof -t -i tcp:12001 -i tcp:5200 | xargs kill -9 >/dev/null 2>&1; exit 0",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}

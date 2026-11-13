@@ -9,6 +9,7 @@
       "runtimeArgs": ["workspace", "backend", "dev:debug"],
       "cwd": "${workspaceFolder}",
       "restart": true,
+      "preLaunchTask": "dev:kill-backend-port",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "env": {
@@ -25,6 +26,7 @@
         "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite.cmd"
       },
       "runtimeArgs": ["dev", "--inspect=5858", "--sourcemap"],
+      "preLaunchTask": "dev:kill-electron-ports",
       "env": {
         "NODE_ENV": "development",
         "REMOTE_DEBUGGING_PORT": "9222"
@@ -66,6 +68,7 @@
       "module": "uvicorn",
       "args": ["main:app", "--host", "0.0.0.0", "--port", "12003", "--reload"],
       "cwd": "${workspaceFolder}/apps/python-service",
+      "preLaunchTask": "dev:kill-python-port",
       "console": "integratedTerminal",
       "envFile": "${workspaceFolder}/apps/python-service/.env",
       "justMyCode": false,
