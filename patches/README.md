@@ -110,3 +110,10 @@ git apply patches/body-agent-run-management.patch
 ```
 
 生成并独立重放：`node scripts/archive-body-agent-runs-patch.cjs <修改前Body目录>`。需保存本次精确前置目录，不能用旧基线覆盖后来新增的代码。测试：`yarn workspace backend verify:agent-runs`、`yarn workspace electron_with_serve test:agent`。Electron E2E需先在12002启动 `apps/backend/scripts/agent-run-desktop-fixture.ts`，再以19222调试端口启动Electron，运行 `node scripts/verify-agent-run-management.cjs`；脚本检查fixture标识，拒绝向真实后端发送fixture任务，不调用云模型。详细证据见 `docs/plans/2026-10-30-agent-run-management.md`。
+
+
+## 录音面板关闭（2026-11-14，human-47n）
+
+`body-hearing-panel-close.patch` 只包含 hearing-panel/index.vue 的关闭门控修订。当前本机已应用，不要重复应用。未连接状态允许关闭，保留现有主进程停止监听后关闭路径；不修改 Body gitlink。验证：`git apply --reverse --check patches/body-hearing-panel-close.patch`、Body typecheck:web，以及真实未连接窗口的按钮点击/退出。
+
+尚未应用时在对应前置源码上运行 `git apply --check patches/body-hearing-panel-close.patch`，确认后再应用。详细记录见 Obsidian 桌面后端托管与注册健康管理功能目录下的《开发期临时修订-测试与交付-2026-11-14》，该产品需求仍未实施。

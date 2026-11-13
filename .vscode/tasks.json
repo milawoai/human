@@ -2,6 +2,22 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "dev:wait-neural",
+      "type": "process",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/dev-wait-ready.cjs", "neural"],
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "dev:wait-hearing",
+      "type": "process",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/dev-wait-ready.cjs", "hearing"],
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
       "label": "dev:kill-backend-port",
       "type": "process",
       "command": "node",

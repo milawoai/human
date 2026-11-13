@@ -1,0 +1,88 @@
+--- a/apps/body/src/renderer/src/pages/hearing-panel/index.vue
++++ b/apps/body/src/renderer/src/pages/hearing-panel/index.vue
+@@ -35,7 +35,7 @@
+ const editableText = ref('')
+ const errorMessage = ref('')
+ const totalDuration = ref(0)
+-const canClose = ref(false)
++const isClosing = ref(false)
+ const autoPasteToFocusedAppEnabled = ref(false)
+ const currentSessionId = ref('')
+ const currentRewriteRequestId = ref('')
+@@ -93,7 +93,6 @@
+       editableText.value = normalizedQuestion
+       sessionState.value = 'stopped'
+       statusLabel.value = '改写完成'
+-      canClose.value = true
+     }
+     return
+   }
+@@ -112,7 +111,6 @@
+       sessionState.value = 'recording'
+       statusLabel.value = '录音中'
+       currentSessionId.value = payload.session_id || ''
+-      canClose.value = false
+       segments.value = []
+       fullText.value = ''
+       editableText.value = ''
+@@ -159,14 +157,12 @@
+       sessionState.value = 'stopped'
+       statusLabel.value = '已停止'
+       editableText.value = transcriptText.value
+-      canClose.value = true
+       break
+ 
+     case 'error':
+       sessionState.value = 'error'
+       statusLabel.value = '错误'
+       errorMessage.value = payload.message || '未知错误'
+-      canClose.value = true
+       break
+   }
+ }
+@@ -223,7 +219,6 @@
+     editableText.value = normalizedQuestion
+     sessionState.value = 'stopped'
+     statusLabel.value = '改写完成'
+-    canClose.value = true
+   }
+ }
+ 
+@@ -244,7 +239,6 @@
+   }
+ 
+   statusLabel.value = '已发送到会话窗口'
+-  canClose.value = true
+ }
+ 
+ const sendFollowup = async () => {
+@@ -296,7 +290,17 @@
+ }
+ 
+ const closePanel = async () => {
+-  await ipc.sense.closeHearingPanel()
++  if (isClosing.value) return
++  isClosing.value = true
++  try {
++    // The main process stops an active recording before closing the window.
++    const result = await ipc.sense.closeHearingPanel()
++    if (!result?.success) errorMessage.value = result?.msg || '关闭录音面板失败'
++  } catch (error) {
++    errorMessage.value = error instanceof Error ? error.message : '关闭录音面板失败'
++  } finally {
++    isClosing.value = false
++  }
+ }
+ 
+ const onToggleAutoPaste = async () => {
+@@ -340,8 +344,8 @@
+         icon="pi pi-times"
+         size="small"
+         text
+-        :disabled="!canClose"
+-        :loading="sessionState === 'recording'"
++        :disabled="isClosing"
++        :loading="isClosing"
+         class="close-btn"
+         @click="closePanel"
+       />
