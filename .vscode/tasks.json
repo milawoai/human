@@ -3,9 +3,9 @@
   "tasks": [
     {
       "label": "dev:kill-backend-port",
-      "type": "shell",
-      "command": "lsof -ti tcp:12002 | xargs kill -9 >/dev/null 2>&1; exit 0",
-      "isBackground": true,
+      "type": "process",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/dev-cleanup.cjs", "backend"],
       "problemMatcher": [],
       "presentation": {
         "reveal": "silent",
@@ -14,9 +14,9 @@
     },
     {
       "label": "dev:kill-python-port",
-      "type": "shell",
-      "command": "lsof -ti tcp:12003 | xargs kill -9 >/dev/null 2>&1; exit 0",
-      "isBackground": true,
+      "type": "process",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/dev-cleanup.cjs", "python"],
       "problemMatcher": [],
       "presentation": {
         "reveal": "silent",
@@ -25,14 +25,22 @@
     },
     {
       "label": "dev:kill-electron-ports",
-      "type": "shell",
-      "command": "lsof -t -i tcp:12001 -i tcp:5200 | xargs kill -9 >/dev/null 2>&1; exit 0",
-      "isBackground": true,
+      "type": "process",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/dev-cleanup.cjs", "electron"],
       "problemMatcher": [],
       "presentation": {
         "reveal": "silent",
         "panel": "dedicated"
       }
+    },
+    {
+      "label": "dev:cleanup-all",
+      "type": "process",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/dev-cleanup.cjs", "all"],
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "dedicated" }
     }
   ]
 }

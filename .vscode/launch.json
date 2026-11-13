@@ -54,6 +54,7 @@
       "type": "node",
       "request": "launch",
       "program": "${workspaceFolder}/node_modules/.bin/turbo",
+      "preLaunchTask": "dev:cleanup-all",
       "args": ["run", "dev", "--parallel"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
@@ -81,6 +82,7 @@
   "compounds": [
     {
       "name": "🔥 全栈调试模式",
+      "preLaunchTask": "dev:cleanup-all",
       "configurations": [
         "🚀 调试后端 (NestJS)",
         "🐍 调试Python服务 (FastAPI)",
@@ -91,6 +93,7 @@
     },
     {
       "name": "⚡ Electron完整调试",
+      "preLaunchTask": "dev:kill-electron-ports",
       "configurations": [
         "🖥️ 调试Electron主进程",
         "🎨 调试Electron渲染进程"
