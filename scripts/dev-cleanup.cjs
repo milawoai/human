@@ -13,6 +13,7 @@ function selectProcesses(rows, root, role) {
   const selected = new Set();
   const dir = path.join(root, 'apps', role === 'electron' ? 'body' : role === 'python' ? 'python-service' : 'backend');
   for (const row of rows) {
+    if (row.stat?.startsWith('Z')) continue;
     const scoped = row.command.includes(`${dir}/`) || row.cwd === dir || row.cwd === root;
     const electronBinary = role === 'electron' && row.command.includes(`${root}/node_modules/electron/`);
     if (electronBinary || (scoped && roles[role].pattern.test(row.command))) selected.add(row.pid);
@@ -21,7 +22,7 @@ function selectProcesses(rows, root, role) {
   let changed;
   do {
     changed = false;
-    for (const row of rows) if (selected.has(row.ppid) && !selected.has(row.pid)) {
+    for (const row of rows) if (!row.stat?.startsWith('Z') && selected.has(row.ppid) && !selected.has(row.pid)) {
       selected.add(row.pid);
       changed = true;
     }
@@ -32,11 +33,18 @@ function selectProcesses(rows, root, role) {
 function command(file, args) {
   return execFileSync(file, args, { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
 }
-function snapshot() {
-  return command('ps', ['-axo', 'pid=,ppid=,lstart=,command=']).split('\n').flatMap(line => {
-    const m = line.match(/^\s*(\d+)\s+(\d+)\s+(\S+\s+\S+\s+\d+\s+\S+\s+\d+)\s+(.+)$/);
-    return m ? [{ pid: Number(m[1]), ppid: Number(m[2]), started: m[3], command: m[4] }] : [];
+function parseSnapshot(output) {
+  return output.split('\n').flatMap(line => {
+    const m = line.match(/^\s*(\d+)\s+(\d+)\s+(\S+)\s+(\S+\s+\S+\s+\d+\s+\S+\s+\d+)\s+(.+)$/);
+    return m ? [{ pid: Number(m[1]), ppid: Number(m[2]), stat: m[3], started: m[4], command: m[5] }] : [];
   });
+}
+function snapshot() {
+  return parseSnapshot(command('ps', ['-axo', 'pid=,ppid=,stat=,lstart=,command=']));
+}
+function pendingProcesses(rows, originals) {
+  // A zombie has exited and holds no listening sockets; only its parent can reap it.
+  return rows.filter(r => !r.stat.startsWith('Z') && originals.get(r.pid) === r.started);
 }
 function lsof(args) {
   try { return command('lsof', args); }
@@ -73,7 +81,7 @@ async function cleanup(role, { root = path.resolve(__dirname, '..'), dryRun = fa
   console.log(`[dev-cleanup] ${role}: ${dryRun ? '将关闭' : '关闭'} PID ${[...selected].join(', ') || '无'}; ports=${ports.join(',')}`);
   if (dryRun) return;
   const originals = new Map(rows.filter(r => selected.has(r.pid)).map(r => [r.pid, r.started]));
-  const remaining = () => snapshot().filter(r => originals.get(r.pid) === r.started);
+  const remaining = () => pendingProcesses(snapshot(), originals);
   const signal = (rowsToStop, sig) => {
     for (const row of rowsToStop) {
       try { process.kill(row.pid, sig); }
@@ -93,7 +101,7 @@ async function cleanup(role, { root = path.resolve(__dirname, '..'), dryRun = fa
   if (remaining().length || listeners(ports).size) throw new Error(`${role}: 清理未完成，请检查残留进程/自动重启的服务。`);
 }
 
-module.exports = { selectProcesses, cleanup };
+module.exports = { selectProcesses, cleanup, parseSnapshot, pendingProcesses };
 if (require.main === module) {
   const role = process.argv[2];
   (async () => {

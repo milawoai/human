@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { selectProcesses } = require('./dev-cleanup.cjs');
 const { cleanup } = require('./dev-cleanup.cjs');
+const { parseSnapshot, pendingProcesses } = require('./dev-cleanup.cjs');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -9,6 +10,15 @@ const { spawn } = require('node:child_process');
 const { once } = require('node:events');
 
 const root = '/work/human';
+test('zombies are already exited; live same-generation processes still block cleanup', () => {
+  const rows = parseSnapshot([
+    '47876 47865 Z Fri Nov 13 23:11:49 2026 <defunct>',
+    '48041 47882 S Fri Nov 13 23:11:50 2026 node /work/human/apps/backend/dist/main',
+    '48042 47882 S Fri Nov 13 23:11:51 2026 node worker.js',
+  ].join('\n'));
+  const originals = new Map([[47876, rows[0].started], [48041, rows[1].started], [48042, 'old generation']]);
+  assert.deepEqual(pendingProcesses(rows, originals).map(r => r.pid), [48041]);
+});
 test('Electron cleanup finds orphan app, launcher and helpers without ports', () => {
   const rows = [
     { pid: 10, ppid: 1, command: `${root}/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron .`, cwd: `${root}/apps/body` },
