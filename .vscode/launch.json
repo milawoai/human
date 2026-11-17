@@ -8,22 +8,35 @@
       "port": 9222,
       "webRoot": "${workspaceFolder}/apps/body/src/renderer",
       "timeout": 180000,
-      "presentation": { "hidden": true }
+      "presentation": {
+        "hidden": true
+      }
     },
     {
       "name": "全栈：Python（等待Neural注册）",
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
-      "args": ["main:app", "--host", "0.0.0.0", "--port", "12003", "--reload"],
+      "args": [
+        "main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "12003",
+        "--reload"
+      ],
       "cwd": "${workspaceFolder}/apps/python-service",
       "preLaunchTask": "dev:wait-neural",
       "console": "integratedTerminal",
       "envFile": "${workspaceFolder}/apps/python-service/.env",
       "justMyCode": false,
       "python": "${workspaceFolder}/apps/python-service/.venv/bin/python",
-      "env": { "PYTHONPATH": "${workspaceFolder}/apps/python-service" },
-      "presentation": { "hidden": true }
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/apps/python-service"
+      },
+      "presentation": {
+        "hidden": true
+      }
     },
     {
       "name": "全栈：Electron（等待Python注册）",
@@ -31,21 +44,39 @@
       "request": "launch",
       "cwd": "${workspaceFolder}/apps/body",
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite",
-      "windows": { "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite.cmd" },
-      "runtimeArgs": ["dev", "--inspect=5858", "--sourcemap"],
+      "windows": {
+        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite.cmd"
+      },
+      "runtimeArgs": [
+        "dev",
+        "--inspect=5858",
+        "--sourcemap"
+      ],
       "preLaunchTask": "dev:wait-hearing",
-      "env": { "NODE_ENV": "development", "REMOTE_DEBUGGING_PORT": "9222" },
+      "env": {
+        "NODE_ENV": "development",
+        "REMOTE_DEBUGGING_PORT": "9222"
+      },
       "sourceMaps": true,
       "console": "integratedTerminal",
-      "resolveSourceMapLocations": ["${workspaceFolder}/apps/body/**", "!**/node_modules/**"],
-      "presentation": { "hidden": true }
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/apps/body/**",
+        "!**/node_modules/**"
+      ],
+      "presentation": {
+        "hidden": true
+      }
     },
     {
-      "name": "🚀 调试后端 (NestJS)",
+      "name": "调试后端",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "yarn",
-      "runtimeArgs": ["workspace", "backend", "dev:debug"],
+      "runtimeArgs": [
+        "workspace",
+        "backend",
+        "dev:debug"
+      ],
       "cwd": "${workspaceFolder}",
       "restart": true,
       "preLaunchTask": "dev:kill-backend-port",
@@ -53,6 +84,10 @@
       "internalConsoleOptions": "neverOpen",
       "env": {
         "NODE_ENV": "development"
+      },
+      "presentation": {
+        "group": "开发调试",
+        "order": 1
       }
     },
     {
@@ -64,7 +99,11 @@
       "windows": {
         "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite.cmd"
       },
-      "runtimeArgs": ["dev", "--inspect=5858", "--sourcemap"],
+      "runtimeArgs": [
+        "dev",
+        "--inspect=5858",
+        "--sourcemap"
+      ],
       "preLaunchTask": "dev:kill-electron-ports",
       "env": {
         "NODE_ENV": "development",
@@ -75,7 +114,10 @@
       "resolveSourceMapLocations": [
         "${workspaceFolder}/apps/body/**",
         "!**/node_modules/**"
-      ]
+      ],
+      "presentation": {
+        "hidden": true
+      }
     },
     {
       "name": "🎨 调试Electron渲染进程",
@@ -89,24 +131,18 @@
       }
     },
     {
-      "name": "🎯 启动所有服务 (开发模式)",
-      "type": "node",
-      "request": "launch",
-      "program": "${workspaceFolder}/node_modules/.bin/turbo",
-      "preLaunchTask": "dev:cleanup-all",
-      "args": ["run", "dev", "--parallel"],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "env": {
-        "NODE_ENV": "development"
-      }
-    },
-    {
-      "name": "🐍 调试Python服务 (FastAPI)",
+      "name": "调试python服务",
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
-      "args": ["main:app", "--host", "0.0.0.0", "--port", "12003", "--reload"],
+      "args": [
+        "main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "12003",
+        "--reload"
+      ],
       "cwd": "${workspaceFolder}/apps/python-service",
       "preLaunchTask": "dev:kill-python-port",
       "console": "integratedTerminal",
@@ -115,29 +151,41 @@
       "python": "${workspaceFolder}/apps/python-service/.venv/bin/python",
       "env": {
         "PYTHONPATH": "${workspaceFolder}/apps/python-service"
+      },
+      "presentation": {
+        "group": "开发调试",
+        "order": 2
       }
     }
   ],
   "compounds": [
     {
-      "name": "🔥 全栈调试模式",
+      "name": "全部启动",
       "preLaunchTask": "dev:cleanup-all",
       "configurations": [
-        "🚀 调试后端 (NestJS)",
+        "调试后端",
         "全栈：Python（等待Neural注册）",
         "全栈：Electron（等待Python注册）",
         "全栈：Electron渲染进程"
       ],
-      "stopAll": true
+      "stopAll": true,
+      "presentation": {
+        "group": "开发调试",
+        "order": 4
+      }
     },
     {
-      "name": "⚡ Electron完整调试",
+      "name": "调试 Electron",
       "preLaunchTask": "dev:kill-electron-ports",
       "configurations": [
         "🖥️ 调试Electron主进程",
         "🎨 调试Electron渲染进程"
       ],
-      "stopAll": true
+      "stopAll": true,
+      "presentation": {
+        "group": "开发调试",
+        "order": 3
+      }
     }
   ]
 }
