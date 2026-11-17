@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "updatedAt": "2026-04-15",
+  "baseUrl": "http://localhost:{port}",
+  "groups": [
+    {
+      "id": "system",
+      "name": "系统",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/heart-beat",
+          "description": "本地服务存活探测。",
+          "requestBody": null,
+          "response": "{ success: boolean, serverId: string }"
+        }
+      ]
+    },
+    {
+      "id": "common",
+      "name": "通用",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/common/hello",
+          "description": "本地服务测试接口。",
+          "requestBody": null,
+          "response": "{ success: boolean, msg: string }"
+        },
+        {
+          "method": "POST",
+          "path": "/common/report",
+          "description": "接收 report 请求并转发到主窗口事件 recevied-report-message。",
+          "requestBody": "任意 JSON",
+          "response": "{ success: boolean, msg: string }"
+        }
+      ]
+    },
+    {
+      "id": "live2d",
+      "name": "Live2D",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/live2d/pet-models",
+          "description": "获取 Pet 可用 Live2D 模型配置。",
+          "requestBody": null,
+          "response": "{ success: boolean, data: { defaultModelId: string, models: Live2DPetModelConfig[] } }"
+        },
+        {
+          "method": "POST",
+          "path": "/live2d/window/open",
+          "description": "打开 Live2D Pet 窗口；如果窗口已关闭，会重新创建并显示。",
+          "requestBody": null,
+          "response": "{ success: boolean, data: { opened: boolean } }"
+        },
+        {
+          "method": "GET",
+          "path": "/live2d/current",
+          "description": "获取当前 Live2D 模型，以及该模型支持的动作和表情列表；如果窗口已关闭，会先打开窗口。",
+          "requestBody": null,
+          "response": "{ success: boolean, data: { model: Live2DPetModelConfig, motions: MotionGroup[], expressions: string[] } }"
+        },
+        {
+          "method": "POST",
+          "path": "/live2d/motion",
+          "description": "让当前 Live2D 模型播放指定动作。",
+          "requestBody": "{ group: string, index: number }",
+          "response": "{ success: boolean, data: { played: boolean } }"
+        },
+        {
+          "method": "POST",
+          "path": "/live2d/expression",
+          "description": "让当前 Live2D 模型切换到指定表情。",
+          "requestBody": "{ name: string }",
+          "response": "{ success: boolean, data: { played: boolean } }"
+        }
+      ]
+    },
+    {
+      "id": "pet",
+      "name": "Pet",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/api/pet/perform",
+          "description": "执行桌面秘书最小表现协议，支持字幕、动作、表情和音频。",
+          "requestBody": "{ text?: string, motion?: { group: string, index?: number }, expression?: string, audioUrl?: string }",
+          "response": "{ success: boolean, data: { textShown: boolean, motionPlayed: boolean, expressionPlayed: boolean, audioPlayed: boolean, audioError?: string } }"
+        }
+      ]
+    },
+    {
+      "id": "mcp",
+      "name": "MCP",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/mcp/rpc",
+          "description": "MCP HTTP transport 存活探测。",
+          "requestBody": null,
+          "response": "{ protocol: string, version: string, status: string, transport: string, message: string }"
+        },
+        {
+          "method": "POST",
+          "path": "/mcp/rpc",
+          "description": "MCP JSON-RPC 2.0 入口，支持 initialize、tools/list、tools/call。",
+          "requestBody": "{ jsonrpc?: string, id?: number | string, method: string, params?: object }",
+          "response": "JSON-RPC 2.0 result/error"
+        }
+      ]
+    }
+  ]
+}

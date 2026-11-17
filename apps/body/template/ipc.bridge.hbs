@@ -1,0 +1,25 @@
+{{!--
+Electron IPC 桥接代码生成模板
+
+核心参数:
+service_name: string
+  服务名称(示例:audio / file / project)
+
+func_name: string
+  函数名称(示例:recordAudio / selectFile / analyzeProject)
+
+------------------------
+示例(Example Params,可直接作为 Handlebars 渲染输入):
+
+const params = {
+  service_name: 'audio',
+  func_name: 'recordAudio'
+}
+--}}
+
+import { inject } from 'vue'
+import type { IpcProxy } from '@renderer/plugin/ipc'
+
+const ipc = inject<IpcProxy>('ipc')!
+await ipc.{{service_name}}.{{func_name}}()
+ 

@@ -1,0 +1,30 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "include": ["app.config.ts", "electron.vite.config.*", "src/main/**/*", "src/shared/**/*", "src/preload/**/*", "../../packages/neural-topics/src/**/*"],
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "strictPropertyInitialization": false,
+    "allowJs": true,
+    "composite": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "types": ["electron-vite/node"],
+    "baseUrl": ".",
+    "paths": {
+      "@main/*": [
+        "src/main/*"
+      ],
+      "@shared/*": [
+        "src/shared/*"
+      ],
+      "@config": [
+        "app.config.ts"
+      ],
+      "neural-topics": [
+        "../../packages/neural-topics/src/index.ts"
+      ]
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
+  "include": [
+    "src/renderer/src/env.d.ts",
+    "src/renderer/src/**/*",
+    "src/renderer/src/**/*.vue",
+    "src/renderer/WebSDK/src/**/*",
+    "src/renderer/WebSDK/Framework/src/**/*",
+    "src/shared/**/*",
+    "src/preload/*.d.ts"
+  ],
+  "exclude": [
+    "public/**/*",
+    "node_modules"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "allowJs": true,
+    "baseUrl": ".",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@renderer/*": [
+        "src/renderer/src/*"
+      ],
+      "@shared/*": [
+        "src/shared/*"
+      ],
+      "@framework/*": [
+        "src/renderer/WebSDK/Framework/src/*"
+      ],
+      "@cubismsdksamples/*": [
+        "src/renderer/WebSDK/src/*"
+      ]
+    }
+  }
+}

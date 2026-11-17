@@ -1,0 +1,81 @@
+[
+  {
+    "serverName": "common",
+    "funcName": "getStore",
+    "description": "从 electron-store 读取一个键的值",
+    "params": [
+      { "name": "key", "type": "string", "description": "键名", "required": true }
+    ]
+  },
+  {
+    "serverName": "common",
+    "funcName": "setStore",
+    "description": "向 electron-store 写入一个键值",
+    "params": [
+      { "name": "key", "type": "string", "description": "键名", "required": true },
+      { "name": "value", "type": "jsonValue", "description": "要存储的值（任意 JSON 可序列化类型）", "required": true }
+    ]
+  },
+  {
+    "serverName": "common",
+    "funcName": "deleteStore",
+    "description": "从 electron-store 删除一个键",
+    "params": [
+      { "name": "key", "type": "string", "description": "键名", "required": true }
+    ]
+  },
+  {
+    "serverName": "common",
+    "funcName": "executeShell",
+    "description": "执行一段 shell 脚本并返回输出",
+    "params": [
+      { "name": "script", "type": "string", "description": "要执行的命令", "required": true }
+    ]
+  },
+  {
+    "serverName": "common",
+    "funcName": "getProcessPlatform",
+    "description": "获取当前操作系统平台标识",
+    "params": []
+  },
+  {
+    "serverName": "common",
+    "funcName": "getLocale",
+    "description": "获取当前语言设置",
+    "params": []
+  },
+  {
+    "serverName": "common",
+    "funcName": "setLocale",
+    "description": "设置当前语言",
+    "params": [
+      { "name": "locale", "type": "string", "description": "语言: zh 或 en", "required": true }
+    ]
+  },
+  {
+    "serverName": "common",
+    "funcName": "copyText",
+    "description": "复制文本到剪贴板",
+    "params": [
+      { "name": "text", "type": "string", "description": "要复制的文本", "required": true }
+    ]
+  },
+  {
+    "serverName": "common",
+    "funcName": "isMacOS",
+    "description": "判断当前是否为 macOS 系统",
+    "params": []
+  },
+  {
+    "serverName": "common",
+    "funcName": "isWindows",
+    "description": "判断当前是否为 Windows 系统",
+    "params": []
+  },
+  {
+    "serverName": "common",
+    "funcName": "isLinux",
+    "description": "判断当前是否为 Linux 系统",
+    "params": []
+  }
+]

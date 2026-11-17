@@ -19,3 +19,11 @@
 ## 跨仓库完整性边界
 
 apps/body 当前为 gitlink（e169dfb8c73424e94eb829a41fd82de8d93f4345），本地缺少 .git 与 .gitmodules 映射，父仓库提交不会包含其工作目录源码。此前部分修改以 patches/ 补丁保存。human-tools 和 Obsidian 目录未找到独立 Git 元数据，未创建仓库或猜测远端。另两方仓库身份待用户确认后继续保存；本记录不能视为外部插件或 Obsidian 当前内容的完整 Git 备份。
+
+## 后续修复：三个应用统一由主仓库管理（human-ryp / human-yie）
+
+用户确认“三方”为 apps 下三个应用，并授权统一 Git 管理。移除 apps/body 失效 gitlink，将本地现有 313 个源码、资源和工程文件直接入库；backend、python-service 原本已属主仓库。Body 历史指针仍可在旧提交追溯，本次没有恢复其缺失的独立仓库历史，也未删除本地源码。前节完整性边界为修复前状态，Body 当前源码未保存的问题至此解决。
+
+Body 原有忽略规则保留，追加忽略 .claude 本地助手状态与生成的带时间戳 Vite 配置。node_modules、out、缓存、日志与环境文件不入库。已有 patches/ 保留为历史证据，此后 Body 修改直接正常提交即可。外部 human-tools 与 Obsidian 不属于用户本次确认的三个应用范围。
+
+验证：313 个入库文件逐字节与工作目录比对一致；Body 主进程与渲染器类型检查均通过。完整 diff --check 检出原源码中的历史尾空格、CRLF 与末尾空行，本次原样保存，不借归档批量格式化。未进行 GUI 与录音业务重新验收。

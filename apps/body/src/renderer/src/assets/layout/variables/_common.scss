@@ -1,0 +1,28 @@
+:root {
+  --p-primary-color: #3b82f6; /* 添加默认值 - 蓝色 */
+  --p-primary-contrast-color: #ffffff; /* 添加默认值 - 白色 */
+  --p-text-color: #111827; /* 添加默认值 - 深灰色 */
+  --p-text-muted-color: #6b7280; /* 添加默认值 - 中灰色 */
+  --p-content-border-color: #e5e7eb; /* 添加默认值 - 浅灰色边框 */
+  --p-content-background: #ffffff; /* 添加默认值 - 白色背景 */
+  --p-content-hover-background: #f3f4f6; /* 添加默认值 - 浅灰色悬停背景 */
+  --p-overlay-popover-background: #ffffff; /* 添加默认值 - 白色弹出背景 */
+  --p-transition-duration: 0.2s; /* 添加默认值 - 过渡时间 */
+  --p-mask-background: rgba(0, 0, 0, 0.4); /* 添加默认值 - 半透明黑色遮罩 */
+  --p-content-border-radius: 0.375rem; /* 添加默认值 - 圆角 */
+  --p-focus-ring-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25); /* 添加默认值 - 蓝色聚焦阴影 */
+
+  --primary-color: var(--p-primary-color);
+  --primary-color-text: var(--p-primary-contrast-color);
+  --text-color: var(--p-text-color);
+  --text-color-secondary: var(--p-text-muted-color);
+  --surface-border: var(--p-content-border-color);
+  --surface-card: var(--p-content-background);
+  --surface-hover: var(--p-content-hover-background);
+  --surface-overlay: var(--p-overlay-popover-background);
+  --transition-duration: var(--p-transition-duration);
+  --maskbg: var(--p-mask-background);
+  --border-radius: var(--p-content-border-radius);
+  --layout-section-transition-duration: 0.2s;
+  --focus-ring-shadow: var(--p-focus-ring-shadow);
+}

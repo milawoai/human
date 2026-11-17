@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Electron</title>
+    <!-- CSP: 允许加载 Blob URL（生产环境的后备配置）-->
+    <!-- windowManager.ts 也会动态设置 CSP，这里作为后备 -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' https: http:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: http: data: blob:"
+    />
+  </head>
+
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
