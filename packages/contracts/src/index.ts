@@ -9,9 +9,11 @@ export * from './types';
 export * from './validate';
 export * from './registry';
 export { TTS_CONTRACT_V1 } from './contracts/tts';
+export { ROUTER_CONTRACT_V1 } from './contracts/router';
 
 import { ContractRegistry } from './registry';
 import { TTS_CONTRACT_V1 } from './contracts/tts';
+import { ROUTER_CONTRACT_V1 } from './contracts/router';
 
 /**
  * 预置全部内置契约的注册表。
@@ -20,6 +22,7 @@ import { TTS_CONTRACT_V1 } from './contracts/tts';
 export function createDefaultRegistry(): ContractRegistry {
   const registry = new ContractRegistry();
   registry.register(TTS_CONTRACT_V1);
+  registry.register(ROUTER_CONTRACT_V1);
   return registry;
 }
 

@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { existsSync, statSync } from 'node:fs';
 import * as path from 'node:path';
 import type { Context, Model, ToolResultMessage } from '@earendil-works/pi-ai';
@@ -16,6 +16,15 @@ import { AgentRunRegistry } from './agent-run-registry';
 import { ToolAdapterService } from '../../motor/motor-tool-runner/core/tool-adapter.service';
 import { BrainSpeechService } from '../speech/brain-speech.service';
 import { speechSystemPrompt, splitSpeechSummary, speechDisplayMessage } from '../speech/speech-summary';
+import {
+  ToolRouterService,
+  ToolRouterMode,
+  PreparedAgentToolsResult,
+} from '../basal-ganglia/tool-router.service';
+import {
+  isToolExecutionError,
+  TOOL_SEARCH_NAME,
+} from '../basal-ganglia/tool-search.agent-tool';
 
 const BRAIN_AGENT_ACTOR = {
   actorId: 'brain-main',
@@ -31,6 +40,8 @@ const TOPIC = {
   BRAIN_AGENT_SESSION_LIST: 'brain.agent.session.list',
   BRAIN_AGENT_RUN_GET: 'brain.agent.run.get',
   BRAIN_AGENT_RUN_CANCEL: 'brain.agent.run.cancel',
+  BRAIN_AGENT_ROUTER_STATUS: 'brain.agent.router.status',
+  BRAIN_AGENT_ROUTER_DECIDE: 'brain.agent.router.decide',
 } as const;
 
 const AGENT_CAPABILITIES: Capability[] = [
@@ -39,6 +50,24 @@ const AGENT_CAPABILITIES: Capability[] = [
     kinds: [topic.endsWith('get') ? 'query' : 'command'] as Capability['kinds'],
     mode: 'once' as const, enabled: true, online: true,
   })),
+  {
+    id: 'brain.agent.router.status',
+    actor: BRAIN_AGENT_ACTOR,
+    topic: TOPIC.BRAIN_AGENT_ROUTER_STATUS,
+    kinds: ['query', 'command'],
+    mode: 'once',
+    enabled: true,
+    online: true,
+  },
+  {
+    id: 'brain.agent.router.decide',
+    actor: BRAIN_AGENT_ACTOR,
+    topic: TOPIC.BRAIN_AGENT_ROUTER_DECIDE,
+    kinds: ['query', 'command'],
+    mode: 'once',
+    enabled: true,
+    online: true,
+  },
   {
     id: 'brain.agent.run',
     actor: BRAIN_AGENT_ACTOR,
@@ -99,6 +128,7 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
     private readonly sessionStore: AgentSessionStore,
     private readonly toolAdapterService: ToolAdapterService,
     private readonly speechService: BrainSpeechService,
+    @Optional() private readonly toolRouter?: ToolRouterService,
   ) {}
 
   onModuleInit() {
@@ -132,6 +162,10 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
         case TOPIC.BRAIN_AGENT_RUN_GET:
         case TOPIC.BRAIN_AGENT_RUN_CANCEL:
           return this.handleRunControl(message);
+        case TOPIC.BRAIN_AGENT_ROUTER_STATUS:
+          return this.handleRouterStatus(message);
+        case TOPIC.BRAIN_AGENT_ROUTER_DECIDE:
+          return await this.handleRouterDecide(message);
         default:
           return { success: false, msg: `BrainAgent 无法处理 topic: ${message.topic}` };
       }
@@ -161,12 +195,19 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
     const runId = this.readString(payload.runId) ?? message.id;
     if (!/^[a-zA-Z0-9_-]{1,128}$/.test(runId)) throw new Error('payload.runId is invalid');
     this.runs.begin(runId, sessionId); // Acquire before any async initialization.
+    const runAbort = new AbortController();
+    let activeAgent: { abort: () => void } | undefined;
+    this.runs.attach(runId, () => {
+      runAbort.abort();
+      activeAgent?.abort();
+    });
     let runError: string | undefined;
     try {
     this.publishRunState(runId);
-    if (this.runs.cancelling(runId)) throw new Error('Agent run cancelled');
+    if (this.runs.cancelling(runId) || runAbort.signal.aborted) throw new Error('Agent run cancelled');
 
     const resolved = await this.llmService.resolveModel(this.readString(payload.profileName));
+    if (this.runs.cancelling(runId) || runAbort.signal.aborted) throw new Error('Agent run cancelled');
     const persisted = this.sessionStore.loadSessionFile(sessionId);
     const speechSummaryEnabled = this.readBoolean(payload.speechSummaryEnabled) ?? persisted?.speechSummaryEnabled === true;
     const systemPrompt =
@@ -183,12 +224,27 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
       toolPreset === 'default'
         ? undefined
         : this.resolveCodingCwd(this.readString(payload.cwd));
-    const tools = await this.buildTools({
+    const routerModeRaw = this.readString(payload.routerMode);
+    const routerMode: ToolRouterMode | undefined =
+      routerModeRaw === 'off' || routerModeRaw === 'shadow' || routerModeRaw === 'active'
+        ? routerModeRaw
+        : undefined;
+    const priorMessages = (persisted?.messages ?? []) as unknown[];
+    const priorMessageCount = priorMessages.length;
+    const contextSummary = this.extractRoutingContextSummary(
+      priorMessages,
+      this.readString(payload.contextSummary),
+    );
+    const { tools, preparedRouting } = await this.buildToolsWithRouting({
       toolPreset,
       codingCwd,
+      userText: continueMode ? undefined : userText,
+      contextSummary: continueMode ? undefined : contextSummary,
+      routerMode,
+      signal: runAbort.signal,
     });
     const { Agent } = await this.getAgentCore();
-    if (this.runs.cancelling(runId)) throw new Error('Agent run cancelled');
+    if (this.runs.cancelling(runId) || runAbort.signal.aborted) throw new Error('Agent run cancelled');
     const speechInstruction: AgentMessage = {
       role: 'system', content: speechSystemPrompt('', true), timestamp: Date.now(),
     };
@@ -214,7 +270,11 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
           ? 'sequential'
           : 'parallel',
     });
-    this.runs.attach(runId, () => agent.abort());
+    activeAgent = agent;
+    if (this.runs.cancelling(runId) || runAbort.signal.aborted) {
+      agent.abort();
+      throw new Error('Agent run cancelled');
+    }
 
     const events: AgentEvent[] = [];
     const requestId = runId;
@@ -248,6 +308,14 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
       ? (rawLast.content ?? []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('') : '';
     const { summary } = splitSpeechSummary(finalText, speechSummaryEnabled);
     const history = rawMessages.filter(m => m !== speechInstruction);
+    const newMessages = history.slice(priorMessageCount);
+    this.toolRouter?.recordRunOutcome({
+      sessionId,
+      requestId,
+      userText: continueMode ? undefined : userText,
+      prepared: preparedRouting,
+      newMessages,
+    });
     const messages = speechSummaryEnabled ? history.map(speechDisplayMessage) : history;
     const lastAssistant = this.findLastAssistant(messages);
     const persistedMeta = this.sessionStore.upsertSession({
@@ -279,6 +347,7 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
         sessionMeta: persistedMeta,
         speechSummaryEnabled,
         speech,
+        toolRouting: preparedRouting?.decision,
       },
     };
     } catch (error) {
@@ -342,6 +411,258 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
     };
   }
 
+  private handleRouterStatus(message: BusMessage) {
+    if (!this.toolRouter) {
+      return { success: false, msg: 'ToolRouterService 未启用' };
+    }
+    const payload = this.ensureObject(message.payload);
+    const hasMode = payload.mode !== undefined;
+    const hasSetMode = payload.setMode !== undefined;
+    if (
+      hasMode &&
+      hasSetMode &&
+      this.readString(payload.mode) !== this.readString(payload.setMode)
+    ) {
+      throw new Error('payload.mode and payload.setMode conflict');
+    }
+
+    let nextMode: ToolRouterMode | undefined;
+    if (hasMode || hasSetMode) {
+      const rawMode = hasMode ? payload.mode : payload.setMode;
+      const modeStr = typeof rawMode === 'string' ? rawMode.trim() : '';
+      if (modeStr !== 'off' && modeStr !== 'shadow' && modeStr !== 'active') {
+        throw new Error('payload.mode must be one of: off, shadow, active');
+      }
+      nextMode = modeStr;
+    }
+
+    let nextTopK: number | undefined;
+    if (payload.topK !== undefined) {
+      const val = Number(payload.topK);
+      if (!Number.isFinite(val) || !Number.isInteger(val) || val < 1 || val > 64) {
+        throw new Error('payload.topK must be an integer between 1 and 64');
+      }
+      nextTopK = val;
+    }
+
+    let nextThreshold: number | undefined;
+    if (payload.threshold !== undefined) {
+      const val = Number(payload.threshold);
+      if (!Number.isFinite(val) || val < 0 || val > 1) {
+        throw new Error('payload.threshold must be a number between 0 and 1');
+      }
+      nextThreshold = val;
+    }
+
+    let nextMinCandidates: number | undefined;
+    if (payload.minCandidates !== undefined) {
+      const val = Number(payload.minCandidates);
+      if (!Number.isFinite(val) || !Number.isInteger(val) || val < 1 || val > 100) {
+        throw new Error('payload.minCandidates must be an integer between 1 and 100');
+      }
+      nextMinCandidates = val;
+    }
+
+    let nextRouteTimeoutMs: number | undefined;
+    if (payload.routeTimeoutMs !== undefined) {
+      const val = Number(payload.routeTimeoutMs);
+      if (!Number.isFinite(val) || !Number.isInteger(val) || val < 20 || val > 120000) {
+        throw new Error('payload.routeTimeoutMs must be an integer between 20 and 120000');
+      }
+      nextRouteTimeoutMs = val;
+    }
+
+    if (
+      nextMode !== undefined ||
+      nextTopK !== undefined ||
+      nextThreshold !== undefined ||
+      nextMinCandidates !== undefined ||
+      nextRouteTimeoutMs !== undefined
+    ) {
+      this.toolRouter.setConfig({
+        mode: nextMode,
+        topK: nextTopK,
+        threshold: nextThreshold,
+        minCandidates: nextMinCandidates,
+        routeTimeoutMs: nextRouteTimeoutMs,
+      });
+    }
+
+    return {
+      success: true,
+      data: this.toolRouter.getStatusAndLogs({
+        limit: this.readNumber(payload.limit) ?? 20,
+        onlyFalseNegatives: this.readBoolean(payload.onlyFalseNegatives),
+        sessionId: this.readString(payload.sessionId),
+      }),
+    };
+  }
+
+  private async handleRouterDecide(message: BusMessage) {
+    if (!this.toolRouter) {
+      return { success: false, msg: 'ToolRouterService 未启用' };
+    }
+    const payload = this.ensureObject(message.payload);
+    const userText = this.readString(payload.userText);
+    if (!userText) {
+      throw new Error('payload.userText is required');
+    }
+    const allTools = this.toolAdapterService
+      .getAllTools()
+      .filter((t) => !t.name.endsWith('.router.decide') && t.name !== TOOL_SEARCH_NAME);
+    const customCandidates = Array.isArray(payload.candidates)
+      ? payload.candidates
+      : allTools.map((t) => ({
+          toolId: t.name,
+          category: t.name.includes('.') ? t.name.split('.')[0] : undefined,
+          description: t.description || t.label || t.name,
+        }));
+    let decideTopK: number | undefined;
+    if (payload.topK !== undefined) {
+      const val = Number(payload.topK);
+      if (!Number.isFinite(val) || !Number.isInteger(val) || val < 1 || val > 64) {
+        throw new Error('payload.topK must be an integer between 1 and 64');
+      }
+      decideTopK = val;
+    }
+
+    let decideThreshold: number | undefined;
+    if (payload.threshold !== undefined) {
+      const val = Number(payload.threshold);
+      if (!Number.isFinite(val) || val < 0 || val > 1) {
+        throw new Error('payload.threshold must be a number between 0 and 1');
+      }
+      decideThreshold = val;
+    }
+
+    const decision = await this.toolRouter.decide({
+      userText,
+      contextSummary: this.readString(payload.contextSummary),
+      candidates: customCandidates,
+      topK: decideTopK,
+      threshold: decideThreshold,
+    });
+    return {
+      success: true,
+      data: decision,
+    };
+  }
+
+  private async buildToolsWithRouting(options: {
+    toolPreset: ToolPreset;
+    codingCwd?: string;
+    userText?: string;
+    contextSummary?: string;
+    routerMode?: ToolRouterMode;
+    signal?: AbortSignal;
+  }): Promise<{ tools: AgentTool[]; preparedRouting?: PreparedAgentToolsResult }> {
+    const baseTools = await this.buildTools({
+      toolPreset: options.toolPreset,
+      codingCwd: options.codingCwd,
+    });
+    if (options.toolPreset === 'none' || !this.toolRouter) {
+      return { tools: baseTools };
+    }
+    // coding_only 为显式硬限定，不走动态工具路由过滤
+    if (options.toolPreset === 'coding_only') {
+      return { tools: baseTools };
+    }
+    const preparedRouting = await this.toolRouter.prepareToolsForRun({
+      userText: options.userText,
+      contextSummary: options.contextSummary,
+      allTools: baseTools,
+      mode: options.routerMode,
+      signal: options.signal,
+    });
+    return {
+      tools: preparedRouting.tools,
+      preparedRouting,
+    };
+  }
+
+  /**
+   * 从当前会话最近几条历史消息中提取供工具路由参考的轻量前文摘要（严格与 TTS 播报摘要区分）
+   */
+  private extractRoutingContextSummary(
+    priorMessages: unknown[],
+    explicitSummary?: string,
+  ): string | undefined {
+    if (explicitSummary?.trim()) {
+      return explicitSummary.trim().slice(0, 500);
+    }
+    if (!Array.isArray(priorMessages) || priorMessages.length === 0) {
+      return undefined;
+    }
+
+    const callIdToToolName = new Map<string, string>();
+    for (const msg of priorMessages) {
+      const m = msg as Record<string, any>;
+      if (!m || typeof m !== 'object' || m.role !== 'assistant' || !Array.isArray(m.content)) {
+        continue;
+      }
+      for (const block of m.content) {
+        if (
+          block &&
+          block.type === 'toolCall' &&
+          typeof block.id === 'string' &&
+          typeof block.name === 'string'
+        ) {
+          callIdToToolName.set(block.id, block.name);
+        }
+      }
+    }
+
+    const recentSlice = priorMessages.slice(-8);
+    const recentUserTexts: string[] = [];
+    const recentSucceededTools: string[] = [];
+
+    for (const msg of recentSlice) {
+      const m = msg as Record<string, any>;
+      if (!m || typeof m !== 'object') continue;
+      if (m.role === 'user') {
+        const text =
+          typeof m.content === 'string'
+            ? m.content.trim()
+            : Array.isArray(m.content)
+              ? m.content
+                  .filter((b: any) => b && b.type === 'text' && typeof b.text === 'string')
+                  .map((b: any) => b.text.trim())
+                  .join(' ')
+              : '';
+        if (text) {
+          recentUserTexts.push(text.slice(0, 140));
+        }
+      } else if (m.role === 'toolResult') {
+        if (isToolExecutionError(m)) continue;
+        const toolName =
+          typeof m.toolName === 'string' && m.toolName
+            ? m.toolName
+            : typeof m.toolCallId === 'string'
+              ? callIdToToolName.get(m.toolCallId)
+              : undefined;
+        if (
+          toolName &&
+          toolName !== TOOL_SEARCH_NAME &&
+          !recentSucceededTools.includes(toolName)
+        ) {
+          recentSucceededTools.push(toolName);
+        }
+      }
+    }
+
+    const parts: string[] = [];
+    if (recentUserTexts.length > 0) {
+      parts.push(`上一轮用户：${recentUserTexts.slice(-2).join(' / ')}`);
+    }
+    if (recentSucceededTools.length > 0) {
+      parts.push(`上一轮成功调用工具：${recentSucceededTools.slice(-4).join(', ')}`);
+    }
+    if (parts.length === 0) {
+      return undefined;
+    }
+    return parts.join(' | ').slice(0, 500);
+  }
+
   private async buildTools(options: {
     toolPreset: ToolPreset;
     codingCwd?: string;
@@ -355,8 +676,10 @@ export class BrainAgentService implements OnModuleInit, InternalCommandHandler {
       },
     };
 
-    // 从 MotorToolRunner 获取工具（通过 ToolAdapterService）
-    const allTools = this.toolAdapterService.getAllTools(hooks);
+    // 从 MotorToolRunner 获取工具（通过 ToolAdapterService），排除内部 router.decide
+    const allTools = this.toolAdapterService
+      .getAllTools(hooks)
+      .filter((t) => !t.name.endsWith('.router.decide') && t.name !== TOOL_SEARCH_NAME);
 
     if (options.toolPreset === 'default') {
       // 默认模式：返回所有已注册且启用的 Motor 工具

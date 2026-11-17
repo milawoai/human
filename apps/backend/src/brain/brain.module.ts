@@ -20,12 +20,30 @@ import { BrainAgentService } from './agent/brain-agent.service';
 import { AgentSessionStore } from './agent/agent-session.store';
 import { MemoryModule } from './hippocampus/memory.module';
 import { BrainSpeechService } from './speech/brain-speech.service';
+import { ToolRoutingLogStore } from './basal-ganglia/tool-routing-log.store';
+import { ToolRouterService } from './basal-ganglia/tool-router.service';
 
 
 @Global()
 @Module({
   imports: [NeuralModule, BrainLanguageCenterModule, MemoryModule, MotorToolRunnerModule],
-  providers: [BrainInitService, BrainCortexService, BrainAgentService, AgentSessionStore, ToolConfigService, BrainSpeechService],
-  exports: [BrainInitService, BrainCortexService, BrainAgentService, ToolConfigService],
+  providers: [
+    BrainInitService,
+    BrainCortexService,
+    BrainAgentService,
+    AgentSessionStore,
+    ToolConfigService,
+    BrainSpeechService,
+    ToolRoutingLogStore,
+    ToolRouterService,
+  ],
+  exports: [
+    BrainInitService,
+    BrainCortexService,
+    BrainAgentService,
+    ToolConfigService,
+    ToolRoutingLogStore,
+    ToolRouterService,
+  ],
 })
 export class BrainModule {}

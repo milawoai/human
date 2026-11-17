@@ -114,6 +114,7 @@ export function toAgentToolResult<T = unknown>(result: ToolResult): AgentToolRes
     };
   } else {
     return {
+      isError: true,
       content: [
         {
           type: 'text' as const,
@@ -122,7 +123,7 @@ export function toAgentToolResult<T = unknown>(result: ToolResult): AgentToolRes
       ],
       details: result.error as any,
       terminate: true, // 错误时终止
-    };
+    } as AgentToolResult<T>;
   }
 }
 
@@ -183,10 +184,11 @@ export class AgentToolAdapter {
           );
           if (beforeResult?.block) {
             return {
+              isError: true,
               content: [{ type: 'text' as const, text: beforeResult.reason || 'Blocked' }],
               details: { blocked: true, reason: beforeResult.reason },
               terminate: true,
-            };
+            } as AgentToolResult<unknown>;
           }
         }
 
@@ -233,10 +235,11 @@ export class AgentToolAdapter {
 
           if (afterResult) {
             return {
+              isError: afterResult.isError ?? !result.success,
               content: afterResult.content || toAgentToolResult(result).content,
-              details: afterResult.details ?? result.data,
+              details: afterResult.details ?? (result.success ? result.data : result.error),
               terminate: afterResult.terminate,
-            };
+            } as AgentToolResult<unknown>;
           }
         }
 

@@ -211,12 +211,19 @@ export class MotorToolRunnerService implements OnModuleInit, OnModuleDestroy, In
 
     switch (message.topic) {
       case MOTOR_TOPICS.TOOL_EXECUTE: {
-        const payload = message.payload as { tool?: string; capability: string; parameters?: Record<string, unknown>; sessionId?: string };
+        const payload = message.payload as {
+          tool?: string;
+          capability: string;
+          parameters?: Record<string, unknown>;
+          sessionId?: string;
+          signal?: AbortSignal;
+        };
         const result = await this.handler.handleExecute({
           tool: payload.tool,
           capability: payload.capability,
           parameters: payload.parameters,
           sessionId: payload.sessionId,
+          signal: payload.signal,
         });
         return { success: result.success, data: result };
       }

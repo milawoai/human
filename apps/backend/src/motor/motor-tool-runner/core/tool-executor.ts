@@ -347,7 +347,7 @@ export class ToolExecutor {
   async executeByCapability(
     capability: string,
     params: Record<string, unknown>,
-    context: ToolContext,
+    context: ExtendedToolContext,
   ): Promise<ToolResult> {
     const tool = this.registry.findByCapability(capability);
     if (!tool) {

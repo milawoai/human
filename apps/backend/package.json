@@ -22,6 +22,7 @@
     "verify:agent-panel": "ts-node -r tsconfig-paths/register scripts/agent-panel-smoke.ts",
     "verify:agent-runs": "ts-node -r tsconfig-paths/register scripts/agent-run-management-smoke.ts",
     "verify:speech-summary": "ts-node -r tsconfig-paths/register scripts/speech-summary-smoke.ts",
+    "verify:tool-router": "ts-node -r tsconfig-paths/register scripts/tool-router-smoke.ts",
     "clean": "rm -rf dist",
     "test": "jest"
   },

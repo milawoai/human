@@ -31,8 +31,9 @@ export class ToolHandler {
     capability: string;
     parameters?: Record<string, unknown>;
     sessionId?: string;
+    signal?: AbortSignal;
   }): Promise<ToolResult> {
-    const { tool, capability, parameters = {} } = payload;
+    const { tool, capability, parameters = {}, signal } = payload;
     const sessionId = payload.sessionId || generateSessionId();
 
     this.logger.log(`收到执行请求: ${tool || '*'}.${capability}, session: ${sessionId}`);
@@ -41,12 +42,14 @@ export class ToolHandler {
     if (tool) {
       return this.executor.execute(tool, capability, parameters, {
         sessionId,
+        signal,
       });
     }
 
     // 否则通过能力名称查找工具并执行
     return this.executor.executeByCapability(capability, parameters, {
       sessionId,
+      signal,
     });
   }
 
