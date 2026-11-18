@@ -15,4 +15,3 @@ export function box(type, name, props = {}) {
 
 export const BODY = '$font-body'
 export const MONO = '$font-mono'
-
