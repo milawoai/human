@@ -11,7 +11,7 @@ import type { BusMessage, MessageKind } from '../interfaces';
 import { NeuralCoreService } from '../neural-core/neural-core.service';
 import { NeuralWsGateway } from '../neural-ws/neural-ws.gateway';
 
-const PYTHON_SERVICE_URL = 'http://localhost:12003';
+const PYTHON_SERVICE_URL = process.env.HUMAN_PYTHON_URL ?? 'http://127.0.0.1:12003';
 
 /**
  * 内部命令处理器接口。

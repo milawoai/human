@@ -25,7 +25,8 @@
     "verify:tool-router": "ts-node -r tsconfig-paths/register scripts/tool-router-smoke.ts",
     "clean": "rm -rf dist",
     "test": "jest",
-    "verify:neural-instances": "ts-node -r tsconfig-paths/register scripts/neural-instance-smoke.ts"
+    "verify:neural-instances": "ts-node -r tsconfig-paths/register scripts/neural-instance-smoke.ts",
+    "verify:runtime-lifecycle": "ts-node -r tsconfig-paths/register scripts/runtime-lifecycle-smoke.ts"
   },
   "dependencies": {
     "@human/cmux-tools": "1.0.0",

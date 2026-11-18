@@ -1,3 +1,4 @@
+import { RuntimeModule } from './runtime/runtime.module';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -7,7 +8,7 @@ import { DatabaseModule } from './database/database.module';
 import { MotorModule } from './motor/motor.module';
 import { MotorToolRunnerModule } from './motor/motor-tool-runner/motor-tool-runner.module';
 @Module({
-  imports: [DatabaseModule, NeuralModule, BrainModule, MotorModule, MotorToolRunnerModule],
+  imports: [RuntimeModule, DatabaseModule, NeuralModule, BrainModule, MotorModule, MotorToolRunnerModule],
   controllers: [AppController],
   providers: [AppService],
 })
