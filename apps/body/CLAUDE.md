@@ -1,5 +1,11 @@
 # CLAUDE.md
 
+## Mandatory theme contract
+
+所有 Electron UI 修改先读 [AGENTS.md](./AGENTS.md) 的“统一主题契约”；必须复用 `--human-*` 并通过 `yarn verify:theme-usage`，不得扩大遗留基线。
+
+@AGENTS.md
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Development Commands

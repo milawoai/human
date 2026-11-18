@@ -1,0 +1,33 @@
+{
+  "id": "harbor",
+  "generatedFrom": "../theme.tokens.json#themes/harbor",
+  "label": "海港蓝灰",
+  "scheme": "light",
+  "description": "冷静的蓝灰浅表面与深青操作，降低大面积白光。",
+  "tokens": {
+    "bg": "#E8EFF4",
+    "surface": "#F8FBFD",
+    "surface-raised": "#DEE8EF",
+    "surface-hover": "#D1E0EB",
+    "input": "#FFFFFF",
+    "text": "#182C3E",
+    "text-muted": "#465F73",
+    "text-subtle": "#5A7183",
+    "border": "#6D879B",
+    "border-strong": "#4D6A80",
+    "accent": "#176183",
+    "accent-strong": "#176183",
+    "on-accent": "#FFFFFF",
+    "accent-soft": "#D9ECF4",
+    "success": "#23694F",
+    "success-soft": "#E1F1E9",
+    "warning": "#805B1B",
+    "warning-soft": "#FFF0D5",
+    "danger": "#AA354B",
+    "danger-soft": "#F8E7EC",
+    "info": "#245F95",
+    "info-soft": "#E2EEF9",
+    "shadow": "0 8px 24px #23465A18",
+    "scrim": "#152C404D"
+  }
+}

@@ -12,6 +12,20 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+## 统一主题契约（强制）
+
+适用于所有 code agent、所有新增/修改的 Electron 页面、组件、行内样式与脚本动态样式。开始前读取 `designs/theme.tokens.json`、`src/shared/theme.ts`、`src/renderer/src/theme/theme.css` 和相近的既有组件。
+
+- 背景、表面、文字、边框、强调/焦点/选择、成功/警告/失败必须消费 `--human-*` 语义变量。字号使用 `--human-text-*`，字体使用 `--human-font-body` / `--human-font-mono`；已有圆角/阴影角色也复用中央变量。新角色先登记中央定义及所有预设，不在页面临时造变量。
+- 组件库可复用 PrimeVue/TDesign，但它们的主题映射集中在 `src/renderer/src/theme/theme.css`。页面不得直接依赖旧 `--surface-*`、`--text-color*`、`--p-*` 等别名，或另写一套组件库配色。
+- 禁止新增硬编码 hex/rgb/hsl/命名颜色、固定字号/字体、绕过主题的 Tailwind 配色/字号/字体类、页面内重定义 `--human-*`，以及单窗口手动切 `.app-dark`。静态、动态和行内样式同样受约束；不得用字符串拼接/变量间接绕过。
+- 主题切换只经现有 `theme-set` IPC 与注册表；透明启动页/桌宠保留透明外画布，内容卡片按主题着色。布局宽高/间距、图像/Live2D模型内容本体不要求染成主题色，不借此排除页面 UI。
+- 共享主题 JSON 是代码与设计规范的来源；`.pen` mode 预览和应用设置页切换是两条路径。新增预设必须能在两处选择，保留跨窗同步、字号缩放和重启恢复。
+
+验证：`yarn verify:theme-usage`、`yarn verify:theme`；涉及设计变量时运行 `yarn theme:sync` 与 `node scripts/theme/sync-theme.mjs --check`。检查CSS/模板/脚本；类型检查和构建会自动执行门禁，PR CI另检查基线不能扩张。静态检查不替代深浅色、大字号及真实内容的视觉检查。
+
+遗留基线 `scripts/theme/usage-baseline.json` 仅冻结既有旧模板声明，并非可复用示例。**不得扩大/重建基线、增加文件/目录豁免或移除门禁来通过测试**；触及旧视觉声明应迁至共享变量，修复后只运行 `yarn theme:prune-baseline` 缩减豁免。新页面和新组件没有基线豁免。
+
 ## Non-Interactive Shell Commands
 
 **ALWAYS use non-interactive flags** with file operations to avoid hanging on confirmation prompts.

@@ -1,0 +1,32 @@
+{
+  "id": "light",
+  "generatedFrom": "../theme.tokens.json#themes/light",
+  "label": "浅色",
+  "tokens": {
+    "bg": "#f4f6fa",
+    "surface": "#ffffff",
+    "surface-raised": "#eef1f7",
+    "surface-hover": "#e3e8f2",
+    "input": "#ffffff",
+    "text": "#202636",
+    "text-muted": "#526078",
+    "text-subtle": "#64728a",
+    "border": "#8492A7",
+    "accent": "#4057c4",
+    "accent-strong": "#4057c4",
+    "on-accent": "#ffffff",
+    "accent-soft": "#e6eaff",
+    "success": "#1d7251",
+    "success-soft": "#e1f3e9",
+    "warning": "#8b590c",
+    "warning-soft": "#fff0d5",
+    "danger": "#b33346",
+    "danger-soft": "#fde7eb",
+    "info": "#245f9d",
+    "info-soft": "#e4f0ff",
+    "shadow": "0 8px 28px #2233551a",
+    "scrim": "#10182840",
+    "border-strong": "#5F708B"
+  },
+  "scheme": "light"
+}

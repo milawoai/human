@@ -1,0 +1,32 @@
+{
+  "id": "dark",
+  "generatedFrom": "../theme.tokens.json#themes/dark",
+  "label": "深色",
+  "tokens": {
+    "bg": "#17191f",
+    "surface": "#22252e",
+    "surface-raised": "#2d313c",
+    "surface-hover": "#353b48",
+    "input": "#1c1f27",
+    "text": "#edf0f7",
+    "text-muted": "#b0b8c9",
+    "text-subtle": "#8b96aa",
+    "border": "#6B778C",
+    "accent": "#9baeff",
+    "accent-strong": "#4f63d8",
+    "on-accent": "#ffffff",
+    "accent-soft": "#303b64",
+    "success": "#85dab0",
+    "success-soft": "#1b3a31",
+    "warning": "#efc47b",
+    "warning-soft": "#3e3422",
+    "danger": "#ff9da5",
+    "danger-soft": "#44282f",
+    "info": "#97c9ff",
+    "info-soft": "#22394f",
+    "shadow": "0 8px 28px #00000040",
+    "scrim": "#00000066",
+    "border-strong": "#8B97AD"
+  },
+  "scheme": "dark"
+}

@@ -28,7 +28,7 @@ test('legacy page adopts shared variables without changing layout, IDs or schema
   assert.equal(after.children[0].children[0].fontSize, '$font-size-sm')
   assert.equal(after.children[0].children[2].fill, '$accent-strong')
   assert.deepEqual(after.variables.local, before.variables.local)
-  assert.deepEqual(after.themes.mode, ['dark', 'light'])
+  assert.deepEqual(after.themes.mode, Object.keys(tokens.themes))
   assert.deepEqual(synchronizeDocument(after, tokens), after)
 })
 test('additional registered preset is included in the design axis and palette', () => {
@@ -36,8 +36,8 @@ test('additional registered preset is included in the design axis and palette', 
   extra.themes.forest = { ...structuredClone(tokens.themes.dark), label: '森林', scheme: 'dark' }
   extra.themes.forest.tokens.accent = '#88ccaa'
   const doc = synchronizeDocument({ children: [] }, extra)
-  assert.deepEqual(doc.themes.mode, ['dark', 'light', 'forest'])
-  assert.equal(doc.variables.accent.value[2].value, '#88ccaa')
+  assert.deepEqual(doc.themes.mode, [...Object.keys(tokens.themes), 'forest'])
+  assert.equal(doc.variables.accent.value.find(entry => entry.theme.mode === 'forest').value, '#88ccaa')
 })
 test('missing references fail; CLI check is read-only and bad files prevent earlier writes', () => {
   assert.throws(() => synchronizeDocument({ children: [{ fill: '$missing' }] }, tokens), /missing/)

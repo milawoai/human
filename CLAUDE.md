@@ -29,4 +29,6 @@ Electron 桌面应用，集成 AI 语音交互、自动化操作、Neural 总线
 - 功能依赖遵循 AGENTS.md「功能依赖与文档展示」：Beads 为权威来源；讨论稿写「依赖与被依赖」，功能索引展示硬前置、可并行部分及依赖图；区分硬阻塞、软关联和待确认关系，按最小任务建无环依赖，变更时同步维护 Beads 与相关文档
 - 术语统一以 Obsidian 库 `名词字典.md` 为准；修改任何系统行为，须同步更新 Obsidian 中对应的 `<system>-system/说明文档.md`
 
+- Electron UI 必须复用统一主题，遵循 [Body 主题契约](apps/body/AGENTS.md#统一主题契约强制)，提交前通过 `yarn verify:theme-usage`；不得扩大遗留基线。
+
 @AGENTS.md

@@ -1,0 +1,33 @@
+{
+  "id": "forest-night",
+  "generatedFrom": "../theme.tokens.json#themes/forest-night",
+  "label": "森林夜",
+  "scheme": "dark",
+  "description": "低亮度绿灰表面与浅绿强调，适合夜间长时间使用。",
+  "tokens": {
+    "bg": "#111B17",
+    "surface": "#18251F",
+    "surface-raised": "#21342B",
+    "surface-hover": "#2C4538",
+    "input": "#132019",
+    "text": "#E9F2EA",
+    "text-muted": "#B0C6B7",
+    "text-subtle": "#87A491",
+    "border": "#5D806B",
+    "border-strong": "#86A891",
+    "accent": "#9ACCAD",
+    "accent-strong": "#2E6F4A",
+    "on-accent": "#FFFFFF",
+    "accent-soft": "#203D2C",
+    "success": "#9EDBB0",
+    "success-soft": "#1D3828",
+    "warning": "#E8C88E",
+    "warning-soft": "#3A3120",
+    "danger": "#F2A9AC",
+    "danger-soft": "#40282C",
+    "info": "#A4C8E6",
+    "info-soft": "#213746",
+    "shadow": "0 8px 28px #050D0840",
+    "scrim": "#00000066"
+  }
+}

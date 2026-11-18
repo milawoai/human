@@ -10,7 +10,7 @@ export function buildFoundation(screen) {
       fill: '$text',
       lineHeight: 1.2,
     }),
-    text('说明', '所有页面共享这一套 token。切换 mode 轴（dark / light）即可一键更换主题，页面无需改动。', {
+    text('说明', '所有页面共享这一套 token。切换 mode 轴即可比较内置主题，应用设置页使用同一套预设。', {
       textGrowth: 'fixed-width',
       width: 'fill_container',
       fontFamily: BODY,

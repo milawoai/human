@@ -12,6 +12,12 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+## Electron UI 主题复用（强制，所有 code agent）
+
+新增或修改 `apps/body` 页面/组件必须遵循 [Body 主题契约](apps/body/AGENTS.md#统一主题契约强制)。消费 `--human-*` 语义变量，复用主题 CSS 与现有组件，不得在页面写固定配色、字号、字体或私有深浅切换。需求涉及新视觉角色时先扩展中央主题定义，而不是另造一套页面样式。
+
+完成前必须通过 `yarn verify:theme-usage`；Body 类型检查和构建已接入该门禁。不得删除/跳过检查、扩大排除范围或增加遗留豁免来“修复”失败。清除旧违规后只允许缩减基线。
+
 <!-- BEGIN DOC LIFECYCLE -->
 ## Feature Documentation Lifecycle (MANDATORY)
 

@@ -32,7 +32,7 @@ const PAIRS = [
   ['text', 'surface-raised', 4.5],
   ['text-muted', 'bg', 4.5],
   ['text-muted', 'surface', 4.5],
-  ['text-subtle', 'surface', 3],
+  ['text-subtle', 'surface', 4.5],
   ['on-accent', 'accent-strong', 4.5],
   ['success', 'surface', 4.5],
   ['warning', 'surface', 4.5],
@@ -43,6 +43,8 @@ const PAIRS = [
   ['danger', 'danger-soft', 4.5],
   ['accent', 'accent-soft', 4.5],
   ['info', 'info-soft', 4.5],
+  ['border', 'input', 3],
+  ['accent', 'bg', 3],
 ]
 
 const tokens = loadTokens()

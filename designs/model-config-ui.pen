@@ -2263,6 +2263,24 @@
           "theme": {
             "mode": "light"
           }
+        },
+        {
+          "value": "#2457C5",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#9ACCAD",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#176183",
+          "theme": {
+            "mode": "harbor"
+          }
         }
       ]
     },
@@ -2284,6 +2302,24 @@
           "theme": {
             "mode": "light"
           }
+        },
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#111B17",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#E8EFF4",
+          "theme": {
+            "mode": "harbor"
+          }
         }
       ]
     },
@@ -2291,15 +2327,33 @@
       "type": "color",
       "value": [
         {
-          "value": "#414a5c",
+          "value": "#6B778C",
           "theme": {
             "mode": "dark"
           }
         },
         {
-          "value": "#cbd3e1",
+          "value": "#8492A7",
           "theme": {
             "mode": "light"
+          }
+        },
+        {
+          "value": "#8492A7",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#5D806B",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#6D879B",
+          "theme": {
+            "mode": "harbor"
           }
         }
       ]
@@ -2308,15 +2362,33 @@
       "type": "color",
       "value": [
         {
-          "value": "#4d5668",
+          "value": "#8B97AD",
           "theme": {
             "mode": "dark"
           }
         },
         {
-          "value": "#b3bdd0",
+          "value": "#5F708B",
           "theme": {
             "mode": "light"
+          }
+        },
+        {
+          "value": "#5F708B",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#86A891",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#4D6A80",
+          "theme": {
+            "mode": "harbor"
           }
         }
       ]
@@ -2339,6 +2411,24 @@
           "theme": {
             "mode": "light"
           }
+        },
+        {
+          "value": "#196A4B",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#9EDBB0",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#23694F",
+          "theme": {
+            "mode": "harbor"
+          }
         }
       ]
     },
@@ -2355,6 +2445,24 @@
           "value": "#ffffff",
           "theme": {
             "mode": "light"
+          }
+        },
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#18251F",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#F8FBFD",
+          "theme": {
+            "mode": "harbor"
           }
         }
       ]
@@ -2377,6 +2485,24 @@
           "theme": {
             "mode": "light"
           }
+        },
+        {
+          "value": "#4D5A70",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#B0C6B7",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#465F73",
+          "theme": {
+            "mode": "harbor"
+          }
         }
       ]
     },
@@ -2393,6 +2519,24 @@
           "value": "#8b590c",
           "theme": {
             "mode": "light"
+          }
+        },
+        {
+          "value": "#84520A",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#E8C88E",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#805B1B",
+          "theme": {
+            "mode": "harbor"
           }
         }
       ]
@@ -2411,6 +2555,24 @@
           "theme": {
             "mode": "light"
           }
+        },
+        {
+          "value": "#F3F6FA",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#21342B",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#DEE8EF",
+          "theme": {
+            "mode": "harbor"
+          }
         }
       ]
     },
@@ -2427,6 +2589,24 @@
           "value": "#e3e8f2",
           "theme": {
             "mode": "light"
+          }
+        },
+        {
+          "value": "#E8EEF7",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#2C4538",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#D1E0EB",
+          "theme": {
+            "mode": "harbor"
           }
         }
       ]
@@ -2445,6 +2625,24 @@
           "theme": {
             "mode": "light"
           }
+        },
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#132019",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "mode": "harbor"
+          }
         }
       ]
     },
@@ -2461,6 +2659,24 @@
           "value": "#202636",
           "theme": {
             "mode": "light"
+          }
+        },
+        {
+          "value": "#18202E",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#E9F2EA",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#182C3E",
+          "theme": {
+            "mode": "harbor"
           }
         }
       ]
@@ -2479,6 +2695,24 @@
           "theme": {
             "mode": "light"
           }
+        },
+        {
+          "value": "#606F86",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#87A491",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#5A7183",
+          "theme": {
+            "mode": "harbor"
+          }
         }
       ]
     },
@@ -2495,6 +2729,24 @@
           "value": "#4057c4",
           "theme": {
             "mode": "light"
+          }
+        },
+        {
+          "value": "#2457C5",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#2E6F4A",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#176183",
+          "theme": {
+            "mode": "harbor"
           }
         }
       ]
@@ -2513,6 +2765,24 @@
           "theme": {
             "mode": "light"
           }
+        },
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "mode": "harbor"
+          }
         }
       ]
     },
@@ -2529,6 +2799,24 @@
           "value": "#e6eaff",
           "theme": {
             "mode": "light"
+          }
+        },
+        {
+          "value": "#E8F0FF",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#203D2C",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#D9ECF4",
+          "theme": {
+            "mode": "harbor"
           }
         }
       ]
@@ -2547,6 +2835,24 @@
           "theme": {
             "mode": "light"
           }
+        },
+        {
+          "value": "#E6F4EC",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#1D3828",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#E1F1E9",
+          "theme": {
+            "mode": "harbor"
+          }
         }
       ]
     },
@@ -2563,6 +2869,24 @@
           "value": "#fff0d5",
           "theme": {
             "mode": "light"
+          }
+        },
+        {
+          "value": "#FFF1D4",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#3A3120",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#FFF0D5",
+          "theme": {
+            "mode": "harbor"
           }
         }
       ]
@@ -2581,6 +2905,24 @@
           "theme": {
             "mode": "light"
           }
+        },
+        {
+          "value": "#AF3046",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#F2A9AC",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#AA354B",
+          "theme": {
+            "mode": "harbor"
+          }
         }
       ]
     },
@@ -2597,6 +2939,24 @@
           "value": "#fde7eb",
           "theme": {
             "mode": "light"
+          }
+        },
+        {
+          "value": "#FCE9ED",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#40282C",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#F8E7EC",
+          "theme": {
+            "mode": "harbor"
           }
         }
       ]
@@ -2615,6 +2975,24 @@
           "theme": {
             "mode": "light"
           }
+        },
+        {
+          "value": "#1D5E92",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#A4C8E6",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#245F95",
+          "theme": {
+            "mode": "harbor"
+          }
         }
       ]
     },
@@ -2632,6 +3010,24 @@
           "theme": {
             "mode": "light"
           }
+        },
+        {
+          "value": "#E8F3FC",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#213746",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#E2EEF9",
+          "theme": {
+            "mode": "harbor"
+          }
         }
       ]
     },
@@ -2648,6 +3044,24 @@
           "value": "#10182840",
           "theme": {
             "mode": "light"
+          }
+        },
+        {
+          "value": "#18283D40",
+          "theme": {
+            "mode": "paper-white"
+          }
+        },
+        {
+          "value": "#00000066",
+          "theme": {
+            "mode": "forest-night"
+          }
+        },
+        {
+          "value": "#152C404D",
+          "theme": {
+            "mode": "harbor"
           }
         }
       ]
@@ -2740,7 +3154,10 @@
   "themes": {
     "mode": [
       "dark",
-      "light"
+      "light",
+      "paper-white",
+      "forest-night",
+      "harbor"
     ]
   }
 }

@@ -1,0 +1,33 @@
+{
+  "id": "paper-white",
+  "generatedFrom": "../theme.tokens.json#themes/paper-white",
+  "label": "纸面白",
+  "scheme": "light",
+  "description": "纯白画布、墨色正文与蓝色操作，优先清晰阅读。",
+  "tokens": {
+    "bg": "#FFFFFF",
+    "surface": "#FFFFFF",
+    "surface-raised": "#F3F6FA",
+    "surface-hover": "#E8EEF7",
+    "input": "#FFFFFF",
+    "text": "#18202E",
+    "text-muted": "#4D5A70",
+    "text-subtle": "#606F86",
+    "border": "#8492A7",
+    "border-strong": "#5F708B",
+    "accent": "#2457C5",
+    "accent-strong": "#2457C5",
+    "on-accent": "#FFFFFF",
+    "accent-soft": "#E8F0FF",
+    "success": "#196A4B",
+    "success-soft": "#E6F4EC",
+    "warning": "#84520A",
+    "warning-soft": "#FFF1D4",
+    "danger": "#AF3046",
+    "danger-soft": "#FCE9ED",
+    "info": "#1D5E92",
+    "info-soft": "#E8F3FC",
+    "shadow": "0 6px 20px #1D315012",
+    "scrim": "#18283D40"
+  }
+}
