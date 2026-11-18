@@ -5,8 +5,12 @@ Neural Core WebSocket 客户端
 注册 sensory-hearing Actor + Capability，接收 control 消息。
 """
 import logging
+import asyncio
+import os
+from .recovery import RecoveryLoop
+from .neural_events import setup_events
+from runtime.identity import identity
 import socketio
-from uuid import uuid4
 
 from module.common.neural_topics import (
     ACTORS,
@@ -21,8 +25,7 @@ logger = logging.getLogger(__name__)
 # 配置
 # ──────────────────────────────────────────────
 
-NEURAL_WS_URL = "http://localhost:12002/neural"
-SERVICE_INSTANCE_ID = str(uuid4())
+NEURAL_WS_URL = os.environ.get("HUMAN_NEURAL_URL", "http://127.0.0.1:12002/neural")
 HEARTBEAT_INTERVAL = 30  # 秒
 
 BODY_ACTOR = ACTORS["SENSORY_HEARING"]
@@ -43,16 +46,14 @@ class NeuralClient:
         await client.disconnect()
     """
 
-    def __init__(self, on_command=None):
+    def __init__(self, on_command=None, on_connection_lost=None):
         """
         Args:
             on_command: 收到 control 消息时的回调，签名 (message: dict) -> None
         """
         self._on_command = on_command
         self._sio = socketio.AsyncClient(
-            reconnection=True,
-            reconnection_delay=3000,
-            reconnection_attempts=10,
+            reconnection=False,
             logger=False,
             engineio_logger=False,
         )
@@ -60,30 +61,42 @@ class NeuralClient:
         self._connected = False
         self._registered = False
 
-        self._setup_events()
+        self._on_connection_lost = on_connection_lost
+        self.instance_id = identity['instanceId']
+        self.neural_instance_id = None
+        self._capabilities_ready = self._subscriptions_ready = False
+        self._ready = asyncio.Event()
+        self._disconnected = asyncio.Event()
+        self._recovery = RecoveryLoop(self._connection_cycle)
+        setup_events(self)
 
     # ──────────────────────────────────────────────
     # 公共 API
     # ──────────────────────────────────────────────
 
     async def connect(self) -> bool:
-        """连接 Neural Core 并完成注册。返回是否成功。"""
+        """Schedule recovery without blocking HTTP startup."""
+        self._recovery.start()
+        return True
+
+    async def _connection_cycle(self):
+        self._disconnected.clear()
+        self._ready.clear()
         try:
-            logger.info("[Neural] 正在连接 %s ...", NEURAL_WS_URL)
-            await self._sio.connect(NEURAL_WS_URL, namespaces=["/neural"])
-            return True
-        except Exception as e:
-            logger.error("[Neural] 连接失败: %s", e)
-            return False
+            await asyncio.wait_for(self._sio.connect(os.environ.get("HUMAN_NEURAL_URL", NEURAL_WS_URL), namespaces=["/neural"], retry=False), 10)
+            await asyncio.wait_for(self._ready.wait(), 10)
+            await self._disconnected.wait()
+        finally:
+            if self._sio.connected:
+                await self._sio.disconnect()
 
     async def disconnect(self):
-        """断开连接。"""
+        await self._recovery.stop()
         self._stop_heartbeat()
         if self._sio.connected:
             await self._sio.disconnect()
-        self._connected = False
-        self._registered = False
-        logger.info("[Neural] 已断开")
+        self._connected = self._registered = False
+        self._ready.clear()
 
     async def send_event(self, topic: str, payload: dict):
         """
@@ -107,71 +120,17 @@ class NeuralClient:
 
     @property
     def is_ready(self) -> bool:
-        return self._connected and self._registered
+        return self._connected and self._registered and self._capabilities_ready and self._subscriptions_ready
 
     # ──────────────────────────────────────────────
     # Socket.IO 事件
-    # ──────────────────────────────────────────────
-
-    def _setup_events(self):
-        sio = self._sio
-
-        @sio.on("connect", namespace="/neural")
-        async def on_connect():
-            logger.info("[Neural] WS 已连接, sid: %s", self._sio.sid)
-            self._connected = True
-            # 连接后立即注册 Actor
-            await self._register_actor()
-
-        @sio.on("disconnect", namespace="/neural")
-        async def on_disconnect():
-            logger.warning("[Neural] WS 断开")
-            self._connected = False
-            self._registered = False
-            self._stop_heartbeat()
-
-        @sio.on("registered", namespace="/neural")
-        async def on_registered(data):
-            logger.info("[Neural] Actor 注册成功: %s", data)
-            self._registered = True
-            # 注册成功后注册 Capability + 订阅
-            await self._register_capabilities()
-            await self._subscribe_topics()
-            self._start_heartbeat()
-
-        @sio.on("capabilities_registered", namespace="/neural")
-        async def on_capabilities_registered(data):
-            logger.info("[Neural] Capability 注册成功: %s", data)
-
-        @sio.on("subscribed", namespace="/neural")
-        async def on_subscribed(data):
-            logger.info("[Neural] 订阅成功: %s", data)
-
-        @sio.on("heartbeat_ack", namespace="/neural")
-        async def on_heartbeat_ack(data):
-            pass  # 心跳确认
-
-        @sio.on("message", namespace="/neural")
-        async def on_message(data):
-            """接收 Neural Core 路由过来的消息。"""
-            kind = data.get("kind", "")
-            topic = data.get("topic", "")
-
-            if kind in ("command", "control") and self._on_command:
-                logger.info("[Neural] 收到 command: topic=%s", topic)
-                await self._on_command(data)
-            else:
-                logger.debug("[Neural] 收到消息: kind=%s, topic=%s", kind, topic)
-
-    # ──────────────────────────────────────────────
-    # 注册流程
     # ──────────────────────────────────────────────
 
     async def _register_actor(self):
         """注册 Actor 身份。"""
         await self._sio.emit(
             "register",
-            {"actor": BODY_ACTOR, "protocolVersion": 1, "serviceInstanceId": SERVICE_INSTANCE_ID},
+            {"actor": BODY_ACTOR, "protocolVersion": 1, "serviceInstanceId": self.instance_id},
             namespace="/neural",
         )
         logger.info("[Neural] 已发送 register: %s", BODY_ACTOR["actorId"])
@@ -180,7 +139,7 @@ class NeuralClient:
         """注册能力列表。"""
         await self._sio.emit(
             "register_capabilities",
-            {"capabilities": CAPABILITIES},
+            {"capabilities": [cap for cap in CAPABILITIES if cap["actor"]["actorId"] == BODY_ACTOR["actorId"]]},
             namespace="/neural",
         )
         logger.info("[Neural] 已注册 %d 个 Capability", len(CAPABILITIES))

@@ -69,6 +69,7 @@ class SpeechRecognitionController:
     """语音识别控制器 - 支持 Online/Segment 双模式"""
 
     def __init__(self, debug: bool = False, kws_manager=None):
+        self._closing = False
         self.debug = debug
         self.config = get_config()
 
@@ -174,6 +175,9 @@ class SpeechRecognitionController:
             - {"type": "final", "text": "..."}  最终结果
             - {"type": "error", "message": "..."}  错误
             """
+            if self._closing:
+                await websocket.close(code=1012)
+                return
             await websocket.accept()
             session_id = str(uuid.uuid4())
             session: Optional[StreamingSession] = None
@@ -353,19 +357,31 @@ class SpeechRecognitionController:
         # 注入 adapter 到 query_router，供 HTTP query 端点使用
         set_query_adapter(self.neural_adapter)
 
+        self.neural_client._on_connection_lost = self.neural_adapter.stop_recording
         success = await self.neural_client.connect()
         if success:
-            logger.info("[Controller] Neural Core 连接成功，sensory-hearing Actor 已注册")
+            logger.info("[Controller] Neural Core 后台恢复任务已启动，等待实例注册确认")
         else:
             logger.error("[Controller] Neural Core 连接失败")
 
     async def stop_neural(self):
-        """停止 Neural Core 连接（应在 FastAPI shutdown 事件中调用）。"""
-        if self.neural_client:
-            await self.neural_client.disconnect()
-            self.neural_client = None
-            self.neural_adapter = None
-            logger.info("[Controller] Neural Core 已断开")
+        """Close audio before disconnecting; do not report success on cleanup failure."""
+        self._closing = True
+        try:
+            if self.neural_adapter:
+                await self.neural_adapter.close()
+        finally:
+            tasks = list(self.audio_tasks.values())
+            for task in tasks:
+                task.cancel()
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
+            self.audio_tasks.clear()
+            self.streaming_sessions.clear()
+            if self.neural_client:
+                await self.neural_client.disconnect()
+            self.neural_client = self.neural_adapter = None
+            set_query_adapter(None)
 
     def get_router(self) -> APIRouter:
         """获取路由器"""

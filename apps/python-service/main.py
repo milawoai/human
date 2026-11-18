@@ -2,8 +2,10 @@
 Human Python Service - FastAPI
 """
 import logging
+import os
 
 from dotenv import load_dotenv
+from runtime.routes import router as runtime_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -29,6 +31,7 @@ app.add_middleware(
 speech_controller = SpeechRecognitionController(debug=False)
 app.include_router(speech_controller.get_router(), prefix="/api/v1")
 app.include_router(hearing_query_router)
+app.include_router(runtime_router)
 
 
 @app.on_event("startup")
@@ -49,4 +52,4 @@ async def on_shutdown():
 async def hello() -> dict:
     """健康检查接口"""
     logger.info("hello endpoint called")
-    return {"status": "success", "service": "Human Python Service", "port": 12003}
+    return {"status": "success", "service": "Human Python Service", "port": int(os.environ.get("HUMAN_PYTHON_PORT", "12003"))}

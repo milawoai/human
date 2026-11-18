@@ -6,6 +6,7 @@ Neural 适配层
 - 业务事件（vad_start / segment_ready / ...）→ 转换为 Neural event
 """
 import logging
+import asyncio
 from typing import Optional
 
 from module.common.neural_topics import EVENT_TOPIC_MAP
@@ -35,6 +36,8 @@ class NeuralAdapter:
             neural_client: 已连接的 NeuralClient 实例
             asr_service: ASR 服务实例（SherpaOnnxFunasrService）
         """
+        self._lock = asyncio.Lock()
+        self._closing = False
         self._client = neural_client
         self._asr_service = asr_service
         self._session: Optional[VadRecordingSession] = None
@@ -85,16 +88,19 @@ class NeuralAdapter:
         topic = message.get("topic", "")
         payload = message.get("payload", {})
 
-        if topic.endswith(".enable"):
-            await self._handle_enable(payload)
-        elif topic.endswith(".disable"):
-            await self._handle_disable()
-        else:
-            logger.warning("[Adapter] 未知 command topic: %s", topic)
-            await self.emit_event("error", {
-                "error": "unknown_topic",
-                "message": f"未知的 topic: {topic}",
-            })
+        async with self._lock:
+            if self._closing:
+                return
+            if topic.endswith(".enable"):
+                await self._handle_enable(payload)
+            elif topic.endswith(".disable"):
+                await self._handle_disable()
+            else:
+                logger.warning("[Adapter] 未知 command topic: %s", topic)
+                await self.emit_event("error", {
+                    "error": "unknown_topic",
+                    "message": f"未知的 topic: {topic}",
+                })
 
     # ──────────────────────────────────────────────
     # Event 发射
@@ -125,17 +131,21 @@ class NeuralAdapter:
     # 内部方法
     # ──────────────────────────────────────────────
 
+    async def stop_recording(self):
+        async with self._lock:
+            await self._graceful_stop()
+
+    async def close(self):
+        self._closing = True
+        await self.stop_recording()
+
     async def _graceful_stop(self):
-        """安全关闭当前会话并等待完成。"""
-        if self._session is None:
-            return
-        try:
-            await self._session.stop()
-            self._session.cleanup()
-        except Exception as e:
-            logger.error("[Adapter] 关闭旧会话异常: %s", e)
-        finally:
-            self._session = None
+        session, self._session = self._session, None
+        if session is not None:
+            try:
+                await session.stop()
+            finally:
+                session.cleanup()
 
     async def _handle_enable(self, payload: dict):
         """处理 enable command：准备 + 开始录音。"""
