@@ -3381,7 +3381,7 @@
               "id": "T0226",
               "type": "text",
               "name": "Desc",
-              "content": "使用应用：设置页“外观主题”选择内置预设，立即同步所有窗口并保存。维护设计：改 theme.tokens.json 后运行 yarn theme:sync，同步 theme.pen 与页面设计稿；编辑器 mode 轴用于设计预览。",
+              "content": "使用应用：设置页“外观主题”选择内置预设，立即同步所有窗口并保存。维护设计：运行 yarn theme:use paper-white 从主题文件选择并重建；改公共变量后用 yarn theme:sync 同步页面设计稿。编辑器 mode 轴用于设计预览。",
               "textGrowth": "fixed-width",
               "width": "fill_container",
               "fontFamily": "$font-body",
@@ -3395,6 +3395,9 @@
           "width": "fill_container"
         }
       ],
+      "theme": {
+        "mode": "paper-white"
+      },
       "x": 0,
       "y": 0,
       "width": 1280,

@@ -24,7 +24,9 @@
     "theme:sync": "node scripts/theme/sync-theme.mjs",
     "theme:test-sync": "node --test scripts/theme/sync-theme.test.mjs",
     "theme:build": "node scripts/theme/build-theme-pen.mjs",
-    "theme:check": "node scripts/theme/check-contrast.mjs"
+    "theme:check": "node scripts/theme/check-contrast.mjs",
+    "theme:use": "node scripts/theme/use-theme.mjs",
+    "theme:test-use": "node --test scripts/theme/use-theme.test.mjs"
   },
   "workspaces": [
     "apps/*",

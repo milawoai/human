@@ -63,6 +63,7 @@ app.whenReady().then(async () => {
       app.exit(0)
       return
     }
+    assert.equal(theme.status().id, themeDefinitions.defaultTheme)
     for (const [page, selector] of pages) await create(page, selector)
     for (const [id, scale] of [['dark', 1], ['light', 1.25], ['paper-white', 1.25], ['forest-night', 1], ['harbor', 1], ['dark', 1]] as const) {
       await windows[0].webContents.executeJavaScript(`(() => { const select = document.querySelector('.theme-settings select'); select.value = ${JSON.stringify(id)}; select.dispatchEvent(new Event('change', {bubbles:true})); })()`)
