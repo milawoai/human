@@ -17,6 +17,15 @@ import { startServer } from './services/server/index'
 import { runStartupSettings } from './startupSettings'
 import { initializeTray, refreshTrayMenu } from './trayManager'
 import { WindowManager } from './windowManager'
+import { acquireDesktopInstance, prepareDesktop } from './services/backend-lifecycle/desktop-startup'
+import { loadBackendSettings } from './services/backend-lifecycle/settings'
+import { backendTargets } from './services/backend-lifecycle/config'
+import { setNeuralTarget } from './services/neural/impl/targets'
+
+const primaryInstance = acquireDesktopInstance(app, () => {
+  if (app.isReady()) WindowManager.getInstance().showMainWindow('/pet-settings')
+  else void app.whenReady().then(() => WindowManager.getInstance().showMainWindow('/pet-settings'))
+})
 
 let isQuitting = false
 
@@ -121,7 +130,7 @@ async function initializeApp() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+if (primaryInstance) app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
   app.dock?.hide()
@@ -137,12 +146,19 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'))
 
   initializeHandlers()
-  void initialConfigs()
   initializeTray()
   initialGlobalShortcut()
 
   // 启动初始化流程：HelloWindow → 连接 Neural → 继续启动
-  initializeApp()
+  try {
+    await prepareDesktop(initialConfigs, async () => {
+      const settings = loadBackendSettings()
+      setNeuralTarget(backendTargets(settings.config).neuralHttp)
+    }, initializeApp)
+  } catch (error) {
+    console.error('[Main] Backend configuration failed:', (error as Error).message)
+    createWindow()
+  }
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) {

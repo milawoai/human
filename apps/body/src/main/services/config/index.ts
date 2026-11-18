@@ -47,13 +47,6 @@ const configParams: TabConfig[] = [
             renderParams: { placeholder: '' },
             key: 'nest_folder_path',
             value: ''
-          },
-          {
-            renderType: 'input',
-            renderLabel: 'nest 端口',
-            renderParams: { placeholder: '' },
-            key: 'nest_port',
-            value: ''
           }
         ]
       },
@@ -124,6 +117,7 @@ export const initialConfigs = async () => {
     }
   } catch (error) {
     console.error('初始化配置失败:', error)
+    throw error
   }
 }
 

@@ -4,14 +4,15 @@
  * 封装对 NestJS Neural Core HTTP 接口的调用
  */
 import axios from 'axios'
-
-const NEURAL_HTTP_URL = 'http://localhost:12002/neural'
+import { getNeuralTarget } from './targets'
 
 const neuralHttp = axios.create({
-  baseURL: NEURAL_HTTP_URL,
+  baseURL: getNeuralTarget(),
   timeout: 600000,
   headers: { 'Content-Type': 'application/json' }
 })
+
+neuralHttp.interceptors.request.use(config => { config.baseURL = getNeuralTarget(); return config })
 
 /** 触发消息 */
 export const neuralTrigger = async (params: {

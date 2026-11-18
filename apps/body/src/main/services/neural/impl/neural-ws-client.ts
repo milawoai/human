@@ -3,14 +3,16 @@
  *
  * 管理 Socket.IO 长连接、Actor 注册、订阅、心跳
  */
+import { randomUUID } from 'node:crypto'
 import { io, Socket } from 'socket.io-client'
 import { NeuralConnectionState } from './types'
+import { getNeuralTarget } from './targets'
 
 // ──────────────────────────────────────────────
 // 配置
 // ──────────────────────────────────────────────
 
-const NEURAL_WS_URL = 'http://localhost:12002/neural'
+const serviceInstanceId = randomUUID()
 const HEARTBEAT_INTERVAL_MS = 30_000
 
 const BODY_ACTOR = {
@@ -39,11 +41,11 @@ export class NeuralWSClient {
         return
       }
 
-      console.log('[Neural] Connecting to', NEURAL_WS_URL)
+      console.log('[Neural] Connecting to', getNeuralTarget())
       this.updateState(NeuralConnectionState.CONNECTING)
 
       try {
-        this.socket = io(NEURAL_WS_URL, {
+        this.socket = io(getNeuralTarget(), {
           transports: ['websocket', 'polling'],
           reconnection: true,
           reconnectionDelay: 3000,
@@ -219,7 +221,7 @@ export class NeuralWSClient {
         return
       }
 
-      this.socket.emit('register', { actor: BODY_ACTOR })
+      this.socket.emit('register', { actor: BODY_ACTOR, protocolVersion: 1, serviceInstanceId })
 
       const timeout = setTimeout(() => {
         resolve({ success: false, msg: 'Register timeout' })
