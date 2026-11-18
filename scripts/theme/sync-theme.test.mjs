@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { synchronizeDocument } from './sync-document.mjs'
-import { loadTokens } from './tokens.mjs'
+import { loadTokens, buildVariables } from './tokens.mjs'
 const tokens = loadTokens()
 test('legacy page adopts shared variables without changing layout, IDs or schema', () => {
   const before = { version: '2.8', themes: { size: ['compact'] }, variables: {
@@ -61,4 +61,14 @@ test('missing references fail; CLI check is read-only and bad files prevent earl
     assert.equal(run().status, 0)
     assert.equal(readFileSync(path, 'utf8'), stable)
   } finally { rmSync(directory, { recursive: true, force: true }) }
+})
+
+test('spatial aliases resolve to shared design dimensions and reject cycles', () => {
+  const variables = buildVariables(tokens)
+  for (const [key, value] of Object.entries({ 'space-page':32, 'space-card':24, 'space-panel':16, 'radius-control':8, 'radius-card':12, 'radius-window':16 })) assert.equal(variables[key].value, value)
+  const modified = structuredClone(tokens)
+  modified.common['spacing-6'] = '3rem'
+  assert.equal(buildVariables(modified)['space-page'].value, 48)
+  modified.common['space-page'] = 'var(--human-space-page)'
+  assert.throws(() => buildVariables(modified), /Cyclic/)
 })

@@ -871,8 +871,8 @@ onMounted(() => {
   z-index: 3;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
+  gap: var(--human-spacing-1);
+  padding: var(--human-spacing-2) var(--human-spacing-3);
   border:1px solid var(--human-border);
   border-radius: var(--human-radius-lg);
   background:var(--human-input);
@@ -891,7 +891,7 @@ onMounted(() => {
   z-index: 5;
   display: grid;
   place-items: center;
-  padding: 12px;
+  padding: var(--human-spacing-3);
   background:var(--human-scrim);
   -webkit-app-region: no-drag;
 }
@@ -902,7 +902,7 @@ onMounted(() => {
   max-width: 360px;
   max-height: calc(100vh - 24px);
   overflow: auto;
-  padding: 16px;
+  padding: var(--human-spacing-4);
   border:1px solid var(--human-border);
   border-radius: var(--human-radius-lg);
   background:var(--human-input);
@@ -911,18 +911,18 @@ onMounted(() => {
 }
 
 .pet-tts-dialog h2 {
-  margin: 0 0 12px;
+  margin: 0 0 var(--human-spacing-3);
   font-size:var(--human-text-lg);
 }
 .pet-tts-dialog label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: var(--human-spacing-2);
   font-size:var(--human-text-base);
 }
 .pet-tts-dialog textarea {
   box-sizing: border-box;
   width: 100%;
-  padding: 10px;
+  padding: var(--human-spacing-2);
   resize: vertical;
   border:1px solid var(--human-border);
   border-radius: var(--human-radius-md);
@@ -936,7 +936,7 @@ onMounted(() => {
   outline:2px solid var(--human-accent);
 }
 .pet-tts-hint {
-  margin: 10px 0;
+  margin: var(--human-spacing-2) 0;
   color:var(--human-text-muted);
   font-size:var(--human-text-sm);
 }
@@ -948,10 +948,10 @@ onMounted(() => {
 .pet-tts-buttons {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--human-spacing-2);
 }
 .pet-tts-buttons button {
-  padding: 8px 12px;
+  padding: var(--human-spacing-2) var(--human-spacing-3);
   border:1px solid var(--human-border);
   border-radius: var(--human-radius-md);
   background: transparent;
@@ -999,7 +999,7 @@ onMounted(() => {
   left: 50%;
   z-index: 2;
   max-width: min(320px, calc(100vw - 24px));
-  padding: 6px 10px;
+  padding: var(--human-spacing-1) var(--human-spacing-2);
   display: flex;
   transform: translateX(-50%);
   border:1px solid var(--human-border);
@@ -1029,10 +1029,10 @@ onMounted(() => {
   position: absolute;
   z-index: 4;
   width: 128px;
-  padding: 8px;
+  padding: var(--human-spacing-2);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--human-spacing-1);
   border:1px solid var(--human-border);
   border-radius: var(--human-radius-md);
   background:var(--human-input);
@@ -1048,7 +1048,7 @@ onMounted(() => {
 .menu-item-with-submenu {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--human-spacing-1);
 }
 
 .menu-item-trigger {
@@ -1066,10 +1066,10 @@ onMounted(() => {
 .submenu {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 4px 0 0 8px;
+  gap: var(--human-spacing-1);
+  padding: var(--human-spacing-1) 0 0 var(--human-spacing-2);
   border-left:2px solid var(--human-border);
-  margin-left: 8px;
+  margin-left: var(--human-spacing-2);
 }
 
 .pet-float-actions {
@@ -1081,7 +1081,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--human-spacing-2);
   width: min(260px, calc(100vw - 24px));
   -webkit-app-region: no-drag;
   animation: fadeInUp 0.3s ease-out;
@@ -1091,10 +1091,10 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--human-spacing-1);
   min-width: 104px;
   height: 36px;
-  padding: 0 12px;
+  padding: 0 var(--human-spacing-3);
   border:1px solid var(--human-border);
   border-radius: var(--human-radius-lg);
   background:var(--human-input);

@@ -16,6 +16,10 @@ function declaration(property, value, context, line, emit, bridge = false) {
   const prop = property.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase())
   const report = (rule, detail = value) => emit({ rule, context: `${context}/${prop}`, value: String(detail), line })
   themeReferences(value, `${context}/${prop}`, line, emit)
+  if (/^(?:(?:padding|margin)(?:-(?:top|bottom|left|right|inline|block)(?:-(?:start|end))?)?|(?:row-|column-)?gap|border(?:-(?:top-left|top-right|bottom-left|bottom-right))?-radius)$/.test(prop)) {
+    const remainder = value.replace(/var\(--human-[\w-]+\)/g, '').replace(/\b(?:auto|inherit|initial|unset|revert|normal)\b/g, '')
+    if (/(?:[1-9]\d*|0?\.\d+)(?:px|rem|em|%|vh|vw)|\b[1-9]\d*\b/.test(remainder)) report(prop.includes('radius') ? 'literal-radius' : 'literal-spacing')
+  }
   if (prop.startsWith('--human-')) report('theme-override')
   if (!bridge && /var\(\s*--(?!human-)/.test(value)) report('foreign-theme-variable')
   if (paintProperty.test(prop)) for (const color of colorLiterals(value)) report('literal-color', color)
@@ -47,6 +51,7 @@ function utilities(value, context, line, emit) {
     }
     const token = word.slice(start)
     if (/var\(--human-|\(--human-/.test(token)) continue
+    if (/^(?:-?(?:p|m)[trblxyse]?|gap(?:-[xy])?|space-[xy])-(?=\d|\[)(?!0$)|^rounded(?:-|$)/.test(token) && !/^rounded-none$/.test(token)) emit({ rule: 'utility-spacing', context, value: word, line })
     const paint = /^(bg|text|border|ring|fill|stroke|decoration|outline)-(?:\[|black|white|(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-)/.test(token)
     const type = /^(text-(xs|sm|base|lg|xl|\d+xl)(\/[^ ]+)?$|font-(sans|serif|mono|\[))/.test(token)
     if (paint || type) emit({ rule: 'utility-theme', context, value: word, line })

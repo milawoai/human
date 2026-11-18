@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "reason": "Initial spatial audit of untouched legacy components; only shrink. Seven product pages have no allowances.",
+  "allowances": {
+    "App.vue": {
+      "02caeff9a06a50518051c74d": 1,
+      "2747d2afcec645be748865d9": 1,
+      "1e955458e775af26634c9f15": 1
+    },
+    "assets/layout/_breadcrumb.scss": {
+      "a767299a189fac71f30ec28d": 1,
+      "fec90f32a9fc651da6ce79ac": 1
+    },
+    "assets/layout/_config.scss": {
+      "1673f1d4cc7c4e949cedaf51": 1,
+      "3d14c9dbf9370c7a155703f8": 1,
+      "346d5586800c1d3d98525885": 1
+    },
+    "assets/layout/_content.scss": {
+      "47f42e603b0888e1e9c3fb7b": 1,
+      "3c68b18d4832d0d08be6de84": 1,
+      "6ecf23b7737bd85a4a30f625": 1
+    },
+    "assets/layout/_footer.scss": {
+      "af063c03dfb3d9da68714f4d": 1,
+      "677263bc328667d140010809": 1
+    },
+    "assets/layout/_responsive.scss": {
+      "cfa9570866e179989b41dc50": 1,
+      "c5192ba6cf86aaf9f8bfec4e": 1,
+      "7a98b5eaf4717d4014ca71a9": 1,
+      "ed92d382d37e31792c6ac393": 1,
+      "51e78223495e9c20b7468586": 1,
+      "4a97cfd0fca644a562075c56": 1
+    },
+    "assets/layout/_topbar.scss": {
+      "4838196d01ac4f28ccc08d0a": 1,
+      "7acb5f6a23a542ad95fa2dea": 1,
+      "e7759317466936b6db567d4c": 1,
+      "534067af5c6e42be73627c0e": 1,
+      "6ccd2749e2bc9d7bbd2bea3a": 1,
+      "d920c564731ab8ef449bd458": 1,
+      "5aa32cdc4966607c30e88e04": 1,
+      "a9b8b04c42b7b6f9945fdb9e": 1,
+      "4114acd4269c5025a020e5f0": 1,
+      "5aabd06b89277c6c5f9dcac2": 1,
+      "2155dddd3c6ec86cfd012fdf": 1,
+      "8df4b3979104f8de5acb24b1": 1,
+      "c0d59b9a0de6202cf6f7ffa1": 1,
+      "2b791816085db0c9a5954098": 1,
+      "441a9faa5b5752560058bd5c": 1,
+      "dd12ea27ab2b618d65599d11": 1,
+      "3d48c9e11d8d789529d71562": 1,
+      "f019ca83438db9b4f02665d8": 1
+    },
+    "assets/layout/_utils.scss": {
+      "8b4b83781945bdb18487af28": 1,
+      "ac0beb4c4457aee8518001d5": 1,
+      "fd5350fac7b2b4706694822f": 1
+    },
+    "assets/layout/sidebar/_sidebar_slim.scss": {
+      "b7eeee8a381cf6e7d6aa793f": 1,
+      "181816f72031df7d7aaa188f": 1,
+      "057ab10299ce748cb38c8466": 1,
+      "640955e01e8c136e54af7084": 1,
+      "a9091b57417383b1267c3591": 1,
+      "b8ca6167617cc38e4cf9afb8": 1,
+      "ed63a30217dd2a45bee82cbd": 1,
+      "19b2b11cffe17401bd191543": 1,
+      "ecb949716ebd4727f0c695b3": 1,
+      "0a2f117c77f41d0284e75a8f": 1
+    },
+    "assets/layout/sidebar/_sidebar_slim_plus.scss": {
+      "35aa454c16d2df34d8064f2b": 1,
+      "66ee35e97f21ce8e74d5ceb5": 1,
+      "df140fc43866af443821fa28": 1,
+      "426baf11b9e6fda5287ce6c2": 1,
+      "4eebae897b0baeb7d7facf47": 1,
+      "97083472c39687780fd255dd": 1,
+      "ec91a9d0b9cc501998ef7339": 1,
+      "77a29fa0c029ab4e8243a730": 1,
+      "534075d8cbf48c188b010e4a": 1,
+      "f4f94fe19d64547eaa8180fb": 1,
+      "2ea7fe4b631fbf521872d9a0": 1,
+      "6b6c3181a1496ed9628c0581": 1
+    },
+    "assets/layout/sidebar/_sidebar_vertical.scss": {
+      "edab5cb7963f926d78f91e24": 1,
+      "34cdaaedcef1541b036988dc": 1,
+      "823ae9bdf8be76879f23d598": 1,
+      "494e348dac3152db193fa433": 1,
+      "a8eb65c9f3daf1bab0b2d2c4": 1,
+      "fbe679a5e1da89c375cf82f4": 1,
+      "efe0ab4eee5a28fd582acd8e": 1,
+      "fa71097f3057e66d4f5af924": 1,
+      "55601c887fac0362dc6339c4": 1,
+      "ca29e8ef4304211a99e411f8": 1,
+      "3dc41a40d1edc783420567a8": 1
+    },
+    "components/CustomForm.vue": {
+      "7f02a4ab223d62ef7a0b0eb9": 1,
+      "5185ffa30f959f18d0887048": 1,
+      "ac32635df67c08a46257e429": 1,
+      "447c478b7f73a844a25a4f62": 1,
+      "857b453db1ce184195b14006": 1,
+      "2cca5bb59c887899ef5cb367": 1,
+      "9fae20267c68926c9ab82f5a": 1,
+      "7aa81360210bb8b0e2851775": 1,
+      "377f5cd4f91aebcca0ee586b": 1
+    },
+    "components/CustomFormDialog.vue": {
+      "7aa81360210bb8b0e2851775": 1,
+      "377f5cd4f91aebcca0ee586b": 1
+    },
+    "components/CustomSelect.vue": {
+      "c171fff5e3d1808684d82aeb": 1,
+      "de86ad124a9fa6c8f47d18ad": 2
+    },
+    "components/CustomToast.vue": {
+      "bf633b354dd4efff4b31cf43": 4,
+      "61a9d7cfcf0ad30838209653": 2,
+      "aece775a29445a3d77d249bd": 2,
+      "5c6288e9527154ee9ebd3ced": 2,
+      "842b5405602a1a8c837aec94": 1,
+      "e7240c47a25cea5c7dc8ecbd": 1,
+      "9eef2d57dd9ff60f8517a499": 1,
+      "2629e89af4f01e4c1eb06b81": 1,
+      "377f5cd4f91aebcca0ee586b": 1
+    },
+    "components/GlobalLoading.vue": {
+      "5c7ca0297d2a1a32b8ff8a1c": 1,
+      "3dee1ddae0ea595df73abf36": 1,
+      "842b5405602a1a8c837aec94": 1,
+      "2dfcbf6c2620cfa01fd22933": 1
+    },
+    "components/LanguageSwitcher.vue": {
+      "a263a1f464b3ce7ee7e41c5b": 2
+    },
+    "components/TagInput.vue": {
+      "5c3af439f6532a4321172e90": 1,
+      "a8ffee5a86f30e306a52b5a9": 1,
+      "5a702faaab92f426c666d588": 1,
+      "69fc9f8c03946851f9f03eee": 1,
+      "94668c2ac3e6e8261c9c1ec5": 1,
+      "451eda1326b42e3b1be6b873": 1,
+      "f222068a22c2cf44f60bbb7e": 1,
+      "9a7cd7c7ac6013d82b9abb43": 1
+    },
+    "components/form/GenerateConfig.vue": {
+      "63752816432225b351c2fbb2": 1,
+      "1181a4f54e3570858315328f": 1,
+      "7aa81360210bb8b0e2851775": 2,
+      "194a1909862220fa3ab9869f": 1,
+      "77e980344c5180b0add48136": 1,
+      "4e2648e70d1fbec032364358": 1
+    },
+    "components/form/ListInput.vue": {
+      "7aa81360210bb8b0e2851775": 2,
+      "337852b7bee9136d4ace0ac4": 1
+    },
+    "components/form/ObjectInput.vue": {
+      "7aa81360210bb8b0e2851775": 2,
+      "337852b7bee9136d4ace0ac4": 1
+    },
+    "components/form/SystemVarInput.vue": {
+      "43daf6ad113a014114fc4aef": 1,
+      "81185803ceee24f07a897180": 1,
+      "7c7059f7b531f788fabeaa26": 1,
+      "15e70e2fc8ed63f763b6a79b": 1,
+      "15a2df8f3139b0897cf6d456": 1,
+      "299ab74a65249d9c2e43af83": 1,
+      "e42c58edaee435833e420086": 1,
+      "7880fb5e1e14767d94c0a841": 1,
+      "52cf9ad1475cda7692e09c95": 1,
+      "c5cccda1dd8106a8e3d774ad": 1,
+      "67cd1aea533c1dde9b5153c8": 1,
+      "be70f150eb85bac50db1db23": 1
+    },
+    "layout/AppConfig.vue": {
+      "1181a4f54e3570858315328f": 2,
+      "7aa81360210bb8b0e2851775": 13,
+      "2e8c16d749bf287e1bf83b97": 2,
+      "b890dd34f3d674be0cdbdf38": 2,
+      "857b453db1ce184195b14006": 1
+    },
+    "layout/AppTopbar.vue": {
+      "e5b8a5cde615438d6ee0240d": 1,
+      "054d0c43a450ab8b5805ef66": 5,
+      "337852b7bee9136d4ace0ac4": 1,
+      "de86ad124a9fa6c8f47d18ad": 4
+    }
+  }
+}

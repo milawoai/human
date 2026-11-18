@@ -14,7 +14,7 @@ function script(source, label, emit, central = false, expression = false) {
       const isKey = parent?.type === 'ObjectProperty' && parent.key === node
       const selector = parent?.type === 'CallExpression' && /^(querySelector|querySelectorAll|getElementById)$/.test(property(parent.callee?.property))
       if (!isKey && !selector) {
-        if (role && /^(font|fontSize|fontFamily|font-size|font-family)$/.test(role)) declaration(role, value, label, line, emit)
+        if (role && /^(font|fontSize|fontFamily|font-size|font-family|padding\w*|margin\w*|gap|rowGap|columnGap|borderRadius)$/.test(role)) declaration(role, value, label, line, emit)
         else for (const color of colorLiterals(value)) if (color === value) emit({ rule: 'literal-color', context: `${label}:${role}`, value, line })
         themeReferences(value, `${label}:${role}`, line, emit)
         if (/var\(\s*--(?!human-)/.test(value)) emit({ rule: 'foreign-theme-variable', context: label, value, line })

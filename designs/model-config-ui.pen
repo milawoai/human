@@ -3108,11 +3108,11 @@
     },
     "radius-sm": {
       "type": "number",
-      "value": 6
+      "value": 8
     },
     "radius-md": {
       "type": "number",
-      "value": 10
+      "value": 12
     },
     "radius-lg": {
       "type": "number",
@@ -3149,6 +3149,70 @@
     "space-8": {
       "type": "number",
       "value": 48
+    },
+    "space-half": {
+      "type": "number",
+      "value": 2
+    },
+    "radius-control": {
+      "type": "number",
+      "value": 8
+    },
+    "radius-card": {
+      "type": "number",
+      "value": 12
+    },
+    "radius-window": {
+      "type": "number",
+      "value": 16
+    },
+    "radius-pill": {
+      "type": "number",
+      "value": 999
+    },
+    "radius-bubble-tail": {
+      "type": "number",
+      "value": 2
+    },
+    "space-page": {
+      "type": "number",
+      "value": 32
+    },
+    "space-section": {
+      "type": "number",
+      "value": 24
+    },
+    "space-card": {
+      "type": "number",
+      "value": 24
+    },
+    "space-panel": {
+      "type": "number",
+      "value": 16
+    },
+    "space-stack": {
+      "type": "number",
+      "value": 16
+    },
+    "space-related": {
+      "type": "number",
+      "value": 8
+    },
+    "space-control-x": {
+      "type": "number",
+      "value": 12
+    },
+    "space-control-y": {
+      "type": "number",
+      "value": 8
+    },
+    "space-compact-x": {
+      "type": "number",
+      "value": 8
+    },
+    "space-compact-y": {
+      "type": "number",
+      "value": 4
     }
   },
   "themes": {

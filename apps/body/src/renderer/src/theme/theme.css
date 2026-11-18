@@ -88,3 +88,19 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
   --p-button-sm-font-size: var(--human-text-sm);
   --p-inputtext-sm-font-size: var(--human-text-sm);
 }
+
+/* Geometry remains page-owned; spacing and corner roles are shared. */
+:root[data-human-theme] {
+  --p-border-radius-sm: var(--human-radius-control);
+  --p-border-radius-md: var(--human-radius-card);
+  --p-form-field-border-radius: var(--human-radius-control);
+  --p-form-field-padding-x: var(--human-space-control-x);
+  --p-form-field-padding-y: var(--human-space-control-y);
+  --p-button-border-radius: var(--human-radius-control);
+  --p-button-padding-x: var(--human-space-control-x);
+  --p-button-padding-y: var(--human-space-control-y);
+  --p-button-gap: var(--human-space-related);
+  --p-button-sm-padding-x: var(--human-space-compact-x);
+  --p-button-sm-padding-y: var(--human-space-compact-y);
+  --td-radius-default: var(--human-radius-control);
+}

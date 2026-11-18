@@ -50,15 +50,15 @@ onUnmounted(() => {
 :global(body:has(.hello-window)),
 :global(#app:has(.hello-window)) { background: transparent !important; overflow: hidden; }
 .hello-window { width: 100vw; height: 100vh; display: grid; place-items: center; user-select: none; -webkit-app-region: drag; }
-.hello-content { box-sizing:border-box; width:360px; height:280px; padding:16px 32px 12px; display:flex; flex-direction:column; align-items:center; background:var(--human-surface); border-radius: var(--human-radius-lg); border:1px solid var(--human-accent); color:var(--human-text); box-shadow:var(--human-shadow); }
-h1 { font-size:var(--human-text-title); letter-spacing:2px; line-height:1.2; margin:4px 0; }
-ul { list-style:none; padding:0; margin:4px 0; font-size:var(--human-text-sm); color:var(--human-success); max-height:72px; overflow-y:auto; -webkit-app-region:no-drag; }
+.hello-content { box-sizing:border-box; width:360px; height:280px; padding:var(--human-spacing-4) var(--human-spacing-6) var(--human-spacing-3); display:flex; flex-direction:column; align-items:center; background:var(--human-surface); border-radius: var(--human-radius-lg); border:1px solid var(--human-accent); color:var(--human-text); box-shadow:var(--human-shadow); }
+h1 { font-size:var(--human-text-title); letter-spacing:2px; line-height:1.2; margin:var(--human-spacing-1) 0; }
+ul { list-style:none; padding:0; margin:var(--human-spacing-1) 0; font-size:var(--human-text-sm); color:var(--human-success); max-height:72px; overflow-y:auto; -webkit-app-region:no-drag; }
 .hello-icon { width:40px; height:40px; flex-shrink:0; }
-li { margin-bottom: 3px; }
+li { margin-bottom: var(--human-spacing-half); }
 footer { flex-shrink:0; margin-top:auto; width:100%; text-align:center; }
-.hello-status { font-size:var(--human-text-base); margin:8px 0; overflow-wrap:anywhere; }
+.hello-status { font-size:var(--human-text-base); margin:var(--human-spacing-2) 0; overflow-wrap:anywhere; }
 .failed { color:var(--human-danger); }
-button { -webkit-app-region:no-drag; font-size:var(--human-text-xs); border:0; padding:3px 6px; background:transparent; color:var(--human-accent); cursor:pointer; }
+button { -webkit-app-region:no-drag; font-size:var(--human-text-xs); border:0; padding:var(--human-spacing-half) var(--human-spacing-1); background:transparent; color:var(--human-accent); cursor:pointer; }
 .pulse { animation: pulse 1.5s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .4; } }
 </style>

@@ -162,3 +162,7 @@ For more details, see README.md and docs/QUICKSTART.md.
 - If push fails, resolve and retry until it succeeds
 
 <!-- END BEADS INTEGRATION -->
+
+### 空间契约（human-tqw.5）
+
+Electron 页面必须复用 `designs/theme.tokens.json` 的空间角色：普通页 `--human-space-page`、区块 `--human-space-section`、卡片 `--human-space-card`、浮层 `--human-space-panel`、组内 `--human-space-related`；控件内距使用 `space-control-x/y`。圆角使用 `radius-control/card/window/pill`。禁止新增非零 padding、margin、gap、圆角字面量及对应 Tailwind 固定尺寸；0、auto、继承与画布几何尺寸可以保留。旧模板的空间债务独立冻结于 `usage-layout-baseline.json`，不得扩大。

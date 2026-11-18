@@ -47,3 +47,8 @@ test('utility modifiers and arbitrary-value syntax still obey the theme contract
   const issues = analyzeSource('x.vue', `<template><div class="dark:text-sm/6 bg-[color:#fff] font-['Arial']" /></template>`)
   assert.equal(issues.filter(issue => issue.rule === 'utility-theme').length, 3)
 })
+test('spatial declarations must share tokens; zero and automatic layout remain allowed', () => {
+  assert.deepEqual(analyzeSource('space.vue', '<template><div/></template><style>.a{padding:var(--human-space-panel);margin:0 auto;gap:var(--human-space-related);border-radius:var(--human-radius-card)}</style>'), [])
+  const rules = analyzeSource('space.vue', '<template><div/></template><style>.a{padding:12px;gap:1rem;border-radius:50%}</style>').map(x => x.rule)
+  assert(rules.includes('literal-spacing')); assert(rules.includes('literal-radius'))
+})

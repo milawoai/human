@@ -152,4 +152,18 @@ export function buildFoundation(screen) {
   }
   screen.children.push(typeSection)
 
+  const spatial = frame('空间与圆角', { layout: 'vertical', gap: '$space-stack', width: 'fill_container' })
+  spatial.children.push(text('空间标题', '间距与默认圆角', { fontFamily: BODY, fontSize: '$font-size-xl', fill: '$text' }))
+  for (const [role, label] of [['page','页面边距 32'], ['section','区块间隔 24'], ['card','卡片内距 24'], ['panel','浮层内距 16'], ['related','组内间隔 8']]) {
+    const sample = frame(`空间 ${role}`, { padding: `$space-${role}`, cornerRadius: '$radius-card', fill: '$surface', width: 'fill_container' })
+    sample.children.push(text(`说明 ${role}`, `${label} · $space-${role}`, { fontFamily: BODY, fontSize: '$font-size-sm', fill: '$text' }))
+    spatial.children.push(sample)
+  }
+  for (const role of ['control', 'card', 'window']) {
+    const sample = frame(`圆角 ${role}`, { padding: '$space-panel', cornerRadius: `$radius-${role}`, fill: '$accent-soft', width: 'fill_container' })
+    sample.children.push(text(`圆角说明 ${role}`, `$radius-${role}`, { fontFamily: BODY, fontSize: '$font-size-sm', fill: '$text' }))
+    spatial.children.push(sample)
+  }
+  screen.children.push(spatial)
+
 }

@@ -33,15 +33,17 @@ export function buildVariables(tokens = loadTokens()) {
 
   variables['line-height'] = { type: 'number', value: Number(common['line-height']) }
 
-  for (const [key, token] of [['sm', 'radius-sm'], ['md', 'radius-md'], ['lg', 'radius-lg']]) {
-    variables[`radius-${key}`] = { type: 'number', value: Number.parseFloat(common[token]) }
+  function pixels(key, seen = new Set()) {
+    if (seen.has(key)) throw Error(`Cyclic spatial token: ${key}`)
+    seen.add(key)
+    const value = common[key]
+    const alias = /^var\(--human-([\w-]+)\)$/.exec(value)
+    if (alias) return pixels(alias[1], seen)
+    if (!/^\d+(?:\.\d+)?(?:px|rem)$/.test(value)) throw Error(`Invalid spatial token: ${key}`)
+    return Number.parseFloat(value) * (value.endsWith('rem') ? common['font-size-px'].base : 1)
   }
-
-  for (let index = 1; index <= 8; index += 1) {
-    variables[`space-${index}`] = {
-      type: 'number',
-      value: Math.round(Number.parseFloat(common[`spacing-${index}`]) * 16),
-    }
+  for (const key of Object.keys(common).filter(key => /^(radius-|space-|spacing-)/.test(key))) {
+    variables[key.replace(/^spacing-/, 'space-')] = { type: 'number', value: pixels(key) }
   }
 
   return variables

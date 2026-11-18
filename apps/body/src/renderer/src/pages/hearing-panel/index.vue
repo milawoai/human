@@ -508,7 +508,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: var(--human-spacing-2) var(--human-spacing-3);
   border-bottom:1px solid var(--human-border);
   -webkit-app-region: drag;
 }
@@ -516,7 +516,7 @@ onUnmounted(() => {
 .header-title {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--human-spacing-1);
   font-size:var(--human-text-base);
   font-weight: 600;
 }
@@ -529,8 +529,8 @@ onUnmounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px;
+  gap: var(--human-spacing-3);
+  padding: var(--human-spacing-3);
   overflow-y: auto;
 }
 
@@ -538,14 +538,14 @@ onUnmounted(() => {
 .view-chat {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--human-spacing-3);
 }
 
 .status-display {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 10px;
+  gap: var(--human-spacing-3);
+  padding: var(--human-spacing-2);
   background:var(--human-surface-raised);
   border-radius: var(--human-radius-md);
 }
@@ -553,7 +553,7 @@ onUnmounted(() => {
 .status-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--human-spacing-1);
   font-size:var(--human-text-sm);
 }
 
@@ -564,12 +564,12 @@ onUnmounted(() => {
 .recorder-controls {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: var(--human-spacing-2);
   flex-wrap: wrap;
 }
 
 .recorder-controls span {
-  margin-left: 4px;
+  margin-left: var(--human-spacing-1);
   white-space: nowrap;
 }
 
@@ -577,8 +577,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: var(--human-spacing-2);
+  padding: var(--human-spacing-2) var(--human-spacing-2);
   border-radius: var(--human-radius-md);
   background:var(--human-surface-raised);
 }
@@ -591,25 +591,25 @@ onUnmounted(() => {
 .subtitle-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--human-spacing-2);
 }
 
 .answer-sections {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--human-spacing-2);
 }
 
 .answer-block {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--human-spacing-1);
 }
 
 .answer-block textarea,
 .chat-input-row textarea {
   width: 100%;
-  padding: 10px;
+  padding: var(--human-spacing-2);
   border:1px solid var(--human-border);
   border-radius: var(--human-radius-sm);
   background:var(--human-input);
@@ -634,7 +634,7 @@ onUnmounted(() => {
 
 .subtitle-textarea textarea {
   width: 100%;
-  padding: 10px;
+  padding: var(--human-spacing-2);
   border:1px solid var(--human-border);
   border-radius: var(--human-radius-sm);
   background:var(--human-surface-raised);
@@ -648,17 +648,17 @@ onUnmounted(() => {
 .segment-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--human-spacing-1);
   max-height: 200px;
   overflow-y: auto;
-  padding: 8px;
+  padding: var(--human-spacing-2);
   background:var(--human-surface-raised);
   border-radius: var(--human-radius-sm);
 }
 
 .segment-item {
   display: flex;
-  gap: 8px;
+  gap: var(--human-spacing-2);
   font-size:var(--human-text-xs);
 }
 
@@ -674,8 +674,8 @@ onUnmounted(() => {
 .error-message {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
+  gap: var(--human-spacing-1);
+  padding: var(--human-spacing-2) var(--human-spacing-3);
   background:var(--human-danger-soft);
   border:1px solid var(--human-danger);
   border-radius: var(--human-radius-sm);
@@ -686,13 +686,13 @@ onUnmounted(() => {
 .chat-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--human-spacing-2);
   max-height: 360px;
   overflow-y: auto;
 }
 
 .chat-turn {
-  padding: 10px;
+  padding: var(--human-spacing-2);
   border-radius: var(--human-radius-md);
   background:var(--human-surface-raised);
   border:1px solid var(--human-border);
@@ -700,13 +700,13 @@ onUnmounted(() => {
 
 .chat-q {
   color:var(--human-accent);
-  margin-bottom: 6px;
+  margin-bottom: var(--human-spacing-1);
 }
 
 .chat-think {
   color:var(--human-warning);
   white-space: pre-wrap;
-  margin-bottom: 6px;
+  margin-bottom: var(--human-spacing-1);
 }
 
 .chat-a {
@@ -715,13 +715,13 @@ onUnmounted(() => {
 }
 
 .chat-err {
-  margin-top: 6px;
+  margin-top: var(--human-spacing-1);
   color:var(--human-danger);
 }
 
 .chat-input-row {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--human-spacing-2);
 }
 </style>

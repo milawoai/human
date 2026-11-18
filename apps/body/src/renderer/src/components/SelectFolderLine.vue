@@ -95,7 +95,7 @@ watch(
 </script>
 
 <template>
-  <div class="flex items-center w-full gap-2">
+  <div class="flex items-center w-full gap-[var(--human-space-related)]">
     <span class="line-title">{{ label }}</span>
     <InputGroup class="flex-1">
       <InputText v-model="folderPath" class="line-input" placeholder="请选择路径" />

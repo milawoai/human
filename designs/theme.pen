@@ -861,11 +861,11 @@
     },
     "radius-sm": {
       "type": "number",
-      "value": 6
+      "value": 8
     },
     "radius-md": {
       "type": "number",
-      "value": 10
+      "value": 12
     },
     "radius-lg": {
       "type": "number",
@@ -902,6 +902,70 @@
     "space-8": {
       "type": "number",
       "value": 48
+    },
+    "space-half": {
+      "type": "number",
+      "value": 2
+    },
+    "radius-control": {
+      "type": "number",
+      "value": 8
+    },
+    "radius-card": {
+      "type": "number",
+      "value": 12
+    },
+    "radius-window": {
+      "type": "number",
+      "value": 16
+    },
+    "radius-pill": {
+      "type": "number",
+      "value": 999
+    },
+    "radius-bubble-tail": {
+      "type": "number",
+      "value": 2
+    },
+    "space-page": {
+      "type": "number",
+      "value": 32
+    },
+    "space-section": {
+      "type": "number",
+      "value": 24
+    },
+    "space-card": {
+      "type": "number",
+      "value": 24
+    },
+    "space-panel": {
+      "type": "number",
+      "value": 16
+    },
+    "space-stack": {
+      "type": "number",
+      "value": 16
+    },
+    "space-related": {
+      "type": "number",
+      "value": 8
+    },
+    "space-control-x": {
+      "type": "number",
+      "value": 12
+    },
+    "space-control-y": {
+      "type": "number",
+      "value": 8
+    },
+    "space-compact-x": {
+      "type": "number",
+      "value": 8
+    },
+    "space-compact-y": {
+      "type": "number",
+      "value": 4
     }
   },
   "children": [
@@ -2351,15 +2415,194 @@
         {
           "id": "T0139",
           "type": "frame",
-          "name": "组件",
+          "name": "空间与圆角",
           "children": [
             {
               "id": "T0140",
+              "type": "text",
+              "name": "空间标题",
+              "content": "间距与默认圆角",
+              "fontFamily": "$font-body",
+              "fontSize": "$font-size-xl",
+              "fill": "$text"
+            },
+            {
+              "id": "T0141",
+              "type": "frame",
+              "name": "空间 page",
+              "children": [
+                {
+                  "id": "T0142",
+                  "type": "text",
+                  "name": "说明 page",
+                  "content": "页面边距 32 · $space-page",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text"
+                }
+              ],
+              "padding": "$space-page",
+              "cornerRadius": "$radius-card",
+              "fill": "$surface",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0143",
+              "type": "frame",
+              "name": "空间 section",
+              "children": [
+                {
+                  "id": "T0144",
+                  "type": "text",
+                  "name": "说明 section",
+                  "content": "区块间隔 24 · $space-section",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text"
+                }
+              ],
+              "padding": "$space-section",
+              "cornerRadius": "$radius-card",
+              "fill": "$surface",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0145",
+              "type": "frame",
+              "name": "空间 card",
+              "children": [
+                {
+                  "id": "T0146",
+                  "type": "text",
+                  "name": "说明 card",
+                  "content": "卡片内距 24 · $space-card",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text"
+                }
+              ],
+              "padding": "$space-card",
+              "cornerRadius": "$radius-card",
+              "fill": "$surface",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0147",
+              "type": "frame",
+              "name": "空间 panel",
+              "children": [
+                {
+                  "id": "T0148",
+                  "type": "text",
+                  "name": "说明 panel",
+                  "content": "浮层内距 16 · $space-panel",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text"
+                }
+              ],
+              "padding": "$space-panel",
+              "cornerRadius": "$radius-card",
+              "fill": "$surface",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0149",
+              "type": "frame",
+              "name": "空间 related",
+              "children": [
+                {
+                  "id": "T0150",
+                  "type": "text",
+                  "name": "说明 related",
+                  "content": "组内间隔 8 · $space-related",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text"
+                }
+              ],
+              "padding": "$space-related",
+              "cornerRadius": "$radius-card",
+              "fill": "$surface",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0151",
+              "type": "frame",
+              "name": "圆角 control",
+              "children": [
+                {
+                  "id": "T0152",
+                  "type": "text",
+                  "name": "圆角说明 control",
+                  "content": "$radius-control",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text"
+                }
+              ],
+              "padding": "$space-panel",
+              "cornerRadius": "$radius-control",
+              "fill": "$accent-soft",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0153",
+              "type": "frame",
+              "name": "圆角 card",
+              "children": [
+                {
+                  "id": "T0154",
+                  "type": "text",
+                  "name": "圆角说明 card",
+                  "content": "$radius-card",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text"
+                }
+              ],
+              "padding": "$space-panel",
+              "cornerRadius": "$radius-card",
+              "fill": "$accent-soft",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0155",
+              "type": "frame",
+              "name": "圆角 window",
+              "children": [
+                {
+                  "id": "T0156",
+                  "type": "text",
+                  "name": "圆角说明 window",
+                  "content": "$radius-window",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text"
+                }
+              ],
+              "padding": "$space-panel",
+              "cornerRadius": "$radius-window",
+              "fill": "$accent-soft",
+              "width": "fill_container"
+            }
+          ],
+          "layout": "vertical",
+          "gap": "$space-stack",
+          "width": "fill_container"
+        },
+        {
+          "id": "T0157",
+          "type": "frame",
+          "name": "组件",
+          "children": [
+            {
+              "id": "T0158",
               "type": "frame",
               "name": "组件 Head",
               "children": [
                 {
-                  "id": "T0141",
+                  "id": "T0159",
                   "type": "text",
                   "name": "Title",
                   "content": "组件 Components",
@@ -2369,7 +2612,7 @@
                   "fill": "$text"
                 },
                 {
-                  "id": "T0142",
+                  "id": "T0160",
                   "type": "text",
                   "name": "Desc",
                   "content": "组件只允许引用 token；换主题时组件外观随 token 自动切换。",
@@ -2383,17 +2626,17 @@
               "width": "fill_container"
             },
             {
-              "id": "T0143",
+              "id": "T0161",
               "type": "frame",
               "name": "Grid",
               "children": [
                 {
-                  "id": "T0144",
+                  "id": "T0162",
                   "type": "frame",
                   "name": "Col Buttons",
                   "children": [
                     {
-                      "id": "T0145",
+                      "id": "T0163",
                       "type": "text",
                       "name": "Cap",
                       "content": "按钮 Button",
@@ -2403,12 +2646,12 @@
                       "fill": "$text-subtle"
                     },
                     {
-                      "id": "T0146",
+                      "id": "T0164",
                       "type": "frame",
                       "name": "Button 主要操作",
                       "children": [
                         {
-                          "id": "T0147",
+                          "id": "T0165",
                           "type": "text",
                           "name": "Label",
                           "content": "主要操作",
@@ -2427,12 +2670,12 @@
                       "alignItems": "center"
                     },
                     {
-                      "id": "T0148",
+                      "id": "T0166",
                       "type": "frame",
                       "name": "Button 次要操作",
                       "children": [
                         {
-                          "id": "T0149",
+                          "id": "T0167",
                           "type": "text",
                           "name": "Label",
                           "content": "次要操作",
@@ -2454,12 +2697,12 @@
                       "strokeAlignment": "inner"
                     },
                     {
-                      "id": "T0150",
+                      "id": "T0168",
                       "type": "frame",
                       "name": "Button 危险操作",
                       "children": [
                         {
-                          "id": "T0151",
+                          "id": "T0169",
                           "type": "text",
                           "name": "Label",
                           "content": "危险操作",
@@ -2478,12 +2721,12 @@
                       "alignItems": "center"
                     },
                     {
-                      "id": "T0152",
+                      "id": "T0170",
                       "type": "frame",
                       "name": "Button 幽灵按钮",
                       "children": [
                         {
-                          "id": "T0153",
+                          "id": "T0171",
                           "type": "text",
                           "name": "Label",
                           "content": "幽灵按钮",
@@ -2507,12 +2750,12 @@
                   "width": "fill_container"
                 },
                 {
-                  "id": "T0154",
+                  "id": "T0172",
                   "type": "frame",
                   "name": "Col Inputs",
                   "children": [
                     {
-                      "id": "T0155",
+                      "id": "T0173",
                       "type": "text",
                       "name": "Cap",
                       "content": "输入 Input",
@@ -2522,12 +2765,12 @@
                       "fill": "$text-subtle"
                     },
                     {
-                      "id": "T0156",
+                      "id": "T0174",
                       "type": "frame",
                       "name": "Input Default",
                       "children": [
                         {
-                          "id": "T0157",
+                          "id": "T0175",
                           "type": "text",
                           "name": "Value",
                           "content": "https://open.bigmodel.cn/api/paas/v4",
@@ -2548,12 +2791,12 @@
                       "strokeAlignment": "inner"
                     },
                     {
-                      "id": "T0158",
+                      "id": "T0176",
                       "type": "frame",
                       "name": "Input Placeholder",
                       "children": [
                         {
-                          "id": "T0159",
+                          "id": "T0177",
                           "type": "text",
                           "name": "Value",
                           "content": "输入 Base URL…",
@@ -2574,12 +2817,12 @@
                       "strokeAlignment": "inner"
                     },
                     {
-                      "id": "T0160",
+                      "id": "T0178",
                       "type": "frame",
                       "name": "Input Focus",
                       "children": [
                         {
-                          "id": "T0161",
+                          "id": "T0179",
                           "type": "text",
                           "name": "Value",
                           "content": "聚焦态：描边 $accent",
@@ -2605,12 +2848,12 @@
                   "width": "fill_container"
                 },
                 {
-                  "id": "T0162",
+                  "id": "T0180",
                   "type": "frame",
                   "name": "Col Badges",
                   "children": [
                     {
-                      "id": "T0163",
+                      "id": "T0181",
                       "type": "text",
                       "name": "Cap",
                       "content": "徽章 Badge / 状态",
@@ -2620,17 +2863,17 @@
                       "fill": "$text-subtle"
                     },
                     {
-                      "id": "T0164",
+                      "id": "T0182",
                       "type": "frame",
                       "name": "Badge Row",
                       "children": [
                         {
-                          "id": "T0165",
+                          "id": "T0183",
                           "type": "frame",
                           "name": "Badge 已连接",
                           "children": [
                             {
-                              "id": "T0166",
+                              "id": "T0184",
                               "type": "text",
                               "name": "Label",
                               "content": "已连接",
@@ -2653,17 +2896,17 @@
                       "alignItems": "center"
                     },
                     {
-                      "id": "T0167",
+                      "id": "T0185",
                       "type": "frame",
                       "name": "Badge Row",
                       "children": [
                         {
-                          "id": "T0168",
+                          "id": "T0186",
                           "type": "frame",
                           "name": "Badge 待更新",
                           "children": [
                             {
-                              "id": "T0169",
+                              "id": "T0187",
                               "type": "text",
                               "name": "Label",
                               "content": "待更新",
@@ -2686,17 +2929,17 @@
                       "alignItems": "center"
                     },
                     {
-                      "id": "T0170",
+                      "id": "T0188",
                       "type": "frame",
                       "name": "Badge Row",
                       "children": [
                         {
-                          "id": "T0171",
+                          "id": "T0189",
                           "type": "frame",
                           "name": "Badge 连接失败",
                           "children": [
                             {
-                              "id": "T0172",
+                              "id": "T0190",
                               "type": "text",
                               "name": "Label",
                               "content": "连接失败",
@@ -2719,17 +2962,17 @@
                       "alignItems": "center"
                     },
                     {
-                      "id": "T0173",
+                      "id": "T0191",
                       "type": "frame",
                       "name": "Badge Row",
                       "children": [
                         {
-                          "id": "T0174",
+                          "id": "T0192",
                           "type": "frame",
                           "name": "Badge 默认档案",
                           "children": [
                             {
-                              "id": "T0175",
+                              "id": "T0193",
                               "type": "text",
                               "name": "Label",
                               "content": "默认档案",
@@ -2752,17 +2995,17 @@
                       "alignItems": "center"
                     },
                     {
-                      "id": "T0176",
+                      "id": "T0194",
                       "type": "frame",
                       "name": "Badge Row",
                       "children": [
                         {
-                          "id": "T0177",
+                          "id": "T0195",
                           "type": "frame",
                           "name": "Badge 说明",
                           "children": [
                             {
-                              "id": "T0178",
+                              "id": "T0196",
                               "type": "text",
                               "name": "Label",
                               "content": "说明",
@@ -2795,17 +3038,17 @@
               "alignItems": "start"
             },
             {
-              "id": "T0179",
+              "id": "T0197",
               "type": "frame",
               "name": "应用示例",
               "children": [
                 {
-                  "id": "T0180",
+                  "id": "T0198",
                   "type": "frame",
                   "name": "Sidebar",
                   "children": [
                     {
-                      "id": "T0181",
+                      "id": "T0199",
                       "type": "text",
                       "name": "Side Title",
                       "content": "供应商",
@@ -2815,12 +3058,12 @@
                       "fill": "$text-subtle"
                     },
                     {
-                      "id": "T0182",
+                      "id": "T0200",
                       "type": "frame",
                       "name": "Nav 智谱 GLM",
                       "children": [
                         {
-                          "id": "T0183",
+                          "id": "T0201",
                           "type": "ellipse",
                           "name": "Dot",
                           "width": 6,
@@ -2828,7 +3071,7 @@
                           "fill": "$success"
                         },
                         {
-                          "id": "T0184",
+                          "id": "T0202",
                           "type": "text",
                           "name": "Label",
                           "content": "智谱 GLM",
@@ -2847,12 +3090,12 @@
                       "fill": "$surface-hover"
                     },
                     {
-                      "id": "T0185",
+                      "id": "T0203",
                       "type": "frame",
                       "name": "Nav OpenAI",
                       "children": [
                         {
-                          "id": "T0186",
+                          "id": "T0204",
                           "type": "ellipse",
                           "name": "Dot",
                           "width": 6,
@@ -2860,7 +3103,7 @@
                           "fill": "$text-subtle"
                         },
                         {
-                          "id": "T0187",
+                          "id": "T0205",
                           "type": "text",
                           "name": "Label",
                           "content": "OpenAI",
@@ -2879,12 +3122,12 @@
                       "fill": "$surface"
                     },
                     {
-                      "id": "T0188",
+                      "id": "T0206",
                       "type": "frame",
                       "name": "Nav Ollama",
                       "children": [
                         {
-                          "id": "T0189",
+                          "id": "T0207",
                           "type": "ellipse",
                           "name": "Dot",
                           "width": 6,
@@ -2892,7 +3135,7 @@
                           "fill": "$text-subtle"
                         },
                         {
-                          "id": "T0190",
+                          "id": "T0208",
                           "type": "text",
                           "name": "Label",
                           "content": "Ollama",
@@ -2918,12 +3161,12 @@
                   "fill": "$bg"
                 },
                 {
-                  "id": "T0191",
+                  "id": "T0209",
                   "type": "frame",
                   "name": "Content",
                   "children": [
                     {
-                      "id": "T0192",
+                      "id": "T0210",
                       "type": "text",
                       "name": "Title",
                       "content": "模型设置",
@@ -2933,7 +3176,7 @@
                       "fill": "$text"
                     },
                     {
-                      "id": "T0193",
+                      "id": "T0211",
                       "type": "text",
                       "name": "Body",
                       "content": "接入本地与云端模型服务，配置 API Key、Base URL 与默认档案。",
@@ -2945,17 +3188,17 @@
                       "lineHeight": "$line-height"
                     },
                     {
-                      "id": "T0194",
+                      "id": "T0212",
                       "type": "frame",
                       "name": "Table",
                       "children": [
                         {
-                          "id": "T0195",
+                          "id": "T0213",
                           "type": "frame",
                           "name": "Row Header",
                           "children": [
                             {
-                              "id": "T0196",
+                              "id": "T0214",
                               "type": "text",
                               "name": "H1",
                               "content": "模型",
@@ -2967,7 +3210,7 @@
                               "textGrowth": "fixed-width"
                             },
                             {
-                              "id": "T0197",
+                              "id": "T0215",
                               "type": "text",
                               "name": "H2",
                               "content": "状态",
@@ -2985,12 +3228,12 @@
                           "fill": "$surface-raised"
                         },
                         {
-                          "id": "T0198",
+                          "id": "T0216",
                           "type": "frame",
                           "name": "Row GLM-5.3",
                           "children": [
                             {
-                              "id": "T0201",
+                              "id": "T0219",
                               "type": "text",
                               "name": "Name",
                               "content": "GLM-5.3",
@@ -3001,12 +3244,12 @@
                               "textGrowth": "fixed-width"
                             },
                             {
-                              "id": "T0199",
+                              "id": "T0217",
                               "type": "frame",
                               "name": "Badge",
                               "children": [
                                 {
-                                  "id": "T0200",
+                                  "id": "T0218",
                                   "type": "text",
                                   "name": "Label",
                                   "content": "已连接",
@@ -3036,12 +3279,12 @@
                           "strokeAlignment": "inner"
                         },
                         {
-                          "id": "T0202",
+                          "id": "T0220",
                           "type": "frame",
                           "name": "Row GLM-4.6",
                           "children": [
                             {
-                              "id": "T0205",
+                              "id": "T0223",
                               "type": "text",
                               "name": "Name",
                               "content": "GLM-4.6",
@@ -3052,12 +3295,12 @@
                               "textGrowth": "fixed-width"
                             },
                             {
-                              "id": "T0203",
+                              "id": "T0221",
                               "type": "frame",
                               "name": "Badge",
                               "children": [
                                 {
-                                  "id": "T0204",
+                                  "id": "T0222",
                                   "type": "text",
                                   "name": "Label",
                                   "content": "待更新",
@@ -3120,12 +3363,12 @@
           "width": "fill_container"
         },
         {
-          "id": "T0206",
+          "id": "T0224",
           "type": "frame",
           "name": "Footer",
           "children": [
             {
-              "id": "T0207",
+              "id": "T0225",
               "type": "text",
               "name": "Title",
               "content": "应用切换与设计同步",
@@ -3135,7 +3378,7 @@
               "fill": "$text"
             },
             {
-              "id": "T0208",
+              "id": "T0226",
               "type": "text",
               "name": "Desc",
               "content": "使用应用：设置页“外观主题”选择内置预设，立即同步所有窗口并保存。维护设计：改 theme.tokens.json 后运行 yarn theme:sync，同步 theme.pen 与页面设计稿；编辑器 mode 轴用于设计预览。",

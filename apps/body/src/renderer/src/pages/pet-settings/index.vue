@@ -437,9 +437,13 @@ onMounted(async () => {
 
 <style scoped>
 .pet-settings-page {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--human-space-section);
   min-height: 100%;
   background: var(--human-bg);
-  padding: 28px;
+  padding: var(--human-space-page);
   color:var(--human-text);
 }
 
@@ -447,12 +451,12 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: var(--human-spacing-4);
+  margin-bottom: 0;
 }
 
 .eyebrow {
-  margin: 0 0 6px;
+  margin: 0 0 var(--human-spacing-1);
   color:var(--human-text-muted);
   font-size:var(--human-text-sm);
 }
@@ -474,23 +478,23 @@ h2 {
 }
 
 .settings-section {
-  margin-bottom: 20px;
-  padding: 18px;
+  margin-bottom: 0;
+  padding: var(--human-space-card);
   border:1px solid var(--human-border);
   border-radius: var(--human-radius-md);
   background:var(--human-surface);
 }
 
 .tab-nav {
-  margin-bottom: 18px;
+  margin-bottom: 0;
   display: flex;
-  gap: 8px;
+  gap: var(--human-spacing-2);
 }
 
 .tab-button {
-  padding: 8px 14px;
+  padding: var(--human-space-control-y) var(--human-space-control-x);
   border:1px solid var(--human-border);
-  border-radius: var(--human-radius-md);
+  border-radius: var(--human-radius-control);
   background:var(--human-surface);
   color:var(--human-text);
   cursor: pointer;
@@ -502,11 +506,11 @@ h2 {
 }
 
 .section-title {
-  margin-bottom: 16px;
+  margin-bottom: var(--human-spacing-4);
 }
 
 .section-title p {
-  margin-top: 6px;
+  margin-top: var(--human-spacing-1);
   color:var(--human-text-muted);
   font-size:var(--human-text-base);
 }
@@ -514,15 +518,15 @@ h2 {
 .model-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: var(--human-spacing-2);
+  margin-bottom: var(--human-spacing-4);
 }
 
 .model-item {
-  padding: 12px;
+  padding: var(--human-spacing-3);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--human-spacing-1);
   border:1px solid var(--human-border);
   border-radius: var(--human-radius-md);
   background:var(--human-bg);
@@ -549,7 +553,7 @@ h2 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: var(--human-spacing-4);
 }
 
 .field-row > span {
@@ -557,15 +561,15 @@ h2 {
 }
 
 .switch-row + .switch-row {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: var(--human-spacing-4);
+  padding-top: var(--human-spacing-4);
   border-top:1px solid var(--human-border);
 }
 
 .switch-row > span {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--human-spacing-1);
 }
 
 .status-text {
@@ -574,44 +578,44 @@ h2 {
 }
 
 .interface-summary {
-  margin-bottom: 16px;
+  margin-bottom: var(--human-spacing-4);
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--human-spacing-2);
   color:var(--human-text-muted);
   font-size:var(--human-text-base);
 }
 
 .interface-group + .interface-group {
-  margin-top: 20px;
+  margin-top: var(--human-spacing-4);
 }
 
 .interface-group h3 {
-  margin: 0 0 10px;
+  margin: 0 0 var(--human-spacing-2);
   font-size:var(--human-text-md);
   font-weight: 700;
 }
 
 .interface-route {
-  padding: 12px;
+  padding: var(--human-spacing-3);
   border:1px solid var(--human-border);
   border-radius: var(--human-radius-md);
   background:var(--human-bg);
 }
 
 .interface-route + .interface-route {
-  margin-top: 10px;
+  margin-top: var(--human-spacing-2);
 }
 
 .route-header {
-  margin-bottom: 8px;
+  margin-bottom: var(--human-spacing-2);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--human-spacing-2);
 }
 
 .method {
-  padding: 3px 7px;
+  padding: var(--human-spacing-half) var(--human-spacing-2);
   border-radius: var(--human-radius-sm);
   background:var(--human-accent);
   color:var(--human-on-accent);
@@ -622,7 +626,7 @@ h2 {
 }
 
 .interface-route p {
-  margin-bottom: 8px;
+  margin-bottom: var(--human-spacing-2);
 }
 
 .interface-route small {
@@ -635,7 +639,7 @@ h2 {
 .model-select-wrapper {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--human-spacing-3);
   flex-wrap: wrap;
 }
 
@@ -652,7 +656,7 @@ h2 {
 .model-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--human-spacing-2);
 }
 
 .model-name {

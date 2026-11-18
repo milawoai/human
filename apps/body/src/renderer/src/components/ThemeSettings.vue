@@ -35,10 +35,10 @@ async function update(event: Event, key: 'id' | 'fontScale') {
   </section>
 </template>
 <style scoped>
-.theme-settings { padding: 16px; border: 1px solid var(--human-border); border-radius: var(--human-radius-md); background: var(--human-surface); }
-h2 { margin: 0 0 12px; font-size: var(--human-text-xl); }
-label { display: inline-flex; align-items: center; gap: 8px; margin-right: 20px; }
-select { padding: 6px 10px; border: 1px solid var(--human-border); border-radius: var(--human-radius-sm); background: var(--human-input); color: var(--human-text); }
-p { font-size: var(--human-text-sm); color: var(--human-text-muted); margin: 10px 0 0; }
+.theme-settings { padding: var(--human-space-card); border: 1px solid var(--human-border); border-radius: var(--human-radius-md); background: var(--human-surface); }
+h2 { margin: 0 0 var(--human-spacing-3); font-size: var(--human-text-xl); }
+label { display: inline-flex; align-items: center; gap: var(--human-spacing-2); margin-right: var(--human-spacing-4); }
+select { padding: var(--human-spacing-1) var(--human-spacing-2); border: 1px solid var(--human-border); border-radius: var(--human-radius-sm); background: var(--human-input); color: var(--human-text); }
+p { font-size: var(--human-text-sm); color: var(--human-text-muted); margin: var(--human-spacing-2) 0 0; }
 [role='alert'] { color: var(--human-danger); }
 </style>

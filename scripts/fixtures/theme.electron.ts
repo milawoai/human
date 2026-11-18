@@ -19,7 +19,7 @@ async function read(window: BrowserWindow, selector: string) {
     if (!el) return null;
     const style = getComputedStyle(el);
     return { theme: root.dataset.humanTheme, fontSize: getComputedStyle(root).fontSize,
-      color: style.color, background: style.backgroundColor, fontFamily: style.fontFamily,
+      padding: style.paddingTop, gap: style.rowGap, radius: style.borderTopLeftRadius, color: style.color, background: style.backgroundColor, fontFamily: style.fontFamily,
       bodyBackground: getComputedStyle(document.body).backgroundColor, scheme: getComputedStyle(root).colorScheme };
   })()`)
 }
@@ -78,6 +78,9 @@ app.whenReady().then(async () => {
         assert(value.fontFamily.includes('PingFang SC'), pages[index][0])
         if (['hello', 'pet'].includes(pages[index][0])) assert.equal(value.bodyBackground, 'rgba(0, 0, 0, 0)')
         else assert.equal(value.background, rgb(palette.bg), pages[index][0])
+        if (['config', 'pet-settings', 'agent-panel'].includes(pages[index][0])) assert.equal(value.padding, `${32 * scale}px`, pages[index][0] + ' page padding')
+        if (pages[index][0] === 'pet-settings') assert.equal(value.gap, `${24 * scale}px`)
+        if (pages[index][0] === 'hello') assert.equal(value.radius, '16px')
         if (pages[index][0] !== 'pet') assert.equal(value.color, rgb(palette.text), pages[index][0])
       }
       const infoButton = await windows[0].webContents.executeJavaScript(`(() => { const style = getComputedStyle(document.querySelector('.p-button-info')); return [style.backgroundColor, style.color]; })()`)
@@ -85,6 +88,23 @@ app.whenReady().then(async () => {
       writeFileSync(`/private/tmp/human-theme-${id}.png`, (await windows[1].webContents.capturePage()).toPNG())
       console.log('THEME_SYNC_PASS=' + JSON.stringify({ id, scale, pages: snapshots.length }))
     }
+    const spatialOverride = await windows[1].webContents.insertCSS(':root { --human-space-page: 48px !important; }')
+    assert.equal((await read(windows[1], '.config-page')).padding, '48px')
+    await windows[1].webContents.removeInsertedCSS(spatialOverride)
+    // Read computed layout at a small viewport and largest text size.
+    theme.set({ id: 'paper-white', fontScale: 1.25 })
+    windows[1].setSize(640, 640)
+    await sleep(350)
+    const layout = await windows[1].webContents.executeJavaScript(`(() => {
+      const root = document.querySelector('.config-page'), card = document.querySelector('.detail');
+      return { padding: getComputedStyle(card).paddingTop, radius: getComputedStyle(card).borderTopLeftRadius,
+        direction: getComputedStyle(document.querySelector('.layout')).flexDirection,
+        width: root.scrollWidth, viewport: root.clientWidth };
+    })()`)
+    assert.equal(layout.padding, '30px'); assert.equal(layout.radius, '12px')
+    assert.equal(layout.direction, 'column'); assert(layout.width <= layout.viewport, JSON.stringify(layout))
+    writeFileSync('/private/tmp/human-theme-layout-narrow.png', (await windows[1].webContents.capturePage()).toPNG())
+    console.log('THEME_LAYOUT_PASS=' + JSON.stringify(layout))
     const before = theme.status()
     assert.throws(() => theme.set({ id: 'invalid', fontScale: 1 }))
     assert.deepEqual(theme.status(), before)
