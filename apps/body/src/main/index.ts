@@ -15,7 +15,10 @@ import { startServer } from './services/server/index'
 import { runStartupSettings } from './startupSettings'
 import { initializeTray, refreshTrayMenu } from './trayManager'
 import { WindowManager } from './windowManager'
-import { acquireDesktopInstance, prepareDesktop } from './services/backend-lifecycle/desktop-startup'
+import { acquireDesktopInstance } from './services/backend-lifecycle/desktop-startup'
+import { startupProgress } from './services/startup'
+import { waitForStartupDisplay } from './services/startup/display'
+import { runStartupTasks } from './services/startup/tasks'
 import { configureBackendServices, startBackendServices, closeBackendServices } from './services/backend-lifecycle'
 import { installAsyncQuit, installSessionQuit } from './services/backend-lifecycle/shutdown'
 
@@ -25,6 +28,7 @@ const primaryInstance = acquireDesktopInstance(app, () => {
 })
 
 let isQuitting = false
+const startupController = new AbortController()
 
 function createWindow(): BrowserWindow {
   const windowManager = WindowManager.getInstance()
@@ -61,15 +65,28 @@ async function initializeApp() {
   const windows = WindowManager.getInstance()
   createWindow()
   windows.createHelloWindow()
+  const hello = windows.getHelloWindow()
+  const displayed = hello
+    ? waitForStartupDisplay(hello, startupController.signal)
+    : Promise.reject(Error('启动窗口创建失败'))
+  // Observe immediately: loading may fail while backends are still starting.
+  void displayed.catch(() => {})
   try {
-    await startBackendServices()
+    await runStartupTasks(startupProgress, async () => {
+      await initialConfigs()
+      startupController.signal.throwIfAborted()
+      await configureBackendServices()
+    }, startBackendServices)
   } catch (error) {
     console.error('[Main] Backend startup:', (error as Error).message)
-    if (!isQuitting) windows.showMainWindow('/pet-settings')
+    startupProgress.fail('启动失败，请打开设置与诊断')
   } finally {
+    try { await displayed } catch (error) { startupProgress.fail((error as Error).message) }
     windows.closeHelloWindow()
   }
-  if (!isQuitting) await applyStartupSettings()
+  if (isQuitting) return
+  if (startupProgress.snapshot().state === 'failed') windows.showMainWindow('/pet-settings')
+  else await applyStartupSettings()
 }
 
 // This method will be called when Electron has finished
@@ -97,7 +114,7 @@ if (primaryInstance) app.whenReady().then(async () => {
 
   // 启动初始化流程：HelloWindow → 连接 Neural → 继续启动
   try {
-    await prepareDesktop(initialConfigs, configureBackendServices, initializeApp)
+    await initializeApp()
   } catch (error) {
     console.error('[Main] Backend configuration failed:', (error as Error).message)
     createWindow()
@@ -124,6 +141,7 @@ app.on('window-all-closed', () => {
 // Ordinary quit is asynchronous; hiding a window never enters this path.
 installAsyncQuit(app, async () => {
   isQuitting = true
+  startupController.abort(Error('应用正在退出'))
   quitGlobalShortcut()
   await closeBackendServices()
 }, error => console.error('[Main] Backend shutdown incomplete:', String(error)))

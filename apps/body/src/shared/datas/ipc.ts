@@ -8,6 +8,7 @@
  */
 
 export const defineHandlers = {
+  startup: { status: { desc: '本次启动初始化阶段快照' } },
   backendLifecycle: {
     status: { servicesName: 'backend-lifecycle', desc: '后端健康与进程归属' },
     retry: { servicesName: 'backend-lifecycle', desc: '重新检测后端' },

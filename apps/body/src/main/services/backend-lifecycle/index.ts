@@ -21,6 +21,7 @@ let quitting = false
 let applying = false
 let neuralListenerInstalled = false
 const initialized = new Set<string>()
+let startupNodeReady: ((error?: string) => void) | undefined
 const log = (message: string) => createLifecycleLog(join(app.getPath('userData'), 'logs/backend-lifecycle.log'))(message)
 export async function configureBackendServices(): Promise<void> {
   if (quitting) throw Error('Application is quitting')
@@ -45,6 +46,11 @@ export async function configureBackendServices(): Promise<void> {
     },
     unavailable: async () => { await stopHearing() },
     publish: snapshot => {
+      if (snapshot.node.phase === 'ready' && startupNodeReady) {
+        const notify = startupNodeReady
+        startupNodeReady = undefined
+        notify(businessError)
+      }
       publishAvailability(snapshot)
       log(`node=${snapshot.node.phase}/${snapshot.node.ownership ?? '-'} python=${snapshot.python.phase}/${snapshot.python.ownership ?? '-'}`)
       for (const win of BrowserWindow.getAllWindows()) if (!win.isDestroyed()) win.webContents.send('backend:state', snapshot)
@@ -60,10 +66,12 @@ export async function configureBackendServices(): Promise<void> {
     })
   }
 }
-export async function startBackendServices(): Promise<void> {
+export async function startBackendServices(onBrainReady?: (error?: string) => void): Promise<void> {
   if (quitting || applying) throw Error('Application is quitting or applying configuration')
   if (!manager) throw Error('Backend configuration is not ready')
-  await manager.start()
+  if (onBrainReady) startupNodeReady = onBrainReady
+  try { await manager.start() }
+  finally { if (startupNodeReady === onBrainReady) startupNodeReady = undefined }
 }
 export async function closeBackendServices(): Promise<void> {
   quitting = true

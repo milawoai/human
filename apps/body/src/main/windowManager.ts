@@ -424,6 +424,7 @@ export class WindowManager {
       const height = 320
 
       this.helloWindow = new BrowserWindow({
+        backgroundColor: '#00000000',
         width,
         height,
         x: Math.round((screenWidth - width) / 2),
@@ -443,20 +444,19 @@ export class WindowManager {
         }
       })
 
+      const helloWindow = this.helloWindow
+      helloWindow.once('ready-to-show', () => {
+        if (!helloWindow.isDestroyed()) helloWindow.show()
+      })
+      helloWindow.once('closed', () => {
+        if (this.helloWindow === helloWindow) this.helloWindow = null
+      })
       const routePath = '/hello'
       if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-        this.helloWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/#${routePath}`)
+        void helloWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/#${routePath}`).catch(error => console.error('HelloWindow加载失败:', error.message))
       } else {
-        this.helloWindow.loadFile(join(__dirname, '../renderer/index.html'), { hash: routePath })
+        void helloWindow.loadFile(join(__dirname, '../renderer/index.html'), { hash: routePath }).catch(error => console.error('HelloWindow加载失败:', error.message))
       }
-
-      this.helloWindow.on('ready-to-show', () => {
-        this.helloWindow?.show()
-      })
-
-      this.helloWindow.on('closed', () => {
-        this.helloWindow = null
-      })
 
       return { success: true, message: 'HelloWindow创建成功' }
     } catch (error) {

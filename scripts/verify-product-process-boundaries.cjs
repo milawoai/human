@@ -2,6 +2,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const root = path.join(__dirname, '..')
 const entries = ['apps/body/src/main/index.ts', 'apps/body/src/main/services/backend-lifecycle',
+  'apps/body/src/main/services/startup',
   'apps/backend/src/runtime', 'apps/python-service/runtime']
 function files(relative) {
   const full = path.join(root, relative)
