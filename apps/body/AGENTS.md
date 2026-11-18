@@ -14,7 +14,7 @@ bd sync               # Sync with git
 
 ## 统一主题契约（强制）
 
-适用于所有 code agent、所有新增/修改的 Electron 页面、组件、行内样式与脚本动态样式。开始前读取 `designs/theme.tokens.json`、`src/shared/theme.ts`、`src/renderer/src/theme/theme.css` 和相近的既有组件。
+适用于所有 code agent、所有新增/修改的 Electron 页面、组件、行内样式与脚本动态样式。开始前读取根目录 `DESIGN.md`（设计描述与提取快照）、`designs/theme.tokens.json`、`src/shared/theme.ts`、`src/renderer/src/theme/theme.css` 和相近的既有组件。
 
 - 背景、表面、文字、边框、强调/焦点/选择、成功/警告/失败必须消费 `--human-*` 语义变量。字号使用 `--human-text-*`，字体使用 `--human-font-body` / `--human-font-mono`；已有圆角/阴影角色也复用中央变量。新角色先登记中央定义及所有预设，不在页面临时造变量。
 - 组件库可复用 PrimeVue/TDesign，但它们的主题映射集中在 `src/renderer/src/theme/theme.css`。页面不得直接依赖旧 `--surface-*`、`--text-color*`、`--p-*` 等别名，或另写一套组件库配色。
