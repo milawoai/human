@@ -5,7 +5,8 @@ import Lara from '@primeuix/themes/lara'
 import Nora from '@primeuix/themes/nora'
 import { useI18n } from '@renderer/composables/useI18n'
 import { useLayout } from '@renderer/layout/composables/layout'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import { currentTheme } from '@renderer/theme'
 
 defineProps({
   simple: {
@@ -448,15 +449,18 @@ function toggleDarkMode() {
 }
 
 function executeDarkModeToggle() {
-  layoutConfig.darkTheme = !layoutConfig.darkTheme
-
-  if (layoutConfig.darkTheme === true && layoutConfig.layoutTheme === 'primaryColor') {
+  void window.electron.ipcRenderer.invoke('theme-set', {
+    id: currentTheme.value.id === 'dark' ? 'light' : 'dark',
+    fontScale: currentTheme.value.fontScale
+  })
+}
+watch(currentTheme, theme => {
+  layoutConfig.darkTheme = theme.id === 'dark'
+  if (layoutConfig.darkTheme && layoutConfig.layoutTheme === 'primaryColor') {
     layoutConfig.layoutTheme = 'colorScheme'
     layoutTheme.value = 'colorScheme'
   }
-
-  document.documentElement.classList.toggle('app-dark')
-}
+}, { immediate: true })
 
 function getPresetExt() {
   const color = primaryColors.value.find((c) => c.name === layoutConfig.primary)

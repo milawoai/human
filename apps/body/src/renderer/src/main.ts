@@ -21,7 +21,10 @@ import ComponentsPlugin from '@renderer/components/index'
 import '@tdesign-vue-next/chat/es/style/index.css'
 import Tooltip from 'primevue/tooltip'
 import i18n from './i18n'
+import './theme/theme.css'
+import { initializeRendererTheme } from './theme'
 
+initializeRendererTheme()
 const app = createApp(App)
 app.use(PrimeVue, {
   theme: {

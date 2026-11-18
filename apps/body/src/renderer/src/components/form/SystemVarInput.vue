@@ -213,7 +213,7 @@ watch(
 
     h4 {
       margin: 0;
-      color: var(--text-color);
+      color: var(--human-text);
     }
   }
 
@@ -223,10 +223,10 @@ watch(
       flex-direction: column;
       gap: 8px;
       padding: 16px;
-      border: 1px solid var(--surface-border);
+      border: 1px solid var(--human-border);
       border-radius: 6px;
       margin-bottom: 12px;
-      background: var(--surface-section);
+      background: var(--human-surface-raised);
 
       .var-key {
         display: flex;
@@ -235,7 +235,7 @@ watch(
 
         span {
           font-weight: 500;
-          color: var(--text-color-secondary);
+          color: var(--human-text-muted);
         }
 
         .key-actions {
@@ -251,7 +251,7 @@ watch(
 
         .hidden-indicator {
           color: var(--orange-500);
-          font-size: 12px;
+          font-size: var(--human-text-sm);
         }
       }
     }
@@ -262,7 +262,7 @@ watch(
 
     h5 {
       margin: 16px 0 12px 0;
-      color: var(--text-color);
+      color: var(--human-text);
     }
 
     .new-var-form {
@@ -278,8 +278,8 @@ watch(
           gap: 8px;
 
           label {
-            color: var(--text-color-secondary);
-            font-size: 14px;
+            color: var(--human-text-muted);
+            font-size: var(--human-text-base);
           }
         }
       }

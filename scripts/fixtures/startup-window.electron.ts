@@ -6,6 +6,9 @@ import { startupProgress, status } from '../../apps/body/src/main/services/start
 import { waitForStartupDisplay } from '../../apps/body/src/main/services/startup/display'
 import { runStartupTasks } from '../../apps/body/src/main/services/startup/tasks'
 app.setPath('userData', process.env.HUMAN_TEST_USER_DATA!)
+const theme = { id: 'dark', fontScale: Number(process.env.HUMAN_TEST_FONT_SCALE || 1), revision: 0 }
+ipcMain.on('theme-bootstrap', event => { event.returnValue = theme })
+ipcMain.handle('theme-status', () => ({ success: true, data: theme }))
 ipcMain.handle('startup-status', () => ({ success: true, data: status() }))
 ipcMain.handle('backendLifecycle-openSettings', () => ({ success: true }))
 ipcMain.handle('config-getConfigByKey', () => ({ success: true, data: null }))
@@ -34,7 +37,8 @@ app.whenReady().then(async () => {
     await displayed
     const dom = await window.webContents.executeJavaScript(`({ text: document.body.innerText,
       status: document.querySelector('[role="status"]')?.textContent,
-      footerBelowTitle: document.querySelector('footer')?.getBoundingClientRect().top > document.querySelector('h1')?.getBoundingClientRect().bottom })`)
+      footerBelowTitle: document.querySelector('footer')?.getBoundingClientRect().top > document.querySelector('h1')?.getBoundingClientRect().bottom,
+      footerInWindow: document.querySelector('footer')?.getBoundingClientRect().bottom <= innerHeight })`)
     // Snapshot query and event delivery must converge before checking the UI.
     for (let i = 0; i < 20 && dom.status !== status().message; i++) {
       await sleep(20)
@@ -42,6 +46,7 @@ app.whenReady().then(async () => {
     }
     assert.equal(dom.status, status().message)
     assert.equal(dom.footerBelowTitle, true)
+    assert.equal(dom.footerInWindow, true)
     const backgrounds = await window.webContents.executeJavaScript(`['html', 'body', '#app'].map(selector => getComputedStyle(document.querySelector(selector)).backgroundColor)`)
     assert.deepEqual(backgrounds, ['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0)'])
     if (mode === 'failure') assert.equal(status().state, 'failed')

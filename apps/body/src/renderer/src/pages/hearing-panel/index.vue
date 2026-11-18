@@ -497,12 +497,9 @@ onUnmounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: rgba(24, 24, 28, 0.88);
-  color: #fff;
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
+  background: var(--human-bg);
+  color:var(--human-text);
+  font-family:var(--human-font-body);
   overflow: hidden;
   backdrop-filter: blur(12px);
 }
@@ -512,7 +509,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom:1px solid var(--human-border);
   -webkit-app-region: drag;
 }
 
@@ -520,7 +517,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size:var(--human-text-base);
   font-weight: 600;
 }
 
@@ -549,19 +546,19 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 12px;
   padding: 10px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
+  background:var(--human-surface-raised);
+  border-radius: var(--human-radius-md);
 }
 
 .status-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.85rem;
+  font-size:var(--human-text-sm);
 }
 
 .status-label {
-  color: rgba(255, 255, 255, 0.5);
+  color:var(--human-text-muted);
 }
 
 .recorder-controls {
@@ -582,13 +579,13 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--human-radius-md);
+  background:var(--human-surface-raised);
 }
 
 .auto-paste-label {
-  font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.8);
+  font-size:var(--human-text-xs);
+  color:var(--human-text-muted);
 }
 
 .subtitle-section {
@@ -613,14 +610,14 @@ onUnmounted(() => {
 .chat-input-row textarea {
   width: 100%;
   padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 6px;
-  background: rgba(12, 14, 18, 0.82);
-  color: rgba(245, 247, 250, 0.95);
-  font-size: 0.9rem;
+  border:1px solid var(--human-border);
+  border-radius: var(--human-radius-sm);
+  background:var(--human-input);
+  color:var(--human-text);
+  font-size:var(--human-text-base);
   line-height: 1.5;
   resize: vertical;
-  font-family: inherit;
+  font-family:var(--human-font-body);
 }
 
 .section-header {
@@ -630,22 +627,22 @@ onUnmounted(() => {
 }
 
 .section-label {
-  font-size: 0.85rem;
+  font-size:var(--human-text-sm);
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
+  color:var(--human-text-muted);
 }
 
 .subtitle-textarea textarea {
   width: 100%;
   padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #fff;
-  font-size: 0.9rem;
+  border:1px solid var(--human-border);
+  border-radius: var(--human-radius-sm);
+  background:var(--human-surface-raised);
+  color:var(--human-text);
+  font-size:var(--human-text-base);
   line-height: 1.5;
   resize: none;
-  font-family: inherit;
+  font-family:var(--human-font-body);
 }
 
 .segment-list {
@@ -655,23 +652,23 @@ onUnmounted(() => {
   max-height: 200px;
   overflow-y: auto;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 6px;
+  background:var(--human-surface-raised);
+  border-radius: var(--human-radius-sm);
 }
 
 .segment-item {
   display: flex;
   gap: 8px;
-  font-size: 0.82rem;
+  font-size:var(--human-text-xs);
 }
 
 .segment-time {
-  color: rgba(255, 255, 255, 0.4);
+  color:var(--human-text-subtle);
   flex-shrink: 0;
 }
 
 .segment-text {
-  color: rgba(255, 255, 255, 0.85);
+  color:var(--human-text);
 }
 
 .error-message {
@@ -679,11 +676,11 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 6px;
-  color: #ff8787;
-  font-size: 0.85rem;
+  background:var(--human-danger-soft);
+  border:1px solid var(--human-danger);
+  border-radius: var(--human-radius-sm);
+  color:var(--human-danger);
+  font-size:var(--human-text-sm);
 }
 
 .chat-list {
@@ -696,30 +693,30 @@ onUnmounted(() => {
 
 .chat-turn {
   padding: 10px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--human-radius-md);
+  background:var(--human-surface-raised);
+  border:1px solid var(--human-border);
 }
 
 .chat-q {
-  color: rgba(190, 230, 255, 0.95);
+  color:var(--human-accent);
   margin-bottom: 6px;
 }
 
 .chat-think {
-  color: rgba(255, 220, 170, 0.95);
+  color:var(--human-warning);
   white-space: pre-wrap;
   margin-bottom: 6px;
 }
 
 .chat-a {
-  color: rgba(240, 245, 250, 0.95);
+  color:var(--human-text);
   white-space: pre-wrap;
 }
 
 .chat-err {
   margin-top: 6px;
-  color: #ff8787;
+  color:var(--human-danger);
 }
 
 .chat-input-row {

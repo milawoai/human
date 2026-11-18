@@ -15,8 +15,9 @@ async function main() {
         build.onResolve({ filter: /\?asset$/ }, args => ({ path: args.path, namespace: 'asset' }))
         build.onLoad({ filter: /.*/, namespace: 'asset' }, () => ({ contents: 'module.exports = ""' }))
       } }] })
-    for (const mode of ['fast', 'slow', 'failure']) {
-      const env = { ...process.env, HUMAN_TEST_STARTUP_MODE: mode, HUMAN_TEST_USER_DATA: join(directory, mode) }
+    for (const mode of ['fast', 'slow', 'failure', 'large-font']) {
+      const env = { ...process.env, HUMAN_TEST_STARTUP_MODE: mode, HUMAN_TEST_USER_DATA: join(directory, mode),
+        HUMAN_TEST_FONT_SCALE: mode === 'large-font' ? '1.25' : '1' }
       delete env.ELECTRON_RUN_AS_NODE
       delete env.ELECTRON_RENDERER_URL
       await new Promise((resolve, reject) => {

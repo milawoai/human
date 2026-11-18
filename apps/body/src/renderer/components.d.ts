@@ -35,6 +35,7 @@ declare module 'vue' {
     SystemVarInput: typeof import('./src/components/form/SystemVarInput.vue')['default']
     TagInput: typeof import('./src/components/TagInput.vue')['default']
     Textarea: typeof import('primevue/textarea')['default']
+    ThemeSettings: typeof import('./src/components/ThemeSettings.vue')['default']
     ToggleSwitch: typeof import('primevue/toggleswitch')['default']
   }
 }

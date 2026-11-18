@@ -8,6 +8,7 @@
  */
 
 export const defineHandlers = {
+  theme: { status: { desc: '全局主题快照' }, set: { desc: '保存主题并同步所有窗口' } },
   startup: { status: { desc: '本次启动初始化阶段快照' } },
   backendLifecycle: {
     status: { servicesName: 'backend-lifecycle', desc: '后端健康与进程归属' },

@@ -1,0 +1,2748 @@
+{
+  "version": "2.17",
+  "themes": {
+    "mode": [
+      "dark",
+      "light"
+    ]
+  },
+  "variables": {
+    "bg": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#17191f",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#f4f6fa",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "surface": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#22252e",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#ffffff",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "surface-raised": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#2d313c",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#eef1f7",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "surface-hover": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#353b48",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#e3e8f2",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "input": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#1c1f27",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#ffffff",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "text": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#edf0f7",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#202636",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "text-muted": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#b0b8c9",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#526078",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "text-subtle": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#8b96aa",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#64728a",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "border": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#414a5c",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#cbd3e1",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "accent": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#9baeff",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#4057c4",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "accent-strong": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#4f63d8",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#4057c4",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "on-accent": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#ffffff",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#ffffff",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "accent-soft": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#303b64",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#e6eaff",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "success": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#85dab0",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#1d7251",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "success-soft": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#1b3a31",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#e1f3e9",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "warning": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#efc47b",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#8b590c",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "warning-soft": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#3e3422",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#fff0d5",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "danger": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#ff9da5",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#b33346",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "danger-soft": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#44282f",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#fde7eb",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "info": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#97c9ff",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#245f9d",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "info-soft": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#22394f",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#e4f0ff",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "scrim": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#00000066",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#10182840",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "border-strong": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#4d5668",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#b3bdd0",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "font-body": {
+      "type": "string",
+      "value": "Noto Sans SC"
+    },
+    "font-mono": {
+      "type": "string",
+      "value": "JetBrains Mono"
+    },
+    "font-size-xs": {
+      "type": "number",
+      "value": 12
+    },
+    "font-size-sm": {
+      "type": "number",
+      "value": 14
+    },
+    "font-size-base": {
+      "type": "number",
+      "value": 16
+    },
+    "font-size-md": {
+      "type": "number",
+      "value": 17
+    },
+    "font-size-lg": {
+      "type": "number",
+      "value": 18
+    },
+    "font-size-xl": {
+      "type": "number",
+      "value": 21
+    },
+    "font-size-title": {
+      "type": "number",
+      "value": 25
+    },
+    "font-size-display": {
+      "type": "number",
+      "value": 32
+    },
+    "line-height": {
+      "type": "number",
+      "value": 1.5
+    },
+    "radius-sm": {
+      "type": "number",
+      "value": 6
+    },
+    "radius-md": {
+      "type": "number",
+      "value": 10
+    },
+    "radius-lg": {
+      "type": "number",
+      "value": 16
+    },
+    "space-1": {
+      "type": "number",
+      "value": 4
+    },
+    "space-2": {
+      "type": "number",
+      "value": 8
+    },
+    "space-3": {
+      "type": "number",
+      "value": 12
+    },
+    "space-4": {
+      "type": "number",
+      "value": 16
+    },
+    "space-5": {
+      "type": "number",
+      "value": 24
+    },
+    "space-6": {
+      "type": "number",
+      "value": 32
+    },
+    "space-7": {
+      "type": "number",
+      "value": 40
+    },
+    "space-8": {
+      "type": "number",
+      "value": 48
+    }
+  },
+  "children": [
+    {
+      "id": "T0001",
+      "type": "frame",
+      "name": "主题规范",
+      "children": [
+        {
+          "id": "T0002",
+          "type": "frame",
+          "name": "Header",
+          "children": [
+            {
+              "id": "T0003",
+              "type": "text",
+              "name": "标题",
+              "content": "Human 设计主题",
+              "fontFamily": "$font-body",
+              "fontSize": "$font-size-display",
+              "fontWeight": "bold",
+              "fill": "$text",
+              "lineHeight": 1.2
+            },
+            {
+              "id": "T0004",
+              "type": "text",
+              "name": "说明",
+              "content": "所有页面共享这一套 token。切换 mode 轴（dark / light）即可一键更换主题，页面无需改动。",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "fontFamily": "$font-body",
+              "fontSize": "$font-size-base",
+              "fill": "$text-muted",
+              "lineHeight": "$line-height"
+            },
+            {
+              "id": "T0005",
+              "type": "frame",
+              "name": "Tokens",
+              "children": [
+                {
+                  "id": "T0006",
+                  "type": "frame",
+                  "name": "Token 背景",
+                  "children": [
+                    {
+                      "id": "T0007",
+                      "type": "ellipse",
+                      "name": "Dot",
+                      "width": 8,
+                      "height": 8,
+                      "fill": "$bg"
+                    },
+                    {
+                      "id": "T0008",
+                      "type": "text",
+                      "name": "Label",
+                      "content": "背景",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-muted"
+                    }
+                  ],
+                  "gap": 6,
+                  "alignItems": "center",
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "cornerRadius": "$radius-sm",
+                  "fill": "$surface-raised"
+                },
+                {
+                  "id": "T0009",
+                  "type": "frame",
+                  "name": "Token 表面",
+                  "children": [
+                    {
+                      "id": "T0010",
+                      "type": "ellipse",
+                      "name": "Dot",
+                      "width": 8,
+                      "height": 8,
+                      "fill": "$surface"
+                    },
+                    {
+                      "id": "T0011",
+                      "type": "text",
+                      "name": "Label",
+                      "content": "表面",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-muted"
+                    }
+                  ],
+                  "gap": 6,
+                  "alignItems": "center",
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "cornerRadius": "$radius-sm",
+                  "fill": "$surface-raised"
+                },
+                {
+                  "id": "T0012",
+                  "type": "frame",
+                  "name": "Token 强调",
+                  "children": [
+                    {
+                      "id": "T0013",
+                      "type": "ellipse",
+                      "name": "Dot",
+                      "width": 8,
+                      "height": 8,
+                      "fill": "$accent"
+                    },
+                    {
+                      "id": "T0014",
+                      "type": "text",
+                      "name": "Label",
+                      "content": "强调",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-muted"
+                    }
+                  ],
+                  "gap": 6,
+                  "alignItems": "center",
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "cornerRadius": "$radius-sm",
+                  "fill": "$surface-raised"
+                }
+              ],
+              "gap": 8,
+              "alignItems": "center"
+            }
+          ],
+          "layout": "vertical",
+          "gap": 10,
+          "width": "fill_container"
+        },
+        {
+          "id": "T0015",
+          "type": "frame",
+          "name": "颜色",
+          "children": [
+            {
+              "id": "T0016",
+              "type": "frame",
+              "name": "颜色 Head",
+              "children": [
+                {
+                  "id": "T0017",
+                  "type": "text",
+                  "name": "Title",
+                  "content": "颜色 Color",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xl",
+                  "fontWeight": "bold",
+                  "fill": "$text"
+                },
+                {
+                  "id": "T0018",
+                  "type": "text",
+                  "name": "Desc",
+                  "content": "语义化命名：所有页面只引用 token 名，禁止写死颜色。",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text-subtle"
+                }
+              ],
+              "layout": "vertical",
+              "gap": 4,
+              "width": "fill_container"
+            },
+            {
+              "id": "T0019",
+              "type": "frame",
+              "name": "Row",
+              "children": [
+                {
+                  "id": "T0020",
+                  "type": "frame",
+                  "name": "Swatch bg",
+                  "children": [
+                    {
+                      "id": "T0021",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$bg",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0022",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "bg",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0023",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "页面最底层",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0024",
+                  "type": "frame",
+                  "name": "Swatch surface",
+                  "children": [
+                    {
+                      "id": "T0025",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$surface",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0026",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "surface",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0027",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "卡片 / 面板",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0028",
+                  "type": "frame",
+                  "name": "Swatch surface-raised",
+                  "children": [
+                    {
+                      "id": "T0029",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$surface-raised",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0030",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "surface-raised",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0031",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "浮层 / 弹窗",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0032",
+                  "type": "frame",
+                  "name": "Swatch surface-hover",
+                  "children": [
+                    {
+                      "id": "T0033",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$surface-hover",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0034",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "surface-hover",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0035",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "悬停态",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0036",
+                  "type": "frame",
+                  "name": "Swatch input",
+                  "children": [
+                    {
+                      "id": "T0037",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$input",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0038",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "input",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0039",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "输入框底色",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0040",
+                  "type": "frame",
+                  "name": "Swatch scrim",
+                  "children": [
+                    {
+                      "id": "T0041",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$scrim",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0042",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "scrim",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0043",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "遮罩",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                }
+              ],
+              "gap": 12,
+              "width": "fill_container"
+            },
+            {
+              "id": "T0044",
+              "type": "frame",
+              "name": "Row",
+              "children": [
+                {
+                  "id": "T0045",
+                  "type": "frame",
+                  "name": "Swatch text",
+                  "children": [
+                    {
+                      "id": "T0046",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$text",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0047",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "text",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0048",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "主要文本",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0049",
+                  "type": "frame",
+                  "name": "Swatch text-muted",
+                  "children": [
+                    {
+                      "id": "T0050",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$text-muted",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0051",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "text-muted",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0052",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "次要文本",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0053",
+                  "type": "frame",
+                  "name": "Swatch text-subtle",
+                  "children": [
+                    {
+                      "id": "T0054",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$text-subtle",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0055",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "text-subtle",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0056",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "弱化 / 占位",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0057",
+                  "type": "frame",
+                  "name": "Swatch border",
+                  "children": [
+                    {
+                      "id": "T0058",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$border",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0059",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "border",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0060",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "描边分隔",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0061",
+                  "type": "frame",
+                  "name": "Swatch accent",
+                  "children": [
+                    {
+                      "id": "T0062",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$accent",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0063",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "accent",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0064",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "强调色",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0065",
+                  "type": "frame",
+                  "name": "Swatch on-accent",
+                  "children": [
+                    {
+                      "id": "T0066",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$on-accent",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0067",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "on-accent",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0068",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "实心强调背景上的文字",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                }
+              ],
+              "gap": 12,
+              "width": "fill_container"
+            },
+            {
+              "id": "T0069",
+              "type": "frame",
+              "name": "Row",
+              "children": [
+                {
+                  "id": "T0070",
+                  "type": "frame",
+                  "name": "Swatch accent-strong",
+                  "children": [
+                    {
+                      "id": "T0071",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$accent-strong",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0072",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "accent-strong",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0073",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "实心强调背景",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0074",
+                  "type": "frame",
+                  "name": "Swatch accent-soft",
+                  "children": [
+                    {
+                      "id": "T0075",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$accent-soft",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0076",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "accent-soft",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0077",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "强调弱背景",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0078",
+                  "type": "frame",
+                  "name": "Swatch success",
+                  "children": [
+                    {
+                      "id": "T0079",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$success",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0080",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "success",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0081",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "成功",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0082",
+                  "type": "frame",
+                  "name": "Swatch success-soft",
+                  "children": [
+                    {
+                      "id": "T0083",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$success-soft",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0084",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "success-soft",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0085",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "成功弱背景",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0086",
+                  "type": "frame",
+                  "name": "Swatch warning",
+                  "children": [
+                    {
+                      "id": "T0087",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$warning",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0088",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "warning",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0089",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "警告",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0090",
+                  "type": "frame",
+                  "name": "Swatch warning-soft",
+                  "children": [
+                    {
+                      "id": "T0091",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$warning-soft",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0092",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "warning-soft",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0093",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "警告弱背景",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                }
+              ],
+              "gap": 12,
+              "width": "fill_container"
+            },
+            {
+              "id": "T0094",
+              "type": "frame",
+              "name": "Row",
+              "children": [
+                {
+                  "id": "T0095",
+                  "type": "frame",
+                  "name": "Swatch danger",
+                  "children": [
+                    {
+                      "id": "T0096",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$danger",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0097",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "danger",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0098",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "危险",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0099",
+                  "type": "frame",
+                  "name": "Swatch danger-soft",
+                  "children": [
+                    {
+                      "id": "T0100",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$danger-soft",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0101",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "danger-soft",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0102",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "危险弱背景",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0103",
+                  "type": "frame",
+                  "name": "Swatch info",
+                  "children": [
+                    {
+                      "id": "T0104",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$info",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0105",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "info",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0106",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "信息",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0107",
+                  "type": "frame",
+                  "name": "Swatch info-soft",
+                  "children": [
+                    {
+                      "id": "T0108",
+                      "type": "rectangle",
+                      "name": "Color",
+                      "width": "fill_container",
+                      "height": 56,
+                      "cornerRadius": "$radius-md",
+                      "fill": "$info-soft",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0109",
+                      "type": "text",
+                      "name": "Token",
+                      "content": "info-soft",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0110",
+                      "type": "text",
+                      "name": "Usage",
+                      "content": "信息弱背景",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fill": "$text-subtle"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": "fill_container"
+                }
+              ],
+              "gap": 12,
+              "width": "fill_container"
+            }
+          ],
+          "layout": "vertical",
+          "gap": 16,
+          "width": "fill_container"
+        },
+        {
+          "id": "T0111",
+          "type": "frame",
+          "name": "排版",
+          "children": [
+            {
+              "id": "T0112",
+              "type": "frame",
+              "name": "排版 Head",
+              "children": [
+                {
+                  "id": "T0113",
+                  "type": "text",
+                  "name": "Title",
+                  "content": "排版 Typography",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xl",
+                  "fontWeight": "bold",
+                  "fill": "$text"
+                },
+                {
+                  "id": "T0114",
+                  "type": "text",
+                  "name": "Desc",
+                  "content": "字体族 $font-body / $font-mono，基准行高 $line-height。",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text-subtle"
+                }
+              ],
+              "layout": "vertical",
+              "gap": 4,
+              "width": "fill_container"
+            },
+            {
+              "id": "T0115",
+              "type": "frame",
+              "name": "Type $font-size-display",
+              "children": [
+                {
+                  "id": "T0116",
+                  "type": "text",
+                  "name": "Meta",
+                  "content": "display · 页面主标题",
+                  "fontFamily": "$font-mono",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text-subtle",
+                  "width": 220,
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "id": "T0117",
+                  "type": "text",
+                  "name": "Sample",
+                  "content": "模型设置 Model Settings",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-display",
+                  "fill": "$text"
+                }
+              ],
+              "gap": 24,
+              "alignItems": "center",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0118",
+              "type": "frame",
+              "name": "Type $font-size-title",
+              "children": [
+                {
+                  "id": "T0119",
+                  "type": "text",
+                  "name": "Meta",
+                  "content": "title · 区块标题",
+                  "fontFamily": "$font-mono",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text-subtle",
+                  "width": 220,
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "id": "T0120",
+                  "type": "text",
+                  "name": "Sample",
+                  "content": "模型设置 Model Settings",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-title",
+                  "fill": "$text"
+                }
+              ],
+              "gap": 24,
+              "alignItems": "center",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0121",
+              "type": "frame",
+              "name": "Type $font-size-xl",
+              "children": [
+                {
+                  "id": "T0122",
+                  "type": "text",
+                  "name": "Meta",
+                  "content": "xl · 小节标题",
+                  "fontFamily": "$font-mono",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text-subtle",
+                  "width": 220,
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "id": "T0123",
+                  "type": "text",
+                  "name": "Sample",
+                  "content": "模型设置 Model Settings",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xl",
+                  "fill": "$text"
+                }
+              ],
+              "gap": 24,
+              "alignItems": "center",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0124",
+              "type": "frame",
+              "name": "Type $font-size-lg",
+              "children": [
+                {
+                  "id": "T0125",
+                  "type": "text",
+                  "name": "Meta",
+                  "content": "lg · 强调正文",
+                  "fontFamily": "$font-mono",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text-subtle",
+                  "width": 220,
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "id": "T0126",
+                  "type": "text",
+                  "name": "Sample",
+                  "content": "模型设置 Model Settings",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-lg",
+                  "fill": "$text"
+                }
+              ],
+              "gap": 24,
+              "alignItems": "center",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0127",
+              "type": "frame",
+              "name": "Type $font-size-md",
+              "children": [
+                {
+                  "id": "T0128",
+                  "type": "text",
+                  "name": "Meta",
+                  "content": "md · 正文",
+                  "fontFamily": "$font-mono",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text-subtle",
+                  "width": 220,
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "id": "T0129",
+                  "type": "text",
+                  "name": "Sample",
+                  "content": "模型设置 Model Settings",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-md",
+                  "fill": "$text"
+                }
+              ],
+              "gap": 24,
+              "alignItems": "center",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0130",
+              "type": "frame",
+              "name": "Type $font-size-base",
+              "children": [
+                {
+                  "id": "T0131",
+                  "type": "text",
+                  "name": "Meta",
+                  "content": "base · 标准正文",
+                  "fontFamily": "$font-mono",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text-subtle",
+                  "width": 220,
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "id": "T0132",
+                  "type": "text",
+                  "name": "Sample",
+                  "content": "模型设置 Model Settings",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-base",
+                  "fill": "$text"
+                }
+              ],
+              "gap": 24,
+              "alignItems": "center",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0133",
+              "type": "frame",
+              "name": "Type $font-size-sm",
+              "children": [
+                {
+                  "id": "T0134",
+                  "type": "text",
+                  "name": "Meta",
+                  "content": "sm · 辅助文本",
+                  "fontFamily": "$font-mono",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text-subtle",
+                  "width": 220,
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "id": "T0135",
+                  "type": "text",
+                  "name": "Sample",
+                  "content": "模型设置 Model Settings",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text"
+                }
+              ],
+              "gap": 24,
+              "alignItems": "center",
+              "width": "fill_container"
+            },
+            {
+              "id": "T0136",
+              "type": "frame",
+              "name": "Type $font-size-xs",
+              "children": [
+                {
+                  "id": "T0137",
+                  "type": "text",
+                  "name": "Meta",
+                  "content": "xs · 标签 / 说明",
+                  "fontFamily": "$font-mono",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text-subtle",
+                  "width": 220,
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "id": "T0138",
+                  "type": "text",
+                  "name": "Sample",
+                  "content": "模型设置 Model Settings",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
+                  "fill": "$text"
+                }
+              ],
+              "gap": 24,
+              "alignItems": "center",
+              "width": "fill_container"
+            }
+          ],
+          "layout": "vertical",
+          "gap": 16,
+          "width": "fill_container"
+        },
+        {
+          "id": "T0139",
+          "type": "frame",
+          "name": "组件",
+          "children": [
+            {
+              "id": "T0140",
+              "type": "frame",
+              "name": "组件 Head",
+              "children": [
+                {
+                  "id": "T0141",
+                  "type": "text",
+                  "name": "Title",
+                  "content": "组件 Components",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xl",
+                  "fontWeight": "bold",
+                  "fill": "$text"
+                },
+                {
+                  "id": "T0142",
+                  "type": "text",
+                  "name": "Desc",
+                  "content": "组件只允许引用 token；换主题时组件外观随 token 自动切换。",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-sm",
+                  "fill": "$text-subtle"
+                }
+              ],
+              "layout": "vertical",
+              "gap": 4,
+              "width": "fill_container"
+            },
+            {
+              "id": "T0143",
+              "type": "frame",
+              "name": "Grid",
+              "children": [
+                {
+                  "id": "T0144",
+                  "type": "frame",
+                  "name": "Col Buttons",
+                  "children": [
+                    {
+                      "id": "T0145",
+                      "type": "text",
+                      "name": "Cap",
+                      "content": "按钮 Button",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text-subtle"
+                    },
+                    {
+                      "id": "T0146",
+                      "type": "frame",
+                      "name": "Button 主要操作",
+                      "children": [
+                        {
+                          "id": "T0147",
+                          "type": "text",
+                          "name": "Label",
+                          "content": "主要操作",
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-sm",
+                          "fontWeight": "bold",
+                          "fill": "$on-accent"
+                        }
+                      ],
+                      "padding": [
+                        10,
+                        16
+                      ],
+                      "cornerRadius": "$radius-md",
+                      "fill": "$accent-strong",
+                      "alignItems": "center"
+                    },
+                    {
+                      "id": "T0148",
+                      "type": "frame",
+                      "name": "Button 次要操作",
+                      "children": [
+                        {
+                          "id": "T0149",
+                          "type": "text",
+                          "name": "Label",
+                          "content": "次要操作",
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-sm",
+                          "fontWeight": "bold",
+                          "fill": "$text"
+                        }
+                      ],
+                      "padding": [
+                        10,
+                        16
+                      ],
+                      "cornerRadius": "$radius-md",
+                      "fill": "$surface-raised",
+                      "alignItems": "center",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0150",
+                      "type": "frame",
+                      "name": "Button 危险操作",
+                      "children": [
+                        {
+                          "id": "T0151",
+                          "type": "text",
+                          "name": "Label",
+                          "content": "危险操作",
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-sm",
+                          "fontWeight": "bold",
+                          "fill": "$danger"
+                        }
+                      ],
+                      "padding": [
+                        10,
+                        16
+                      ],
+                      "cornerRadius": "$radius-md",
+                      "fill": "$danger-soft",
+                      "alignItems": "center"
+                    },
+                    {
+                      "id": "T0152",
+                      "type": "frame",
+                      "name": "Button 幽灵按钮",
+                      "children": [
+                        {
+                          "id": "T0153",
+                          "type": "text",
+                          "name": "Label",
+                          "content": "幽灵按钮",
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-sm",
+                          "fontWeight": "bold",
+                          "fill": "$text-muted"
+                        }
+                      ],
+                      "padding": [
+                        10,
+                        16
+                      ],
+                      "cornerRadius": "$radius-md",
+                      "fill": "$surface",
+                      "alignItems": "center"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 12,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0154",
+                  "type": "frame",
+                  "name": "Col Inputs",
+                  "children": [
+                    {
+                      "id": "T0155",
+                      "type": "text",
+                      "name": "Cap",
+                      "content": "输入 Input",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text-subtle"
+                    },
+                    {
+                      "id": "T0156",
+                      "type": "frame",
+                      "name": "Input Default",
+                      "children": [
+                        {
+                          "id": "T0157",
+                          "type": "text",
+                          "name": "Value",
+                          "content": "https://open.bigmodel.cn/api/paas/v4",
+                          "fontFamily": "$font-mono",
+                          "fontSize": "$font-size-sm",
+                          "fill": "$text"
+                        }
+                      ],
+                      "width": "fill_container",
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "cornerRadius": "$radius-md",
+                      "fill": "$input",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0158",
+                      "type": "frame",
+                      "name": "Input Placeholder",
+                      "children": [
+                        {
+                          "id": "T0159",
+                          "type": "text",
+                          "name": "Value",
+                          "content": "输入 Base URL…",
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-sm",
+                          "fill": "$text-subtle"
+                        }
+                      ],
+                      "width": "fill_container",
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "cornerRadius": "$radius-md",
+                      "fill": "$input",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner"
+                    },
+                    {
+                      "id": "T0160",
+                      "type": "frame",
+                      "name": "Input Focus",
+                      "children": [
+                        {
+                          "id": "T0161",
+                          "type": "text",
+                          "name": "Value",
+                          "content": "聚焦态：描边 $accent",
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-sm",
+                          "fill": "$text"
+                        }
+                      ],
+                      "width": "fill_container",
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "cornerRadius": "$radius-md",
+                      "fill": "$input",
+                      "stroke": "$accent",
+                      "strokeWidth": 2,
+                      "strokeAlignment": "inner"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 12,
+                  "width": "fill_container"
+                },
+                {
+                  "id": "T0162",
+                  "type": "frame",
+                  "name": "Col Badges",
+                  "children": [
+                    {
+                      "id": "T0163",
+                      "type": "text",
+                      "name": "Cap",
+                      "content": "徽章 Badge / 状态",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text-subtle"
+                    },
+                    {
+                      "id": "T0164",
+                      "type": "frame",
+                      "name": "Badge Row",
+                      "children": [
+                        {
+                          "id": "T0165",
+                          "type": "frame",
+                          "name": "Badge 已连接",
+                          "children": [
+                            {
+                              "id": "T0166",
+                              "type": "text",
+                              "name": "Label",
+                              "content": "已连接",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
+                              "fontWeight": "bold",
+                              "fill": "$success"
+                            }
+                          ],
+                          "padding": [
+                            5,
+                            10
+                          ],
+                          "cornerRadius": "$radius-sm",
+                          "fill": "$success-soft",
+                          "alignItems": "center"
+                        }
+                      ],
+                      "gap": 8,
+                      "alignItems": "center"
+                    },
+                    {
+                      "id": "T0167",
+                      "type": "frame",
+                      "name": "Badge Row",
+                      "children": [
+                        {
+                          "id": "T0168",
+                          "type": "frame",
+                          "name": "Badge 待更新",
+                          "children": [
+                            {
+                              "id": "T0169",
+                              "type": "text",
+                              "name": "Label",
+                              "content": "待更新",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
+                              "fontWeight": "bold",
+                              "fill": "$warning"
+                            }
+                          ],
+                          "padding": [
+                            5,
+                            10
+                          ],
+                          "cornerRadius": "$radius-sm",
+                          "fill": "$warning-soft",
+                          "alignItems": "center"
+                        }
+                      ],
+                      "gap": 8,
+                      "alignItems": "center"
+                    },
+                    {
+                      "id": "T0170",
+                      "type": "frame",
+                      "name": "Badge Row",
+                      "children": [
+                        {
+                          "id": "T0171",
+                          "type": "frame",
+                          "name": "Badge 连接失败",
+                          "children": [
+                            {
+                              "id": "T0172",
+                              "type": "text",
+                              "name": "Label",
+                              "content": "连接失败",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
+                              "fontWeight": "bold",
+                              "fill": "$danger"
+                            }
+                          ],
+                          "padding": [
+                            5,
+                            10
+                          ],
+                          "cornerRadius": "$radius-sm",
+                          "fill": "$danger-soft",
+                          "alignItems": "center"
+                        }
+                      ],
+                      "gap": 8,
+                      "alignItems": "center"
+                    },
+                    {
+                      "id": "T0173",
+                      "type": "frame",
+                      "name": "Badge Row",
+                      "children": [
+                        {
+                          "id": "T0174",
+                          "type": "frame",
+                          "name": "Badge 默认档案",
+                          "children": [
+                            {
+                              "id": "T0175",
+                              "type": "text",
+                              "name": "Label",
+                              "content": "默认档案",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
+                              "fontWeight": "bold",
+                              "fill": "$accent"
+                            }
+                          ],
+                          "padding": [
+                            5,
+                            10
+                          ],
+                          "cornerRadius": "$radius-sm",
+                          "fill": "$accent-soft",
+                          "alignItems": "center"
+                        }
+                      ],
+                      "gap": 8,
+                      "alignItems": "center"
+                    },
+                    {
+                      "id": "T0176",
+                      "type": "frame",
+                      "name": "Badge Row",
+                      "children": [
+                        {
+                          "id": "T0177",
+                          "type": "frame",
+                          "name": "Badge 说明",
+                          "children": [
+                            {
+                              "id": "T0178",
+                              "type": "text",
+                              "name": "Label",
+                              "content": "说明",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
+                              "fontWeight": "bold",
+                              "fill": "$info"
+                            }
+                          ],
+                          "padding": [
+                            5,
+                            10
+                          ],
+                          "cornerRadius": "$radius-sm",
+                          "fill": "$info-soft",
+                          "alignItems": "center"
+                        }
+                      ],
+                      "gap": 8,
+                      "alignItems": "center"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 12,
+                  "width": "fill_container"
+                }
+              ],
+              "gap": 24,
+              "width": "fill_container",
+              "alignItems": "start"
+            },
+            {
+              "id": "T0179",
+              "type": "frame",
+              "name": "应用示例",
+              "children": [
+                {
+                  "id": "T0180",
+                  "type": "frame",
+                  "name": "Sidebar",
+                  "children": [
+                    {
+                      "id": "T0181",
+                      "type": "text",
+                      "name": "Side Title",
+                      "content": "供应商",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
+                      "fontWeight": "bold",
+                      "fill": "$text-subtle"
+                    },
+                    {
+                      "id": "T0182",
+                      "type": "frame",
+                      "name": "Nav 智谱 GLM",
+                      "children": [
+                        {
+                          "id": "T0183",
+                          "type": "ellipse",
+                          "name": "Dot",
+                          "width": 6,
+                          "height": 6,
+                          "fill": "$success"
+                        },
+                        {
+                          "id": "T0184",
+                          "type": "text",
+                          "name": "Label",
+                          "content": "智谱 GLM",
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-sm",
+                          "fill": "$text"
+                        }
+                      ],
+                      "gap": 8,
+                      "alignItems": "center",
+                      "padding": [
+                        8,
+                        10
+                      ],
+                      "cornerRadius": "$radius-md",
+                      "fill": "$surface-hover"
+                    },
+                    {
+                      "id": "T0185",
+                      "type": "frame",
+                      "name": "Nav OpenAI",
+                      "children": [
+                        {
+                          "id": "T0186",
+                          "type": "ellipse",
+                          "name": "Dot",
+                          "width": 6,
+                          "height": 6,
+                          "fill": "$text-subtle"
+                        },
+                        {
+                          "id": "T0187",
+                          "type": "text",
+                          "name": "Label",
+                          "content": "OpenAI",
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-sm",
+                          "fill": "$text-muted"
+                        }
+                      ],
+                      "gap": 8,
+                      "alignItems": "center",
+                      "padding": [
+                        8,
+                        10
+                      ],
+                      "cornerRadius": "$radius-md",
+                      "fill": "$surface"
+                    },
+                    {
+                      "id": "T0188",
+                      "type": "frame",
+                      "name": "Nav Ollama",
+                      "children": [
+                        {
+                          "id": "T0189",
+                          "type": "ellipse",
+                          "name": "Dot",
+                          "width": 6,
+                          "height": 6,
+                          "fill": "$text-subtle"
+                        },
+                        {
+                          "id": "T0190",
+                          "type": "text",
+                          "name": "Label",
+                          "content": "Ollama",
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-sm",
+                          "fill": "$text-muted"
+                        }
+                      ],
+                      "gap": 8,
+                      "alignItems": "center",
+                      "padding": [
+                        8,
+                        10
+                      ],
+                      "cornerRadius": "$radius-md",
+                      "fill": "$surface"
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 8,
+                  "width": 220,
+                  "padding": 20,
+                  "fill": "$bg"
+                },
+                {
+                  "id": "T0191",
+                  "type": "frame",
+                  "name": "Content",
+                  "children": [
+                    {
+                      "id": "T0192",
+                      "type": "text",
+                      "name": "Title",
+                      "content": "模型设置",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xl",
+                      "fontWeight": "bold",
+                      "fill": "$text"
+                    },
+                    {
+                      "id": "T0193",
+                      "type": "text",
+                      "name": "Body",
+                      "content": "接入本地与云端模型服务，配置 API Key、Base URL 与默认档案。",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-sm",
+                      "fill": "$text-muted",
+                      "lineHeight": "$line-height"
+                    },
+                    {
+                      "id": "T0194",
+                      "type": "frame",
+                      "name": "Table",
+                      "children": [
+                        {
+                          "id": "T0195",
+                          "type": "frame",
+                          "name": "Row Header",
+                          "children": [
+                            {
+                              "id": "T0196",
+                              "type": "text",
+                              "name": "H1",
+                              "content": "模型",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
+                              "fontWeight": "bold",
+                              "fill": "$text-subtle",
+                              "width": 180,
+                              "textGrowth": "fixed-width"
+                            },
+                            {
+                              "id": "T0197",
+                              "type": "text",
+                              "name": "H2",
+                              "content": "状态",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
+                              "fontWeight": "bold",
+                              "fill": "$text-subtle"
+                            }
+                          ],
+                          "gap": 16,
+                          "padding": [
+                            10,
+                            14
+                          ],
+                          "fill": "$surface-raised"
+                        },
+                        {
+                          "id": "T0198",
+                          "type": "frame",
+                          "name": "Row GLM-5.3",
+                          "children": [
+                            {
+                              "id": "T0201",
+                              "type": "text",
+                              "name": "Name",
+                              "content": "GLM-5.3",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-sm",
+                              "fill": "$text",
+                              "width": 180,
+                              "textGrowth": "fixed-width"
+                            },
+                            {
+                              "id": "T0199",
+                              "type": "frame",
+                              "name": "Badge",
+                              "children": [
+                                {
+                                  "id": "T0200",
+                                  "type": "text",
+                                  "name": "Label",
+                                  "content": "已连接",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": "$font-size-xs",
+                                  "fill": "$success"
+                                }
+                              ],
+                              "padding": [
+                                3,
+                                8
+                              ],
+                              "cornerRadius": "$radius-sm",
+                              "fill": "$success-soft"
+                            }
+                          ],
+                          "gap": 16,
+                          "padding": [
+                            10,
+                            14
+                          ],
+                          "alignItems": "center",
+                          "stroke": "$border",
+                          "strokeWidth": {
+                            "top": 1
+                          },
+                          "strokeAlignment": "inner"
+                        },
+                        {
+                          "id": "T0202",
+                          "type": "frame",
+                          "name": "Row GLM-4.6",
+                          "children": [
+                            {
+                              "id": "T0205",
+                              "type": "text",
+                              "name": "Name",
+                              "content": "GLM-4.6",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-sm",
+                              "fill": "$text",
+                              "width": 180,
+                              "textGrowth": "fixed-width"
+                            },
+                            {
+                              "id": "T0203",
+                              "type": "frame",
+                              "name": "Badge",
+                              "children": [
+                                {
+                                  "id": "T0204",
+                                  "type": "text",
+                                  "name": "Label",
+                                  "content": "待更新",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": "$font-size-xs",
+                                  "fill": "$warning"
+                                }
+                              ],
+                              "padding": [
+                                3,
+                                8
+                              ],
+                              "cornerRadius": "$radius-sm",
+                              "fill": "$warning-soft"
+                            }
+                          ],
+                          "gap": 16,
+                          "padding": [
+                            10,
+                            14
+                          ],
+                          "alignItems": "center",
+                          "stroke": "$border",
+                          "strokeWidth": {
+                            "top": 1
+                          },
+                          "strokeAlignment": "inner"
+                        }
+                      ],
+                      "layout": "vertical",
+                      "gap": 0,
+                      "width": "fill_container",
+                      "cornerRadius": "$radius-md",
+                      "fill": "$input",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "clip": true
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 16,
+                  "width": "fill_container",
+                  "padding": 20
+                }
+              ],
+              "layout": "horizontal",
+              "gap": 0,
+              "width": "fill_container",
+              "cornerRadius": "$radius-lg",
+              "fill": "$surface",
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "clip": true
+            }
+          ],
+          "layout": "vertical",
+          "gap": 16,
+          "width": "fill_container"
+        },
+        {
+          "id": "T0206",
+          "type": "frame",
+          "name": "Footer",
+          "children": [
+            {
+              "id": "T0207",
+              "type": "text",
+              "name": "Title",
+              "content": "一键更换主题",
+              "fontFamily": "$font-body",
+              "fontSize": "$font-size-lg",
+              "fontWeight": "bold",
+              "fill": "$text"
+            },
+            {
+              "id": "T0208",
+              "type": "text",
+              "name": "Desc",
+              "content": "改 designs/theme.tokens.json 的色值后执行 node scripts/theme/sync-theme.mjs，theme.pen 与所有页面设计稿同步更新；在 pen.dev 编辑器里切换 mode 轴即可在 dark / light 间即时切换。",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "fontFamily": "$font-body",
+              "fontSize": "$font-size-sm",
+              "fill": "$text-muted",
+              "lineHeight": "$line-height"
+            }
+          ],
+          "layout": "vertical",
+          "gap": 6,
+          "width": "fill_container"
+        }
+      ],
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "layout": "vertical",
+      "padding": 48,
+      "gap": 36,
+      "fill": "$bg",
+      "clip": true
+    }
+  ]
+}

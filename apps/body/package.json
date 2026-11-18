@@ -28,6 +28,7 @@
     "prebuild": "echo '准备构建...'",
     "postbuild": "echo '构建完成!'",
     "build:electron": "turbo run build:electron --filter=electron-app && yarn copy-services && yarn electron-builder",
+    "test:theme": "node --experimental-strip-types --test src/main/services/theme/*.test.ts src/shared/theme*.test.ts",
     "test:startup": "node --experimental-strip-types --test src/main/services/startup/*.test.ts",
     "test:backend-lifecycle": "node --experimental-strip-types --test src/main/services/backend-lifecycle/*.test.ts"
   },

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BackendLifecyclePanel from '@renderer/components/BackendLifecyclePanel.vue'
+import ThemeSettings from '@renderer/components/ThemeSettings.vue'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import Tag from 'primevue/tag'
@@ -255,6 +256,8 @@ onMounted(async () => {
       <Button label="打开 Live2D" severity="info" @click="openLive2DWindow" />
     </section>
 
+    <ThemeSettings />
+
     <nav class="tab-nav" aria-label="Pet settings tabs">
       <button
         class="tab-button"
@@ -435,8 +438,9 @@ onMounted(async () => {
 <style scoped>
 .pet-settings-page {
   min-height: 100%;
+  background: var(--human-bg);
   padding: 28px;
-  color: var(--text-color);
+  color:var(--human-text);
 }
 
 .page-header {
@@ -449,8 +453,8 @@ onMounted(async () => {
 
 .eyebrow {
   margin: 0 0 6px;
-  color: var(--text-color-secondary);
-  font-size: 12px;
+  color:var(--human-text-muted);
+  font-size:var(--human-text-sm);
 }
 
 h1,
@@ -460,21 +464,21 @@ p {
 }
 
 h1 {
-  font-size: 28px;
+  font-size:var(--human-text-title);
   font-weight: 700;
 }
 
 h2 {
-  font-size: 18px;
+  font-size:var(--human-text-xl);
   font-weight: 700;
 }
 
 .settings-section {
   margin-bottom: 20px;
   padding: 18px;
-  border: 1px solid var(--surface-border);
-  border-radius: 8px;
-  background: var(--surface-card);
+  border:1px solid var(--human-border);
+  border-radius: var(--human-radius-md);
+  background:var(--human-surface);
 }
 
 .tab-nav {
@@ -485,16 +489,16 @@ h2 {
 
 .tab-button {
   padding: 8px 14px;
-  border: 1px solid var(--surface-border);
-  border-radius: 8px;
-  background: var(--surface-card);
-  color: var(--text-color);
+  border:1px solid var(--human-border);
+  border-radius: var(--human-radius-md);
+  background:var(--human-surface);
+  color:var(--human-text);
   cursor: pointer;
 }
 
 .tab-button.active {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  border-color:var(--human-accent);
+  color:var(--human-accent);
 }
 
 .section-title {
@@ -503,8 +507,8 @@ h2 {
 
 .section-title p {
   margin-top: 6px;
-  color: var(--text-color-secondary);
-  font-size: 13px;
+  color:var(--human-text-muted);
+  font-size:var(--human-text-base);
 }
 
 .model-list {
@@ -519,16 +523,16 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  border: 1px solid var(--surface-border);
-  border-radius: 8px;
-  background: var(--surface-ground);
-  color: var(--text-color);
+  border:1px solid var(--human-border);
+  border-radius: var(--human-radius-md);
+  background:var(--human-bg);
+  color:var(--human-text);
   text-align: left;
   cursor: pointer;
 }
 
 .model-item.active {
-  border-color: var(--primary-color);
+  border-color:var(--human-accent);
 }
 
 .model-item span {
@@ -537,7 +541,7 @@ h2 {
 
 .model-item small,
 .switch-row small {
-  color: var(--text-color-secondary);
+  color:var(--human-text-muted);
 }
 
 .field-row,
@@ -555,7 +559,7 @@ h2 {
 .switch-row + .switch-row {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid var(--surface-border);
+  border-top:1px solid var(--human-border);
 }
 
 .switch-row > span {
@@ -565,8 +569,8 @@ h2 {
 }
 
 .status-text {
-  color: var(--primary-color);
-  font-size: 13px;
+  color:var(--human-accent);
+  font-size:var(--human-text-base);
 }
 
 .interface-summary {
@@ -574,8 +578,8 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  color: var(--text-color-secondary);
-  font-size: 13px;
+  color:var(--human-text-muted);
+  font-size:var(--human-text-base);
 }
 
 .interface-group + .interface-group {
@@ -584,15 +588,15 @@ h2 {
 
 .interface-group h3 {
   margin: 0 0 10px;
-  font-size: 15px;
+  font-size:var(--human-text-md);
   font-weight: 700;
 }
 
 .interface-route {
   padding: 12px;
-  border: 1px solid var(--surface-border);
-  border-radius: 8px;
-  background: var(--surface-ground);
+  border:1px solid var(--human-border);
+  border-radius: var(--human-radius-md);
+  background:var(--human-bg);
 }
 
 .interface-route + .interface-route {
@@ -608,13 +612,13 @@ h2 {
 
 .method {
   padding: 3px 7px;
-  border-radius: 6px;
-  background: var(--primary-color);
-  color: var(--primary-color-text);
+  border-radius: var(--human-radius-sm);
+  background:var(--human-accent);
+  color:var(--human-on-accent);
 }
 
 .path {
-  color: var(--text-color);
+  color:var(--human-text);
 }
 
 .interface-route p {
@@ -623,7 +627,7 @@ h2 {
 
 .interface-route small {
   display: block;
-  color: var(--text-color-secondary);
+  color:var(--human-text-muted);
 }
 
 /* ── Hearing Settings Tab ── */
@@ -637,7 +641,7 @@ h2 {
 
 .section-label {
   font-weight: 700;
-  font-size: 14px;
+  font-size:var(--human-text-base);
   white-space: nowrap;
 }
 
@@ -652,13 +656,13 @@ h2 {
 }
 
 .model-name {
-  font-size: 13px;
-  color: var(--text-color-secondary);
+  font-size:var(--human-text-base);
+  color:var(--human-text-muted);
 }
 
 .loading-hint,
 .hint-text {
-  color: var(--text-color-secondary);
-  font-size: 13px;
+  color:var(--human-text-muted);
+  font-size:var(--human-text-base);
 }
 </style>

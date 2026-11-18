@@ -1,8 +1,17 @@
 import { electronAPI } from '@electron-toolkit/preload'
-import { contextBridge, webUtils } from 'electron'
+import { contextBridge, webUtils, ipcRenderer, webFrame } from 'electron'
+import { defaultTheme, themeBootstrapCss } from '../shared/theme'
+const initialTheme = ipcRenderer.sendSync('theme-bootstrap') ?? { ...defaultTheme, revision: 0 }
+void webFrame.insertCSS(themeBootstrapCss(initialTheme))
+window.addEventListener('DOMContentLoaded', () => {
+  if (document.documentElement.dataset.humanTheme) return
+  document.documentElement.dataset.humanTheme = initialTheme.id
+  document.documentElement.classList.toggle('app-dark', initialTheme.id === 'dark')
+}, { once: true })
 
 // Custom APIs for renderer
 const api = {
+  initialTheme,
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   platform: {
     isMacOS: process.platform === 'darwin',

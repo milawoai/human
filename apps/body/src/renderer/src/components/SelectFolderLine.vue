@@ -112,8 +112,8 @@ watch(
 <style scoped lang="less">
 .line {
   &-title {
-    font-size: 1rem;
-    color: var(--text-color);
+    font-size:var(--human-text-base);
+    color:var(--human-text);
     margin: 0;
     padding: 0;
     width: 6rem;
@@ -122,11 +122,11 @@ watch(
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
+}
 
   &-input {
-    font-size: 1rem;
-    color: var(--text-color);
-  }
+    font-size:var(--human-text-base);
+    color:var(--human-text);
+}
 }
 </style>

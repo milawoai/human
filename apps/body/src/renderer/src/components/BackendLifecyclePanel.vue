@@ -51,7 +51,7 @@ onUnmounted(() => window.electron.ipcRenderer.removeListener('backend:state', ch
   </section>
 </template>
 <style scoped>
-.backend-panel { padding: 20px; border: 1px solid #ddd; border-radius: 12px; }
+.backend-panel { padding:20px; border:1px solid var(--human-border); border-radius: var(--human-radius-md); }
 article { margin: 16px 0; } label { display: inline-flex; gap: 8px; margin-right: 12px; }
 button { margin: 4px; padding: 6px 12px; } input { width: 90px; }
 </style>

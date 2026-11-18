@@ -19,6 +19,7 @@ import { acquireDesktopInstance } from './services/backend-lifecycle/desktop-sta
 import { startupProgress } from './services/startup'
 import { waitForStartupDisplay } from './services/startup/display'
 import { runStartupTasks } from './services/startup/tasks'
+import { initializeTheme } from './services/theme'
 import { configureBackendServices, startBackendServices, closeBackendServices } from './services/backend-lifecycle'
 import { installAsyncQuit, installSessionQuit } from './services/backend-lifecycle/shutdown'
 
@@ -109,6 +110,7 @@ if (primaryInstance) app.whenReady().then(async () => {
 
   installSessionQuit(powerMonitor, app)
   initializeHandlers()
+  initializeTheme()
   initializeTray()
   initialGlobalShortcut()
 

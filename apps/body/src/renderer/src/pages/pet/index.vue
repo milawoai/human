@@ -873,10 +873,10 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 18px;
-  background: rgba(24, 24, 28, 0.82);
-  color: #fff;
+  border:1px solid var(--human-border);
+  border-radius: var(--human-radius-lg);
+  background:var(--human-input);
+  color:var(--human-text);
   cursor: pointer;
   -webkit-app-region: no-drag;
 }
@@ -892,7 +892,7 @@ onMounted(() => {
   display: grid;
   place-items: center;
   padding: 12px;
-  background: rgba(0, 0, 0, 0.25);
+  background:var(--human-scrim);
   -webkit-app-region: no-drag;
 }
 
@@ -903,46 +903,46 @@ onMounted(() => {
   max-height: calc(100vh - 24px);
   overflow: auto;
   padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 14px;
-  background: rgba(24, 24, 28, 0.96);
-  color: #fff;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3);
+  border:1px solid var(--human-border);
+  border-radius: var(--human-radius-lg);
+  background:var(--human-input);
+  color:var(--human-text);
+  box-shadow:var(--human-shadow);
 }
 
 .pet-tts-dialog h2 {
   margin: 0 0 12px;
-  font-size: 16px;
+  font-size:var(--human-text-lg);
 }
 .pet-tts-dialog label {
   display: block;
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size:var(--human-text-base);
 }
 .pet-tts-dialog textarea {
   box-sizing: border-box;
   width: 100%;
   padding: 10px;
   resize: vertical;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  border:1px solid var(--human-border);
+  border-radius: var(--human-radius-md);
+  background:var(--human-surface-raised);
+  color:var(--human-text);
   font: inherit;
-  font-size: 14px;
+  font-size:var(--human-text-base);
   user-select: text;
 }
 .pet-tts-dialog textarea:focus-visible {
-  outline: 2px solid #93c5fd;
+  outline:2px solid var(--human-accent);
 }
 .pet-tts-hint {
   margin: 10px 0;
-  color: #c4c7ce;
-  font-size: 12px;
+  color:var(--human-text-muted);
+  font-size:var(--human-text-sm);
 }
 .pet-tts-error {
-  color: #ffaaaa;
-  font-size: 13px;
+  color:var(--human-danger);
+  font-size:var(--human-text-base);
   overflow-wrap: anywhere;
 }
 .pet-tts-buttons {
@@ -952,14 +952,14 @@ onMounted(() => {
 }
 .pet-tts-buttons button {
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 8px;
+  border:1px solid var(--human-border);
+  border-radius: var(--human-radius-md);
   background: transparent;
-  color: #fff;
+  color:var(--human-text);
   cursor: pointer;
 }
 .pet-tts-buttons .pet-tts-confirm {
-  background: #2563eb;
+  background:var(--human-accent-strong);
 }
 .pet-tts-buttons button:disabled,
 .pet-tts-launcher:disabled {
@@ -1002,27 +1002,27 @@ onMounted(() => {
   padding: 6px 10px;
   display: flex;
   transform: translateX(-50%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
-  background: rgba(24, 24, 28, 0.72);
-  color: #fff;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+  border:1px solid var(--human-border);
+  border-radius: var(--human-radius-md);
+  background:var(--human-input);
+  color:var(--human-text);
+  box-shadow:var(--human-shadow);
   backdrop-filter: blur(10px);
   -webkit-app-region: no-drag;
 }
 
 .pet-status-badge small,
 .pet-status-badge strong {
-  color: rgba(255, 255, 255, 0.72);
+  color:var(--human-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size:var(--human-text-sm);
   line-height: 18px;
 }
 
 .pet-status-badge .error-text {
-  color: #ff8787;
+  color:var(--human-danger);
 }
 
 .pet-context-menu {
@@ -1033,10 +1033,10 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
-  background: rgba(24, 24, 28, 0.82);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+  border:1px solid var(--human-border);
+  border-radius: var(--human-radius-md);
+  background:var(--human-input);
+  box-shadow:var(--human-shadow);
   backdrop-filter: blur(10px);
   -webkit-app-region: no-drag;
 }
@@ -1059,7 +1059,7 @@ onMounted(() => {
 }
 
 .submenu-arrow {
-  font-size: 10px;
+  font-size:var(--human-text-xs);
   opacity: 0.6;
 }
 
@@ -1068,7 +1068,7 @@ onMounted(() => {
   flex-direction: column;
   gap: 4px;
   padding: 4px 0 0 8px;
-  border-left: 2px solid rgba(255, 255, 255, 0.15);
+  border-left:2px solid var(--human-border);
   margin-left: 8px;
 }
 
@@ -1076,7 +1076,7 @@ onMounted(() => {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
   z-index: 3;
   display: flex;
   align-items: center;
@@ -1095,37 +1095,36 @@ onMounted(() => {
   min-width: 104px;
   height: 36px;
   padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 18px;
-  background: rgba(24, 24, 28, 0.78);
-  color: #fff;
-  font-size: 13px;
+  border:1px solid var(--human-border);
+  border-radius: var(--human-radius-lg);
+  background:var(--human-input);
+  color:var(--human-text);
+  font-size:var(--human-text-base);
   line-height: 1;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow:var(--human-shadow);
   backdrop-filter: blur(12px);
   cursor: pointer;
-  transition:
-    background 0.2s,
+  transition:background 0.2s,
     transform 0.2s;
 }
 
 .pet-float-action:hover {
-  background: rgba(40, 120, 220, 0.6);
+  background:var(--human-accent-soft);
   transform: scale(1.05);
 }
 
 .pet-float-action i {
-  font-size: 14px;
+  font-size:var(--human-text-base);
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
     transform: translate(-50%, -40%);
-  }
+}
   to {
     opacity: 1;
     transform: translate(-50%, -50%);
-  }
+}
 }
 </style>

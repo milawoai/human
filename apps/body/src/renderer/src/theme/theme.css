@@ -1,0 +1,90 @@
+/*
+ * Theme bridge: semantic tokens (--human-*) come from designs/theme.tokens.json via shared/theme.ts.
+ * Pages and components must only reference --human-* tokens.
+ * The --p-* / --td-* / --surface-* / --text-color-* names below are compatibility aliases for
+ * PrimeVue, TDesign and the legacy layout SCSS; new code must not use them.
+ */
+:root[data-human-theme] {
+  --p-primary-color: var(--human-accent-strong);
+  --p-primary-hover-color: var(--human-accent-strong);
+  --p-primary-active-color: var(--human-accent-strong);
+  --p-primary-contrast-color: var(--human-on-accent);
+  --p-text-color: var(--human-text);
+  --p-text-muted-color: var(--human-text-muted);
+  --p-content-background: var(--human-surface);
+  --p-content-border-color: var(--human-border);
+  --p-content-hover-background: var(--human-surface-hover);
+  --p-overlay-popover-background: var(--human-surface-raised);
+  --p-form-field-background: var(--human-input);
+  --p-form-field-color: var(--human-text);
+  --p-form-field-border-color: var(--human-border);
+  --p-form-field-placeholder-color: var(--human-text-subtle);
+  --p-form-field-focus-border-color: var(--human-accent);
+  --p-mask-background: var(--human-scrim);
+  --surface-ground: var(--human-bg);
+  --surface-card: var(--human-surface);
+  --surface-border: var(--human-border);
+  --surface-hover: var(--human-surface-hover);
+  --surface-overlay: var(--human-surface-raised);
+  --surface-section: var(--human-surface-raised);
+  --text-color: var(--human-text);
+  --text-color-secondary: var(--human-text-muted);
+  --primary-color: var(--human-accent);
+  --primary-color-text: var(--human-on-accent);
+  --v-body-bg: var(--human-surface);
+  --td-bg-color-page: var(--human-bg);
+  --td-bg-color-container: var(--human-surface);
+  --td-bg-color-secondarycontainer: var(--human-surface-raised);
+  --td-text-color-primary: var(--human-text);
+  --td-text-color-secondary: var(--human-text-muted);
+  --td-border-level-1-color: var(--human-border);
+  --td-brand-color: var(--human-accent-strong);
+  --td-font-family: var(--human-font-body);
+  --td-font-size-body-medium: var(--human-text-base);
+}
+html { font-size: var(--human-root-size) !important; }
+html[data-human-theme='dark'] { color-scheme: dark; }
+html[data-human-theme='light'] { color-scheme: light; }
+body { background: var(--human-bg); color: var(--human-text); font-family: var(--human-font-body); font-size: var(--human-text-base); line-height: var(--human-line-height); }
+button, input, select, textarea { font-family: inherit; font-size: inherit; }
+:focus-visible { outline-color: var(--human-accent); }
+::selection { background: var(--human-accent-soft); color: var(--human-text); }
+/* Severity controls share semantic colors with native controls and chat. */
+:root[data-human-theme] {
+  --p-button-info-background: var(--human-info-soft);
+  --p-button-info-color: var(--human-info);
+  --p-button-info-border-color: var(--human-info);
+  --p-button-info-hover-background: var(--human-surface-hover);
+  --p-button-info-hover-color: var(--human-info);
+  --p-button-info-hover-border-color: var(--human-info);
+  --p-button-success-background: var(--human-success-soft);
+  --p-button-success-color: var(--human-success);
+  --p-button-success-border-color: var(--human-success);
+  --p-button-success-hover-background: var(--human-surface-hover);
+  --p-button-success-hover-color: var(--human-success);
+  --p-button-success-hover-border-color: var(--human-success);
+  --p-button-danger-background: var(--human-danger-soft);
+  --p-button-danger-color: var(--human-danger);
+  --p-button-danger-border-color: var(--human-danger);
+  --p-button-danger-hover-background: var(--human-surface-hover);
+  --p-button-danger-hover-color: var(--human-danger);
+  --p-button-danger-hover-border-color: var(--human-danger);
+  --p-tag-success-background: var(--human-success-soft);
+  --p-tag-success-color: var(--human-success);
+  --p-tag-danger-background: var(--human-danger-soft);
+  --p-tag-danger-color: var(--human-danger);
+  --p-tag-warn-background: var(--human-warning-soft);
+  --p-tag-warn-color: var(--human-warning);
+}
+:root[data-human-theme] {
+  --p-toggleswitch-background: var(--human-border);
+  --p-toggleswitch-hover-background: var(--human-surface-hover);
+  --p-toggleswitch-checked-background: var(--human-accent-strong);
+  --p-toggleswitch-checked-hover-background: var(--human-accent-strong);
+  --p-toggleswitch-handle-background: var(--human-surface);
+  --p-toggleswitch-handle-checked-background: var(--human-on-accent);
+  --p-tag-info-background: var(--human-info-soft);
+  --p-tag-info-color: var(--human-info);
+  --p-button-sm-font-size: var(--human-text-sm);
+  --p-inputtext-sm-font-size: var(--human-text-sm);
+}

@@ -1,4 +1,5 @@
 export interface Api {
+  initialTheme: import('@shared/theme').ThemeSnapshot
   getPathForFile: (file: File) => string
 }
 

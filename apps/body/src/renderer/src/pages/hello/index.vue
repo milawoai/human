@@ -4,7 +4,7 @@ import type { StartupSnapshot } from '@shared/startup'
 
 const progress = ref<StartupSnapshot>({ revision: -1, state: 'loading', message: '准备启动', stages: [] })
 const finished = computed(() => progress.value.stages.filter(stage => stage.state === 'done'))
-const color = computed(() => progress.value.state === 'failed' ? '#ef4444' : progress.value.state === 'done' ? '#22c55e' : '#6366f1')
+const color = computed(() => progress.value.state === 'failed' ? 'var(--human-danger)' : progress.value.state === 'done' ? 'var(--human-success)' : 'var(--human-accent)')
 let mounted = false
 const accept = (snapshot: StartupSnapshot) => {
   if (mounted && snapshot.revision >= progress.value.revision) progress.value = snapshot
@@ -50,14 +50,15 @@ onUnmounted(() => {
 :global(body:has(.hello-window)),
 :global(#app:has(.hello-window)) { background: transparent !important; overflow: hidden; }
 .hello-window { width: 100vw; height: 100vh; display: grid; place-items: center; user-select: none; -webkit-app-region: drag; }
-.hello-content { box-sizing: border-box; width: 360px; height: 280px; padding: 24px 32px 16px; display: flex; flex-direction: column; align-items: center; background: rgba(30, 30, 40, .96); border-radius: 16px; border: 1px solid rgba(99, 102, 241, .25); color: #f1f5f9; box-shadow: 0 8px 24px #0005; }
-h1 { font-size: 20px; letter-spacing: 2px; margin: 8px 0; }
-ul { list-style: none; padding: 0; margin: 4px 0; font-size: 12px; color: #86efac; max-height: 72px; overflow-y: auto; -webkit-app-region: no-drag; }
+.hello-content { box-sizing:border-box; width:360px; height:280px; padding:16px 32px 12px; display:flex; flex-direction:column; align-items:center; background:var(--human-surface); border-radius: var(--human-radius-lg); border:1px solid var(--human-accent); color:var(--human-text); box-shadow:var(--human-shadow); }
+h1 { font-size:var(--human-text-title); letter-spacing:2px; line-height:1.2; margin:4px 0; }
+ul { list-style:none; padding:0; margin:4px 0; font-size:var(--human-text-sm); color:var(--human-success); max-height:72px; overflow-y:auto; -webkit-app-region:no-drag; }
+.hello-icon { width:40px; height:40px; flex-shrink:0; }
 li { margin-bottom: 3px; }
-footer { margin-top: auto; width: 100%; text-align: center; }
-.hello-status { font-size: 13px; margin: 8px 0; overflow-wrap: anywhere; }
-.failed { color: #fca5a5; }
-button { -webkit-app-region: no-drag; font-size: 11px; border: 0; padding: 3px 6px; background: transparent; color: #a5b4fc; cursor: pointer; }
+footer { flex-shrink:0; margin-top:auto; width:100%; text-align:center; }
+.hello-status { font-size:var(--human-text-base); margin:8px 0; overflow-wrap:anywhere; }
+.failed { color:var(--human-danger); }
+button { -webkit-app-region:no-drag; font-size:var(--human-text-xs); border:0; padding:3px 6px; background:transparent; color:var(--human-accent); cursor:pointer; }
 .pulse { animation: pulse 1.5s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .4; } }
 </style>

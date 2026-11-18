@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "defaultTheme": "dark",
+  "common": {
+    "font-body": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+    "font-mono": "ui-monospace, \"SFMono-Regular\", Menlo, monospace",
+    "line-height": "1.5",
+    "radius-sm": "6px",
+    "radius-md": "10px",
+    "radius-lg": "16px",
+    "spacing-1": "0.25rem",
+    "spacing-2": "0.5rem",
+    "spacing-3": "0.75rem",
+    "spacing-4": "1rem",
+    "spacing-5": "1.5rem",
+    "spacing-6": "2rem",
+    "spacing-7": "2.5rem",
+    "spacing-8": "3rem",
+    "pen-font-body": "Noto Sans SC",
+    "pen-font-mono": "JetBrains Mono",
+    "font-size-px": {
+      "xs": 12,
+      "sm": 14,
+      "base": 16,
+      "md": 17,
+      "lg": 18,
+      "xl": 21,
+      "title": 25,
+      "display": 32
+    }
+  },
+  "themes": {
+    "dark": {
+      "label": "深色",
+      "tokens": {
+        "bg": "#17191f",
+        "surface": "#22252e",
+        "surface-raised": "#2d313c",
+        "surface-hover": "#353b48",
+        "input": "#1c1f27",
+        "text": "#edf0f7",
+        "text-muted": "#b0b8c9",
+        "text-subtle": "#8b96aa",
+        "border": "#414a5c",
+        "accent": "#9baeff",
+        "accent-strong": "#4f63d8",
+        "on-accent": "#ffffff",
+        "accent-soft": "#303b64",
+        "success": "#85dab0",
+        "success-soft": "#1b3a31",
+        "warning": "#efc47b",
+        "warning-soft": "#3e3422",
+        "danger": "#ff9da5",
+        "danger-soft": "#44282f",
+        "info": "#97c9ff",
+        "info-soft": "#22394f",
+        "shadow": "0 8px 28px #00000040",
+        "scrim": "#00000066",
+        "border-strong": "#4d5668"
+      }
+    },
+    "light": {
+      "label": "浅色",
+      "tokens": {
+        "bg": "#f4f6fa",
+        "surface": "#ffffff",
+        "surface-raised": "#eef1f7",
+        "surface-hover": "#e3e8f2",
+        "input": "#ffffff",
+        "text": "#202636",
+        "text-muted": "#526078",
+        "text-subtle": "#64728a",
+        "border": "#cbd3e1",
+        "accent": "#4057c4",
+        "accent-strong": "#4057c4",
+        "on-accent": "#ffffff",
+        "accent-soft": "#e6eaff",
+        "success": "#1d7251",
+        "success-soft": "#e1f3e9",
+        "warning": "#8b590c",
+        "warning-soft": "#fff0d5",
+        "danger": "#b33346",
+        "danger-soft": "#fde7eb",
+        "info": "#245f9d",
+        "info-soft": "#e4f0ff",
+        "shadow": "0 8px 28px #2233551a",
+        "scrim": "#10182840",
+        "border-strong": "#b3bdd0"
+      }
+    }
+  }
+}
