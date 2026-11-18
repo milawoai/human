@@ -27,7 +27,8 @@
     "copy-services": "yarn node scripts/copy-services.js",
     "prebuild": "echo '准备构建...'",
     "postbuild": "echo '构建完成!'",
-    "build:electron": "turbo run build:electron --filter=electron-app && yarn copy-services && yarn electron-builder"
+    "build:electron": "turbo run build:electron --filter=electron-app && yarn copy-services && yarn electron-builder",
+    "test:backend-lifecycle": "node --experimental-strip-types --test src/main/services/backend-lifecycle/*.test.ts"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
