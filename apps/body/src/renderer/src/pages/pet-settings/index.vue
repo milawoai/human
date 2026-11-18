@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BackendLifecyclePanel from '@renderer/components/BackendLifecyclePanel.vue'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import Tag from 'primevue/tag'
@@ -280,6 +281,8 @@ onMounted(async () => {
         录音配置
       </button>
     </nav>
+
+    <BackendLifecyclePanel />
 
     <!-- Pet 配置 Tab -->
     <template v-if="activeTab === 'settings'">

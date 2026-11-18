@@ -8,6 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    BackendLifecyclePanel: typeof import('./src/components/BackendLifecyclePanel.vue')['default']
     Button: typeof import('primevue/button')['default']
     Checkbox: typeof import('primevue/checkbox')['default']
     CustomForm: typeof import('./src/components/CustomForm.vue')['default']

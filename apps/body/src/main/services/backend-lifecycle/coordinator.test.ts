@@ -115,3 +115,42 @@ test('health reports are instance-scoped and recovery reuses the owned child', a
   assert.equal(events.filter(e => e === 'launch:node').length, 1)
   await coordinator.shutdown()
 })
+
+test('an external service disappearing never becomes owned on automatic retry', async () => {
+  let present = true
+  const { coordinator, events } = fixture({ probe: async () => present ? { kind: 'compatible', instanceId: 'external' } : { kind: 'absent' } })
+  await coordinator.start()
+  present = false
+  coordinator.reportDegraded('node', 'external', 'lost')
+  await assert.rejects(coordinator.start())
+  assert(!events.some(e => e.startsWith('launch:')))
+  await coordinator.shutdown()
+})
+
+test('owned restart recovers Node before Python without duplicate launches', async () => {
+  const { coordinator, events } = fixture()
+  await coordinator.start()
+  await coordinator.restartOwned('node')
+  assert.equal(events.filter(e => e === 'launch:node').length, 2)
+  assert.equal(events.filter(e => e === 'launch:python').length, 1)
+  assert.equal(coordinator.snapshot().python.phase, 'ready')
+  await coordinator.shutdown()
+})
+
+test('restart is serialized against another restart and concurrent shutdown', async () => {
+  const stop = deferred<void>(), stopping = deferred<void>()
+  let calls = 0
+  const { coordinator } = fixture({ stop: async () => {
+    calls++
+    if (calls === 1) { stopping.resolve(); await stop.promise }
+  } })
+  await coordinator.start()
+  const restarting = coordinator.restartOwned('node')
+  await stopping.promise
+  await assert.rejects(coordinator.restartOwned('node'), /busy/)
+  const shutdown = coordinator.shutdown()
+  stop.resolve()
+  await assert.rejects(restarting)
+  await shutdown
+  assert.equal(calls, 2, 'Node stopped once by restart; Python once by shutdown')
+})

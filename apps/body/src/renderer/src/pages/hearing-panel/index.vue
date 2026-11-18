@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { backendUnavailableReason, type BackendSnapshot } from '@shared/backendLifecycle'
 import type { IpcProxy } from '@renderer/plugin/ipc'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
@@ -29,7 +30,8 @@ interface ChatTurn {
 }
 
 const sessionState = ref<'idle' | 'prepared' | 'recording' | 'stopped' | 'error'>('idle')
-const statusLabel = ref('未连接')
+const statusLabel = ref('正在检测服务')
+const backendReason = ref('正在检测后端服务')
 const segments = ref<Segment[]>([])
 const fullText = ref('')
 const editableText = ref('')
@@ -316,7 +318,17 @@ const onToggleAutoPaste = async () => {
 // 生命周期
 // ──────────────────────────────────────────────
 
+const handleBackendState = (_event: unknown, snapshot: BackendSnapshot) => {
+  backendReason.value = backendUnavailableReason(snapshot) ?? ''
+  if (['idle', 'stopped'].includes(sessionState.value)) {
+    statusLabel.value = backendReason.value || '已连接 · 待录音'
+  }
+}
 onMounted(() => {
+  ipc.backendLifecycle.status().then(result => {
+    if (result.success && result.data?.snapshot) handleBackendState(null, result.data.snapshot)
+  })
+  window.electron.ipcRenderer.on('backend:state', handleBackendState)
   ipc.sense.getHearingStatus().then((result) => {
     if (result?.success) {
       autoPasteToFocusedAppEnabled.value = Boolean(
@@ -329,11 +341,13 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.electron.ipcRenderer.off('sense:hearing-event', handleHearingEvent)
+  window.electron.ipcRenderer.off('backend:state', handleBackendState)
 })
 </script>
 
 <template>
   <main class="hearing-panel">
+    <p v-if="backendReason" role="status">{{ backendReason }}</p>
     <!-- 顶栏 -->
     <div class="panel-header">
       <span class="header-title">

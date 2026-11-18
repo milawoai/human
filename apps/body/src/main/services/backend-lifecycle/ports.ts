@@ -7,7 +7,7 @@ export interface BackendPorts {
   probe(name: BackendName, signal: AbortSignal): Promise<ProbeResult>
   launch(name: BackendName, signal: AbortSignal): Promise<OwnedBackend>
   waitReady(name: BackendName, instanceId: string, signal: AbortSignal): Promise<void>
-  stop(name: BackendName, child: OwnedBackend): Promise<void>
+  stop(name: BackendName, child: OwnedBackend, reason?: 'restart' | 'shutdown'): Promise<void>
 }
 export interface LifecycleClock {
   now(): number

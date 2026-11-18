@@ -74,9 +74,7 @@ export class NeuralWSClient {
         this.socket.on('connect_error', (error) => {
           console.error('[Neural] Connection error:', error?.message)
           this.updateState(NeuralConnectionState.ERROR)
-          if (this.state === NeuralConnectionState.CONNECTING) {
-            resolve({ success: false, msg: error.message })
-          }
+          resolve({ success: false, msg: error.message })
         })
 
         this.socket.on('disconnect', (reason) => {

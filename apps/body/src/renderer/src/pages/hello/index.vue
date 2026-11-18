@@ -10,6 +10,7 @@
       <div class="hello-title">Human</div>
       <div class="hello-status" :class="statusClass">{{ statusText }}</div>
       <div v-if="errorMessage" class="hello-error">{{ errorMessage }}</div>
+      <button style="-webkit-app-region: no-drag" @click="openSettings">打开设置与诊断</button>
     </div>
   </div>
 </template>
@@ -51,6 +52,13 @@ const statusColor = computed(() => {
 const isConnecting = computed(() => state.value === 'connecting')
 
 // 监听主进程推送的连接状态变化
+const openSettings = () => window.electron.ipcRenderer.invoke('backendLifecycle-openSettings')
+const handleBackendState = (_, data) => {
+  const node = data.node, python = data.python
+  if (node.phase === 'ready' && python.phase === 'ready') state.value = 'connected'
+  else if ([node.phase, python.phase].some(s => ['failed', 'conflict'].includes(s))) state.value = 'error'
+  errorMessage.value = node.error || python.error || `Node: ${node.phase} · Python: ${python.phase}`
+}
 const handleNeuralState = (_, data) => {
   if (data.state === 'registered' || data.state === 'connected') {
     state.value = 'connected'
@@ -63,10 +71,12 @@ const handleNeuralState = (_, data) => {
 onMounted(() => {
   // 注册监听主进程推送的 Neural 状态
   window.electron?.ipcRenderer?.on('neural:state', handleNeuralState)
+  window.electron?.ipcRenderer?.on('backend:state', handleBackendState)
 })
 
 onUnmounted(() => {
   window.electron?.ipcRenderer?.removeListener('neural:state', handleNeuralState)
+  window.electron?.ipcRenderer?.removeListener('backend:state', handleBackendState)
 })
 </script>
 

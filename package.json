@@ -11,7 +11,10 @@
     "start:backend": "yarn workspace backend start:dev",
     "start:electron": "yarn workspace electron_with_serve dev",
     "build:backend": "yarn workspace backend build",
-    "build:electron": "yarn workspace electron_with_serve build"
+    "build:electron": "yarn workspace electron_with_serve build",
+    "verify:process-boundaries": "node scripts/verify-product-process-boundaries.cjs",
+    "verify:desktop-lifecycle": "yarn verify:process-boundaries && node scripts/verify-neural-connection.cjs && node scripts/verify-desktop-lifecycle.cjs",
+    "verify:desktop-electron": "yarn verify:process-boundaries && node scripts/verify-desktop-electron.cjs"
   },
   "workspaces": [
     "apps/*",

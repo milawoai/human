@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 // @ts-expect-error Node strip-types needs a .ts extension.
-import { resolveBackendConfig, backendTargets } from './config.ts'
+import { resolveBackendConfig, backendTargets, captureBackendOverrides } from './config.ts'
 // @ts-expect-error Node strip-types needs a .ts extension.
 import { prepareDesktop, acquireDesktopInstance } from './desktop-startup.ts'
 
@@ -55,4 +55,13 @@ test('second instance cannot install backend startup and focuses the existing ap
     quit: () => {}, on: (_name: string, fn: () => void) => { second = fn } }, () => { events.push('focus') }), true)
   second()
   assert(events.includes('focus'))
+})
+
+
+test('explicit launch overrides survive later loading of user env files', () => {
+  const inherited = { HUMAN_BACKEND_NODE_POLICY: 'connect-only' }
+  const captured = captureBackendOverrides(inherited)
+  inherited.HUMAN_BACKEND_NODE_POLICY = 'auto'
+  const result = resolveBackendConfig(undefined, {}, { ...inherited, ...captured }, [])
+  assert.equal(result.config.node.policy, 'connect-only')
 })

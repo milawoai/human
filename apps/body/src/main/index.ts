@@ -7,20 +7,17 @@
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1-fileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 import { electronApp, optimizer } from '@electron-toolkit/utils'
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, powerMonitor } from 'electron'
 import { initialGlobalShortcut, quitGlobalShortcut } from './globalShortcuts'
 import { initializeHandlers } from './handler'
 import { getPetSettings, initialConfigs } from './services/config/index'
-import { connectNeural, onNeuralStateChange } from './services/neural/index'
-import { neuralTrigger } from './services/neural/impl/neural-http'
 import { startServer } from './services/server/index'
 import { runStartupSettings } from './startupSettings'
 import { initializeTray, refreshTrayMenu } from './trayManager'
 import { WindowManager } from './windowManager'
 import { acquireDesktopInstance, prepareDesktop } from './services/backend-lifecycle/desktop-startup'
-import { loadBackendSettings } from './services/backend-lifecycle/settings'
-import { backendTargets } from './services/backend-lifecycle/config'
-import { setNeuralTarget } from './services/neural/impl/targets'
+import { configureBackendServices, startBackendServices, closeBackendServices } from './services/backend-lifecycle'
+import { installAsyncQuit, installSessionQuit } from './services/backend-lifecycle/shutdown'
 
 const primaryInstance = acquireDesktopInstance(app, () => {
   if (app.isReady()) WindowManager.getInstance().showMainWindow('/pet-settings')
@@ -59,72 +56,20 @@ const applyStartupSettings = async () => {
   })
 }
 
-/**
- * 应用初始化流程
- * 1. 打开 HelloWindow
- * 2. 连接 Neural Core 长连接
- * 3. 连接成功/失败后关闭 HelloWindow
- * 4. 继续正常启动（创建主窗口、启动配置等）
- */
+/** Main UI stays reachable while backend registration is pending. */
 async function initializeApp() {
-  const windowManager = WindowManager.getInstance()
-
-  // 1. 打开 HelloWindow
-  windowManager.createHelloWindow()
-  console.log('[Main] HelloWindow 已打开，开始初始化...')
-
-  // 将 Neural 状态变化推送给 HelloWindow
-  onNeuralStateChange((state) => {
-    const helloWin = windowManager.getHelloWindow()
-    if (helloWin && !helloWin.isDestroyed()) {
-      helloWin.webContents.send('neural:state', { state })
-    }
-  })
-
-  // 2. 连接 Neural Core
-  try {
-    console.log('[Main] 正在连接 Neural Core...')
-    const result = await connectNeural()
-    if (result.success) {
-      console.log('[Main] ✓ Neural Core 连接成功')
-
-      // 2.1 Neural 连接成功后，触发 brain.init
-      try {
-        console.log('[Main] ── brain.init 流程开始 ──')
-        console.log('[Main] 调用 neuralTrigger: kind=command, topic=brain.init.execute')
-        const initResult = await neuralTrigger({
-          kind: 'command',
-          topic: 'brain.init.execute',
-          payload: {}
-        })
-        if (initResult.success) {
-          console.log('[Main] ✓ brain.init 成功:', JSON.stringify(initResult.data))
-        } else {
-          console.warn('[Main] ✗ brain.init 失败:', initResult.msg)
-        }
-        console.log('[Main] ── brain.init 流程结束 ──')
-      } catch (initError) {
-        console.warn('[Main] ✗ brain.init 异常:', (initError as Error).message)
-      }
-    } else {
-      console.warn('[Main] ✗ Neural Core 连接失败:', result.msg)
-    }
-  } catch (error) {
-    console.warn('[Main] ✗ Neural Core 连接异常:', error)
-  }
-
-  // 3. 等一小段时间让用户看到连接结果
-  await new Promise((resolve) => setTimeout(resolve, 5800))
-
-  // 4. 关闭 HelloWindow
-  windowManager.closeHelloWindow()
-  console.log('[Main] HelloWindow 已关闭，继续启动...')
-
-  // 5. 继续正常启动
+  const windows = WindowManager.getInstance()
   createWindow()
-  applyStartupSettings().catch((error) => {
-    console.error('[Main] 应用启动配置失败:', error)
-  })
+  windows.createHelloWindow()
+  try {
+    await startBackendServices()
+  } catch (error) {
+    console.error('[Main] Backend startup:', (error as Error).message)
+    if (!isQuitting) windows.showMainWindow('/pet-settings')
+  } finally {
+    windows.closeHelloWindow()
+  }
+  if (!isQuitting) await applyStartupSettings()
 }
 
 // This method will be called when Electron has finished
@@ -145,19 +90,18 @@ if (primaryInstance) app.whenReady().then(async () => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  installSessionQuit(powerMonitor, app)
   initializeHandlers()
   initializeTray()
   initialGlobalShortcut()
 
   // 启动初始化流程：HelloWindow → 连接 Neural → 继续启动
   try {
-    await prepareDesktop(initialConfigs, async () => {
-      const settings = loadBackendSettings()
-      setNeuralTarget(backendTargets(settings.config).neuralHttp)
-    }, initializeApp)
+    await prepareDesktop(initialConfigs, configureBackendServices, initializeApp)
   } catch (error) {
     console.error('[Main] Backend configuration failed:', (error as Error).message)
     createWindow()
+    WindowManager.getInstance().showMainWindow('/pet-settings')
   }
 
   app.on('activate', function () {
@@ -177,12 +121,9 @@ app.on('window-all-closed', () => {
   // Tray app stays alive. Use tray menu "关闭" to quit explicitly.
 })
 
-// 应用退出时注销所有全局快捷键并停止所有服务
-app.on('before-quit', () => {
+// Ordinary quit is asynchronous; hiding a window never enters this path.
+installAsyncQuit(app, async () => {
   isQuitting = true
-})
-
-app.on('will-quit', async () => {
-  console.log('[Main] 应用退出，停止所有服务...')
   quitGlobalShortcut()
-})
+  await closeBackendServices()
+}, error => console.error('[Main] Backend shutdown incomplete:', String(error)))

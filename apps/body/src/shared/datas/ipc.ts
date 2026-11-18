@@ -8,6 +8,13 @@
  */
 
 export const defineHandlers = {
+  backendLifecycle: {
+    status: { servicesName: 'backend-lifecycle', desc: '后端健康与进程归属' },
+    retry: { servicesName: 'backend-lifecycle', desc: '重新检测后端' },
+    restart: { servicesName: 'backend-lifecycle', desc: '重启本次托管的服务' },
+    applyConfig: { servicesName: 'backend-lifecycle', desc: '应用固定端口与启动策略' },
+    openSettings: { servicesName: 'backend-lifecycle', desc: '打开后端诊断设置' }
+  },
   agent: {
     openPanel: { desc: '打开 Agent 测试面板' },
     run: { desc: '执行 Pi Agent 任务' },

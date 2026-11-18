@@ -1,10 +1,6 @@
-import type { BackendName, BackendPolicy } from '../../../shared/backendLifecycle'
+import type { BackendConfig, BackendName, BackendPolicy } from '../../../shared/backendLifecycle'
 export const BACKEND_CONFIG_KEY = 'backendLifecycle'
-export interface BackendConfig {
-  schemaVersion: 1
-  node: { policy: BackendPolicy; host: '127.0.0.1'; port: number }
-  python: { policy: BackendPolicy; host: '127.0.0.1'; port: number }
-}
+export type { BackendConfig } from '../../../shared/backendLifecycle'
 type Source = 'default' | 'legacy' | 'saved' | 'environment' | 'argument'
 const port = (value: unknown): number => {
   if ((typeof value !== 'string' && typeof value !== 'number') || !/^\d+$/.test(String(value))) throw Error('Invalid backend port')
@@ -50,4 +46,9 @@ export function backendTargets(config: BackendConfig) {
   const node = `http://${config.node.host}:${config.node.port}`
   return { node, python: `http://${config.python.host}:${config.python.port}`,
     neuralHttp: `${node}/neural`, neuralWs: `${node}/neural`, pythonNeural: `${node}/neural` }
+}
+
+export function captureBackendOverrides(env: Record<string, string | undefined>): Record<string, string> {
+  return Object.fromEntries(Object.entries(env).filter((entry): entry is [string, string] =>
+    /^HUMAN_BACKEND_(NODE|PYTHON)_(PORT|POLICY)$/.test(entry[0]) && entry[1] !== undefined))
 }

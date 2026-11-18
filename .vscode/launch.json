@@ -55,7 +55,9 @@
       "preLaunchTask": "dev:wait-hearing",
       "env": {
         "NODE_ENV": "development",
-        "REMOTE_DEBUGGING_PORT": "9222"
+        "REMOTE_DEBUGGING_PORT": "9222",
+        "HUMAN_BACKEND_NODE_POLICY": "connect-only",
+        "HUMAN_BACKEND_PYTHON_POLICY": "connect-only"
       },
       "sourceMaps": true,
       "console": "integratedTerminal",
@@ -107,7 +109,9 @@
       "preLaunchTask": "dev:kill-electron-ports",
       "env": {
         "NODE_ENV": "development",
-        "REMOTE_DEBUGGING_PORT": "9222"
+        "REMOTE_DEBUGGING_PORT": "9222",
+        "HUMAN_BACKEND_NODE_POLICY": "connect-only",
+        "HUMAN_BACKEND_PYTHON_POLICY": "connect-only"
       },
       "sourceMaps": true,
       "console": "integratedTerminal",

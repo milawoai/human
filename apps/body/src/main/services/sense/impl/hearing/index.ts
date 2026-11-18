@@ -1,3 +1,4 @@
+import { hearingUnavailableReason } from '../../../backend-lifecycle/availability'
 /**
  * Hearing — 听觉感知模块
  *
@@ -109,6 +110,8 @@ export const startHearing = async (params?: {
   save_dir?: string
   model_id?: string
 }): Promise<BaseResponse> => {
+  const unavailable = hearingUnavailableReason()
+  if (unavailable) return { success: false, msg: unavailable }
   console.log('[Sense] startHearing called')
 
   if (isListening) {
@@ -188,7 +191,7 @@ export const stopHearing = async (): Promise<BaseResponse> => {
       kind: 'control',
       topic: TOPIC.SENSORY_HEARING_DISABLE,
       payload: {}
-    })
+    }, { timeoutMs: 5000 })
     if (!result.success) {
       isListening = false
       console.error('[Sense] 监听关闭失败')

@@ -7,6 +7,7 @@ import { cancellable } from './cancellation.ts'
 export class BackendCoordinator {
   private policies: BackendPolicies
   private readonly ports: BackendPorts
+  private readonly onChange: (snapshot: BackendSnapshot) => void
   private readonly controller = new AbortController()
   private readonly children = new Map<BackendName, OwnedBackend>()
   private readonly launching = new Set<Promise<void>>()
@@ -14,9 +15,10 @@ export class BackendCoordinator {
   private stopping?: Promise<void>
   private state: BackendSnapshot = { node: { phase: 'stopped' }, python: { phase: 'stopped' } }
 
-  constructor(policies: BackendPolicies, ports: BackendPorts) {
+  constructor(policies: BackendPolicies, ports: BackendPorts, onChange: (snapshot: BackendSnapshot) => void = () => {}) {
     this.policies = { ...policies }
     this.ports = ports
+    this.onChange = onChange
   }
 
   snapshot(): BackendSnapshot {
@@ -45,16 +47,43 @@ export class BackendCoordinator {
     }
   }
 
-  shutdown(): Promise<void> {
-    if (this.stopping) return this.stopping
+  restartOwned(name: BackendName): Promise<void> {
+    if (this.stopping || this.starting) return Promise.reject(Error('Lifecycle is busy'))
+    const child = this.children.get(name)
+    if (!child) return Promise.reject(Error('External services must be restarted by their original launcher'))
+    const run = (async () => {
+      this.reportDegraded(name, child.instanceId, 'Restart requested')
+      this.update(name, { phase: 'stopping' })
+      await this.ports.stop(name, child, 'restart')
+      this.children.delete(name)
+      this.state[name] = { phase: 'stopped' }
+      this.controller.signal.throwIfAborted()
+      await this.startService('node')
+      await this.startService('python')
+    })().catch(error => {
+      if (!this.controller.signal.aborted) this.update(name, { phase: 'failed', error: String(error) })
+      throw error
+    })
+    this.starting = run
+    void run.finally(() => { if (this.starting === run) this.starting = undefined }).catch(() => {})
+    return run
+  }
+
+  cancelStartup(): void {
     this.controller.abort(Error('Lifecycle cancelled for shutdown'))
     for (const name of ['node', 'python'] as const) this.update(name, { phase: 'stopping' })
+  }
+
+  shutdown(): Promise<void> {
+    if (this.stopping) return this.stopping
+    this.cancelStartup()
     this.stopping = this.stopServices()
     return this.stopping
   }
 
   private update(name: BackendName, changes: Partial<BackendStatus>): void {
     this.state[name] = { ...this.state[name], ...changes }
+    this.onChange(this.snapshot())
   }
 
   private async startService(name: BackendName): Promise<void> {
@@ -74,7 +103,7 @@ export class BackendCoordinator {
         if (probe.kind === 'compatible') {
           this.update(name, { ownership: 'external', instanceId: probe.instanceId })
         } else {
-          if (this.policies[name] !== 'auto') throw Error(`${name}: connect-only service is absent`)
+          if (this.state[name].ownership === 'external' || this.policies[name] !== 'auto') throw Error(`${name}: connect-only service is absent`)
           this.update(name, { phase: 'starting' })
           const launch = this.ports.launch(name, signal).then(result => { this.children.set(name, result) })
           this.launching.add(launch)
@@ -100,6 +129,7 @@ export class BackendCoordinator {
   private async stopServices(): Promise<void> {
     // A process returned late by a launcher must also be reclaimed. Launch adapters
     // must settle within their deadline, even when cancelled before bootstrap.
+    if (this.starting) await this.starting.catch(() => {})
     await Promise.allSettled([...this.launching])
     const errors: unknown[] = []
     for (const name of ['python', 'node'] as const) {
@@ -109,6 +139,7 @@ export class BackendCoordinator {
         if (child) await this.ports.stop(name, child)
         this.children.delete(name)
         this.state[name] = { phase: 'stopped' }
+        this.onChange(this.snapshot())
       } catch (error) {
         errors.push(error)
         this.update(name, { phase: 'failed', error: String(error) })
