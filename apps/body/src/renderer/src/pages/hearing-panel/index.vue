@@ -508,7 +508,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--human-spacing-2) var(--human-spacing-3);
+  padding: var(--human-spacing-3) var(--human-space-panel);
   border-bottom:1px solid var(--human-border);
   -webkit-app-region: drag;
 }
@@ -529,8 +529,8 @@ onUnmounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--human-spacing-3);
-  padding: var(--human-spacing-3);
+  gap: var(--human-space-stack);
+  padding: var(--human-space-panel);
   overflow-y: auto;
 }
 

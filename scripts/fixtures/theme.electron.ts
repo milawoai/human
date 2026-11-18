@@ -83,6 +83,8 @@ app.whenReady().then(async () => {
         if (pages[index][0] === 'hello') assert.equal(value.radius, '16px')
         if (pages[index][0] !== 'pet') assert.equal(value.color, rgb(palette.text), pages[index][0])
       }
+      const panelPadding = await windows[4].webContents.executeJavaScript("getComputedStyle(document.querySelector('.panel-body')).paddingTop")
+      assert.equal(panelPadding, `${16 * scale}px`)
       const infoButton = await windows[0].webContents.executeJavaScript(`(() => { const style = getComputedStyle(document.querySelector('.p-button-info')); return [style.backgroundColor, style.color]; })()`)
       assert.deepEqual(infoButton, [rgb(palette['info-soft']), rgb(palette.info)])
       writeFileSync(`/private/tmp/human-theme-${id}.png`, (await windows[1].webContents.capturePage()).toPNG())

@@ -701,7 +701,7 @@ onUnmounted(() => {
     .t-chat__detail {
       background:var(--human-accent-strong);
       color:var(--human-on-accent);
-      border-radius: var(--human-radius-card) var(--human-radius-card) var(--human-radius-control) var(--human-radius-card);
+      border-radius: var(--human-radius-card) var(--human-radius-card) var(--human-radius-bubble-tail) var(--human-radius-card);
       overflow: hidden;
 }
 
@@ -715,7 +715,7 @@ onUnmounted(() => {
     .t-chat__detail {
       background:var(--human-surface-raised);
       border:1px solid var(--human-border);
-      border-radius: var(--human-radius-card) var(--human-radius-card) var(--human-radius-card) var(--human-radius-control);
+      border-radius: var(--human-radius-card) var(--human-radius-card) var(--human-radius-card) var(--human-radius-bubble-tail);
       overflow: hidden;
 }
 }
@@ -741,7 +741,7 @@ onUnmounted(() => {
 
 .input-area {
   flex-shrink: 0;
-  padding: var(--human-spacing-3) var(--human-spacing-3) var(--human-spacing-3);
+  padding: var(--human-space-panel);
   background:var(--human-surface);
   border-top:1px solid var(--human-border);
 }
