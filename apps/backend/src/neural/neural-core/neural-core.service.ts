@@ -7,6 +7,7 @@
  * - 不承载任何业务逻辑
  */
 import { Injectable, Logger } from '@nestjs/common';
+import { ActorRegistry, neuralInstanceId } from './actor-registry';
 import {
   ActorRef,
   ActorState,
@@ -39,7 +40,9 @@ export class NeuralCoreService {
   // ──────────────────────────────────────────────
 
   /** actorId → ActorState */
-  private readonly actors = new Map<string, ActorState>();
+  private readonly registry = new ActorRegistry();
+  private readonly actors = this.registry.actors;
+  readonly neuralInstanceId = neuralInstanceId;
 
   /** capabilityId → Capability */
   private readonly capabilities = new Map<string, Capability>();
@@ -47,88 +50,36 @@ export class NeuralCoreService {
   /** subscriptionId → Subscription */
   private readonly subscriptions = new Map<string, Subscription>();
 
-  /** connectionId → actorId （WS 连接映射） */
-  private readonly connectionMap = new Map<string, string>();
-
-  // ──────────────────────────────────────────────
-  // Actor 管理
-  // ──────────────────────────────────────────────
-
-  /** 注册 Actor，返回是否为新注册 */
-  registerActor(actor: ActorRef, connectionId: string): boolean {
+  registerActor(actor: ActorRef, connectionId: string, serviceInstanceId: string): boolean {
+    // Validate before clearing the current generation.
     const existing = this.actors.get(actor.actorId);
-    if (existing) {
-      // 已存在 → 更新连接信息
-      existing.connected = true;
-      existing.connectionId = connectionId;
-      existing.lastHeartbeatAt = Date.now();
-      this.connectionMap.set(connectionId, actor.actorId);
-
-      // 将该 actor 的所有 capability 标记为 online
-      this.setOnlineByActor(actor.actorId, true);
-
-      this.logger.log(`Actor 重新连接: ${actor.actorId}`);
-      return false;
+    if (existing?.connected && existing.serviceInstanceId !== serviceInstanceId) {
+      throw new Error(`Actor ${actor.actorId} belongs to another service instance`);
     }
-
-    const state: ActorState = {
-      actor,
-      connected: true,
-      connectionId,
-      lastHeartbeatAt: Date.now(),
-    };
-    this.actors.set(actor.actorId, state);
-    this.connectionMap.set(connectionId, actor.actorId);
-    this.logger.log(`Actor 注册: ${actor.actorId} (${actor.runtime}/${actor.system})`);
-    return true;
+    if (existing?.connectionId !== connectionId) {
+      this.removeSubscriptionsByActor(actor.actorId);
+      this.setOnlineByActor(actor.actorId, false);
+    }
+    return this.registry.register(actor, connectionId, serviceInstanceId);
   }
 
-  /**
-   * 注册内部 Actor（无需 WS 连接）。
-   * 适用于 runtime === 'nest' 的进程内服务（如 Brain）。
-   */
   registerInternalActor(actor: ActorRef): boolean {
-    const existing = this.actors.get(actor.actorId);
-    if (existing) {
-      existing.connected = true;
-      existing.lastHeartbeatAt = Date.now();
-      this.setOnlineByActor(actor.actorId, true);
-      this.logger.log(`内部 Actor 重新注册: ${actor.actorId}`);
-      return false;
-    }
+    return this.registry.registerInternal(actor);
+  }
 
-    const state: ActorState = {
-      actor,
-      connected: true,
-      lastHeartbeatAt: Date.now(),
-      // 无 connectionId
-    };
-    this.actors.set(actor.actorId, state);
-    this.logger.log(`内部 Actor 注册: ${actor.actorId} (${actor.runtime}/${actor.system})`);
+  unregisterActor(actorId: string, connectionId?: string): boolean {
+    if (!this.registry.unregister(actorId, connectionId)) return false;
+    this.setOnlineByActor(actorId, false);
+    this.removeSubscriptionsByActor(actorId);
     return true;
   }
 
-  /** 注销 Actor（断开连接时调用） */
-  unregisterActor(actorId: string): void {
-    const state = this.actors.get(actorId);
-    if (!state) return;
-
-    state.connected = false;
-    // 清除连接映射
-    if (state.connectionId) {
-      this.connectionMap.delete(state.connectionId);
-    }
-    state.connectionId = undefined;
-
-    // 将该 actor 的所有 capability 标记为 offline
-    this.setOnlineByActor(actorId, false);
-
-    this.logger.log(`Actor 断开: ${actorId}`);
+  isCurrentConnection(actorId: string, connectionId: string): boolean {
+    return this.registry.isCurrent(actorId, connectionId);
   }
 
-  /** 通过 connectionId 查找 actorId */
   getActorIdByConnection(connectionId: string): string | undefined {
-    return this.connectionMap.get(connectionId);
+    return this.registry.actorFor(connectionId);
   }
 
   /** 通过 actorId 获取 ActorState */
@@ -142,11 +93,8 @@ export class NeuralCoreService {
   }
 
   /** 更新心跳时间 */
-  heartbeat(actorId: string): void {
-    const state = this.actors.get(actorId);
-    if (state) {
-      state.lastHeartbeatAt = Date.now();
-    }
+  heartbeat(actorId: string, connectionId?: string): void {
+    this.registry.heartbeat(actorId, connectionId);
   }
 
   /** 清理长时间未心跳的 actor */
@@ -178,7 +126,10 @@ export class NeuralCoreService {
 
   /** 注册能力列表 */
   registerCapabilities(capabilities: Capability[]): void {
-    for (const cap of capabilities) {
+    for (const input of capabilities) {
+      const state = this.actors.get(input.actor.actorId);
+      const cap = { ...input, serviceInstanceId: state?.serviceInstanceId,
+        neuralInstanceId: state?.neuralInstanceId, connectionId: state?.connectionId };
       const existing = this.capabilities.get(cap.id);
       if (existing) {
         // 更新已有能力

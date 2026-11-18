@@ -160,24 +160,23 @@ export class NeuralHttpService implements OnModuleInit {
   // 查询类
   // ──────────────────────────────────────────────
 
-  listActors() {
+  listActors(params?: { serviceInstanceId?: string; neuralInstanceId?: string }) {
     return {
       success: true,
-      data: this.coreService.getAllActors(),
+      data: this.coreService.getAllActors().filter(a =>
+        (!params?.serviceInstanceId || a.serviceInstanceId === params.serviceInstanceId) &&
+        (!params?.neuralInstanceId || a.neuralInstanceId === params.neuralInstanceId)),
     };
   }
 
-  listCapabilities(params?: { topic?: string; kind?: MessageKind }) {
-    if (params?.topic) {
-      return {
-        success: true,
-        data: this.coreService.findCapabilities(params.topic, params.kind),
-      };
-    }
-    return {
-      success: true,
-      data: this.coreService.getAllCapabilities(),
-    };
+  listCapabilities(params?: { topic?: string; kind?: MessageKind; serviceInstanceId?: string; neuralInstanceId?: string }) {
+    const capabilities = params?.topic
+      ? this.coreService.findCapabilities(params.topic, params.kind)
+      : this.coreService.getAllCapabilities();
+    return { success: true, data: capabilities.filter(c =>
+      (!params?.serviceInstanceId || c.serviceInstanceId === params.serviceInstanceId) &&
+      (!params?.neuralInstanceId || c.neuralInstanceId === params.neuralInstanceId)) };
+
   }
 
   listSubscriptions() {

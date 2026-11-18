@@ -49,7 +49,13 @@ export interface BusMessage<T = unknown> {
 export type CapabilityMode = 'once' | 'stream';
 
 /** 能力 — 描述某个 Actor 可以处理什么 topic */
-export interface Capability {
+export interface RegistrationGeneration {
+  serviceInstanceId?: string;
+  neuralInstanceId?: string;
+  connectionId?: string;
+}
+
+export interface Capability extends RegistrationGeneration {
   id: string;
   actor: ActorRef;
 
@@ -65,7 +71,7 @@ export interface Capability {
 }
 
 /** 订阅 — 描述某个 Actor 想接收什么 topic 的事件 */
-export interface Subscription {
+export interface Subscription extends RegistrationGeneration {
   id: string;
   subscriber: ActorRef;
   topics: string[];
@@ -78,4 +84,6 @@ export interface ActorState {
   connected: boolean;
   lastHeartbeatAt?: number;
   connectionId?: string;
+  serviceInstanceId: string;
+  neuralInstanceId: string;
 }

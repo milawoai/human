@@ -34,13 +34,13 @@ export class NeuralHttpController {
   // ──────────────────────────────────────────────
 
   @Post('actors/list')
-  listActors() {
-    return this.service.listActors();
+  listActors(@Body() body?: { serviceInstanceId?: string; neuralInstanceId?: string }) {
+    return this.service.listActors(body);
   }
 
   @Post('capabilities/list')
   listCapabilities(
-    @Body() body?: { topic?: string; kind?: MessageKind },
+    @Body() body?: { topic?: string; kind?: MessageKind; serviceInstanceId?: string; neuralInstanceId?: string },
   ) {
     return this.service.listCapabilities(body);
   }

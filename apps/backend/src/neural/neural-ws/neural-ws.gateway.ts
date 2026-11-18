@@ -66,8 +66,7 @@ export class NeuralWsGateway
     const actorId = this.socketActorMap.get(client.id);
 
     if (actorId) {
-      this.coreService.unregisterActor(actorId);
-      this.coreService.removeSubscriptionsByActor(actorId);
+      this.coreService.unregisterActor(actorId, client.id);
       this.socketActorMap.delete(client.id);
     }
 
@@ -80,7 +79,7 @@ export class NeuralWsGateway
 
   @SubscribeMessage('register')
   handleRegister(
-    @MessageBody() data: { actor: ActorRef },
+    @MessageBody() data: { actor: ActorRef; protocolVersion?: number; serviceInstanceId?: string },
     @ConnectedSocket() client: Socket,
   ): void {
     const actor = data.actor;
@@ -92,12 +91,30 @@ export class NeuralWsGateway
       return;
     }
 
+    if (data.protocolVersion !== 1 || typeof data.serviceInstanceId !== 'string' ||
+        !data.serviceInstanceId.trim() || data.serviceInstanceId.length > 128) {
+      client.emit('error', { topic: 'neural.bus.register', payload: { error: 'Incompatible registration: protocolVersion=1 and serviceInstanceId required' } });
+      return;
+    }
+    const mapped = this.socketActorMap.get(client.id);
+    if (mapped && (mapped !== actor.actorId || !this.coreService.isCurrentConnection(mapped, client.id))) {
+      client.emit('error', { topic: 'neural.bus.register', payload: { error: 'Superseded connection; reconnect with a new socket' } });
+      return;
+    }
+    try {
+      this.coreService.registerActor(actor, client.id, data.serviceInstanceId);
+    } catch (error) {
+      client.emit('error', { topic: 'neural.bus.register', payload: { error: (error as Error).message } });
+      return;
+    }
     this.socketActorMap.set(client.id, actor.actorId);
-    this.coreService.registerActor(actor, client.id);
 
     client.emit('registered', {
       success: true,
       actorId: actor.actorId,
+      serviceInstanceId: data.serviceInstanceId,
+      neuralInstanceId: this.coreService.neuralInstanceId,
+      connectionId: client.id,
       timestamp: Date.now(),
     });
 
@@ -113,7 +130,11 @@ export class NeuralWsGateway
     @MessageBody() data: { capabilities: Capability[] },
     @ConnectedSocket() client: Socket,
   ): void {
-    this.coreService.registerCapabilities(data.capabilities || []);
+    const actorId = this.currentActor(client);
+    if (!actorId || !Array.isArray(data.capabilities) ||
+        data.capabilities.some(cap => cap.actor?.actorId !== actorId)) return;
+    const state = this.coreService.getActorState(actorId)!;
+    this.coreService.registerCapabilities(data.capabilities.map(cap => ({ ...cap, actor: state.actor })));
 
     client.emit('capabilities_registered', {
       success: true,
@@ -128,9 +149,9 @@ export class NeuralWsGateway
 
   @SubscribeMessage('heartbeat')
   handleHeartbeat(@ConnectedSocket() client: Socket): void {
-    const actorId = this.socketActorMap.get(client.id);
+    const actorId = this.currentActor(client);
     if (actorId) {
-      this.coreService.heartbeat(actorId);
+      this.coreService.heartbeat(actorId, client.id);
     }
     client.emit('heartbeat_ack', { timestamp: Date.now() });
   }
@@ -144,7 +165,7 @@ export class NeuralWsGateway
     @MessageBody() data: { topics: string[]; kinds?: MessageKind[] },
     @ConnectedSocket() client: Socket,
   ): void {
-    const actorId = this.socketActorMap.get(client.id);
+    const actorId = this.currentActor(client);
     if (!actorId) {
       client.emit('error', {
         topic: 'neural.bus.subscribe',
@@ -159,6 +180,9 @@ export class NeuralWsGateway
     const subscription: Subscription = {
       id: `sub-${crypto.randomUUID()}-${actorId}`,
       subscriber: state.actor,
+      connectionId: client.id,
+      serviceInstanceId: state.serviceInstanceId,
+      neuralInstanceId: state.neuralInstanceId,
       topics: data.topics,
       kinds: data.kinds,
     };
@@ -178,6 +202,9 @@ export class NeuralWsGateway
     @MessageBody() data: { subscriptionId: string },
     @ConnectedSocket() client: Socket,
   ): void {
+    const actorId = this.currentActor(client);
+    if (!actorId || !this.coreService.getAllSubscriptions().some(sub =>
+      sub.id === data.subscriptionId && sub.subscriber.actorId === actorId && sub.connectionId === client.id)) return;
     this.coreService.removeSubscription(data.subscriptionId);
 
     client.emit('unsubscribed', {
@@ -196,15 +223,10 @@ export class NeuralWsGateway
     @MessageBody() data: BusMessage,
     @ConnectedSocket() client: Socket,
   ): void {
-    const actorId = this.socketActorMap.get(client.id);
-
-    // 补充 source 信息（如果未提供）
-    if (actorId && !data.source?.actorId) {
-      const state = this.coreService.getActorState(actorId);
-      if (state) {
-        data.source = state.actor;
-      }
-    }
+    const actorId = this.currentActor(client);
+    if (!actorId) return;
+    const sender = this.coreService.getActorState(actorId)!;
+    data.source = sender.actor;
 
     // 补充时间戳
     if (!data.timestamp) {
@@ -229,8 +251,6 @@ export class NeuralWsGateway
     }
 
     // 广播给订阅者
-    console.log(result)
-    console.log(result.subscribers.length)
     for (const sub of result.subscribers) {
       this.sendToConnection(sub.connectionId, 'message', data);
     }
@@ -282,15 +302,20 @@ export class NeuralWsGateway
     const state = this.coreService.getActorState(actorId);
     if (!state?.connectionId) return false;
 
-    const socket = this.server.sockets.get(state.connectionId);
+    const connectionId = state.connectionId;
+    const socket = this.server.sockets.get(connectionId);
     if (socket) {
       socket.disconnect(true);
     }
 
-    this.coreService.unregisterActor(actorId);
-    this.coreService.removeSubscriptionsByActor(actorId);
-    this.socketActorMap.delete(state.connectionId);
+    this.coreService.unregisterActor(actorId, connectionId);
+    this.socketActorMap.delete(connectionId);
     return true;
+  }
+
+  private currentActor(client: Socket): string | undefined {
+    const actorId = this.socketActorMap.get(client.id);
+    return actorId && this.coreService.isCurrentConnection(actorId, client.id) ? actorId : undefined;
   }
 
   /**

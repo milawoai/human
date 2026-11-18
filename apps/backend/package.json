@@ -24,7 +24,8 @@
     "verify:speech-summary": "ts-node -r tsconfig-paths/register scripts/speech-summary-smoke.ts",
     "verify:tool-router": "ts-node -r tsconfig-paths/register scripts/tool-router-smoke.ts",
     "clean": "rm -rf dist",
-    "test": "jest"
+    "test": "jest",
+    "verify:neural-instances": "ts-node -r tsconfig-paths/register scripts/neural-instance-smoke.ts"
   },
   "dependencies": {
     "@human/cmux-tools": "1.0.0",

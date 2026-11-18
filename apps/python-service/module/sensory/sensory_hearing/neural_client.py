@@ -6,6 +6,7 @@ Neural Core WebSocket 客户端
 """
 import logging
 import socketio
+from uuid import uuid4
 
 from module.common.neural_topics import (
     ACTORS,
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 # ──────────────────────────────────────────────
 
 NEURAL_WS_URL = "http://localhost:12002/neural"
+SERVICE_INSTANCE_ID = str(uuid4())
 HEARTBEAT_INTERVAL = 30  # 秒
 
 BODY_ACTOR = ACTORS["SENSORY_HEARING"]
@@ -169,7 +171,7 @@ class NeuralClient:
         """注册 Actor 身份。"""
         await self._sio.emit(
             "register",
-            {"actor": BODY_ACTOR},
+            {"actor": BODY_ACTOR, "protocolVersion": 1, "serviceInstanceId": SERVICE_INSTANCE_ID},
             namespace="/neural",
         )
         logger.info("[Neural] 已发送 register: %s", BODY_ACTOR["actorId"])
