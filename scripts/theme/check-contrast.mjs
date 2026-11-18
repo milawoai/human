@@ -48,7 +48,7 @@ const PAIRS = [
 const tokens = loadTokens()
 let failed = 0
 
-for (const mode of ['dark', 'light']) {
+for (const mode of Object.keys(tokens.themes)) {
   const palette = tokens.themes[mode].tokens
   for (const [foreground, background, minimum] of PAIRS) {
     const ratio = contrast(palette[foreground], palette[background])

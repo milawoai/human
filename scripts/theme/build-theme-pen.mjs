@@ -30,8 +30,8 @@ function buildScreen() {
   // ---------- Footer ----------
   const footer = frame('Footer', { layout: 'vertical', gap: 6, width: 'fill_container' })
   footer.children.push(
-    text('Title', '一键更换主题', { fontFamily: BODY, fontSize: '$font-size-lg', fontWeight: 'bold', fill: '$text' }),
-    text('Desc', '改 designs/theme.tokens.json 的色值后执行 node scripts/theme/sync-theme.mjs，theme.pen 与所有页面设计稿同步更新；在 pen.dev 编辑器里切换 mode 轴即可在 dark / light 间即时切换。', {
+    text('Title', '应用切换与设计同步', { fontFamily: BODY, fontSize: '$font-size-lg', fontWeight: 'bold', fill: '$text' }),
+    text('Desc', '使用应用：设置页“外观主题”选择内置预设，立即同步所有窗口并保存。维护设计：改 theme.tokens.json 后运行 yarn theme:sync，同步 theme.pen 与页面设计稿；编辑器 mode 轴用于设计预览。', {
       textGrowth: 'fixed-width',
       width: 'fill_container',
       fontFamily: BODY,

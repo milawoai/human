@@ -10,7 +10,7 @@
               "alignItems": "center",
               "children": [
                 {
-                  "fill": "#FF5F57",
+                  "fill": "$danger",
                   "height": 12,
                   "id": "U6XKx",
                   "name": "Close",
@@ -18,7 +18,7 @@
                   "width": 12
                 },
                 {
-                  "fill": "#FEBC2E",
+                  "fill": "$warning",
                   "height": 12,
                   "id": "8h9X7",
                   "name": "Minimize",
@@ -26,7 +26,7 @@
                   "width": 12
                 },
                 {
-                  "fill": "#28C840",
+                  "fill": "$success",
                   "height": 12,
                   "id": "8dVIV",
                   "name": "Zoom",
@@ -44,9 +44,9 @@
               "children": [
                 {
                   "content": "模型设置",
-                  "fill": "$text-primary",
-                  "fontFamily": "$font-ui",
-                  "fontSize": 13,
+                  "fill": "$text",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
                   "fontWeight": "600",
                   "id": "WMpSS",
                   "name": "模型设置",
@@ -69,7 +69,7 @@
               "width": 52
             }
           ],
-          "fill": "$bg-panel",
+          "fill": "$surface",
           "gap": 16,
           "height": 46,
           "id": "d9r50",
@@ -105,9 +105,9 @@
                     },
                     {
                       "content": "智谱 GLM",
-                      "fill": "$text-primary",
-                      "fontFamily": "$font-ui",
-                      "fontSize": 13,
+                      "fill": "$text",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
                       "fontWeight": "normal",
                       "id": "39O3n",
                       "name": "Provider Name",
@@ -116,7 +116,7 @@
                       "width": "fill_container"
                     },
                     {
-                      "fill": "$gold",
+                      "fill": "$warning",
                       "height": 14,
                       "iconFontFamily": "lucide",
                       "iconFontName": "star",
@@ -127,7 +127,7 @@
                     }
                   ],
                   "cornerRadius": 8,
-                  "fill": "$bg-elevated",
+                  "fill": "$surface-hover",
                   "gap": 10,
                   "id": "B2iFs",
                   "name": "Provider 智谱 GLM",
@@ -156,9 +156,9 @@
                     },
                     {
                       "content": "DeepSeek",
-                      "fill": "$text-secondary",
-                      "fontFamily": "$font-ui",
-                      "fontSize": 13,
+                      "fill": "$text-muted",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
                       "fontWeight": "normal",
                       "id": "5a0NT",
                       "name": "Provider Name",
@@ -191,9 +191,9 @@
                     },
                     {
                       "content": "MiniMax",
-                      "fill": "$text-secondary",
-                      "fontFamily": "$font-ui",
-                      "fontSize": 13,
+                      "fill": "$text-muted",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
                       "fontWeight": "normal",
                       "id": "2caaP",
                       "name": "Provider Name",
@@ -217,7 +217,7 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "fill": "$text-muted",
+                      "fill": "$text-subtle",
                       "height": 8,
                       "id": "jHQvK",
                       "name": "Status Dot",
@@ -226,9 +226,9 @@
                     },
                     {
                       "content": "Kimi",
-                      "fill": "$text-secondary",
-                      "fontFamily": "$font-ui",
-                      "fontSize": 13,
+                      "fill": "$text-muted",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
                       "fontWeight": "normal",
                       "id": "6lVZQ",
                       "name": "Provider Name",
@@ -261,9 +261,9 @@
                     },
                     {
                       "content": "OpenRouter",
-                      "fill": "$text-secondary",
-                      "fontFamily": "$font-ui",
-                      "fontSize": 13,
+                      "fill": "$text-muted",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
                       "fontWeight": "normal",
                       "id": "0iSSA",
                       "name": "Provider Name",
@@ -296,9 +296,9 @@
                     },
                     {
                       "content": "本地 Ollama",
-                      "fill": "$text-secondary",
-                      "fontFamily": "$font-ui",
-                      "fontSize": 13,
+                      "fill": "$text-muted",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
                       "fontWeight": "normal",
                       "id": "RKFH0",
                       "name": "Provider Name",
@@ -329,7 +329,7 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "fill": "$text-secondary",
+                      "fill": "$text-muted",
                       "height": 14,
                       "iconFontFamily": "lucide",
                       "iconFontName": "trash-2",
@@ -340,9 +340,9 @@
                     },
                     {
                       "content": "删除档案",
-                      "fill": "$text-secondary",
-                      "fontFamily": "$font-ui",
-                      "fontSize": 13,
+                      "fill": "$text-muted",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
                       "fontWeight": "normal",
                       "id": "MtrU0",
                       "name": "删除档案",
@@ -350,7 +350,7 @@
                     }
                   ],
                   "cornerRadius": 8,
-                  "fill": "$bg-surface",
+                  "fill": "$surface-raised",
                   "gap": 8,
                   "id": "vGFtD",
                   "justifyContent": "center",
@@ -372,7 +372,7 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "fill": "$text-primary",
+                      "fill": "$text",
                       "height": 14,
                       "iconFontFamily": "lucide",
                       "iconFontName": "plus",
@@ -383,9 +383,9 @@
                     },
                     {
                       "content": "添加供应商",
-                      "fill": "$text-primary",
-                      "fontFamily": "$font-ui",
-                      "fontSize": 13,
+                      "fill": "$text",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
                       "fontWeight": "normal",
                       "id": "Jzxi3",
                       "name": "添加供应商",
@@ -393,7 +393,7 @@
                     }
                   ],
                   "cornerRadius": 8,
-                  "fill": "$bg-elevated",
+                  "fill": "$surface-hover",
                   "gap": 8,
                   "id": "7dhAc",
                   "justifyContent": "center",
@@ -411,7 +411,7 @@
                   "width": "fill_container"
                 }
               ],
-              "fill": "$bg-panel",
+              "fill": "$surface",
               "gap": 6,
               "height": "fill_container",
               "id": "8755f",
@@ -435,9 +435,9 @@
                   "children": [
                     {
                       "content": "智谱 GLM",
-                      "fill": "$text-primary",
-                      "fontFamily": "$font-ui",
-                      "fontSize": 20,
+                      "fill": "$text",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xl",
                       "fontWeight": "700",
                       "id": "BSwmJ",
                       "name": "智谱 GLM",
@@ -457,8 +457,8 @@
                         {
                           "content": "已连接",
                           "fill": "$accent",
-                          "fontFamily": "$font-ui",
-                          "fontSize": 11,
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-xs",
                           "fontWeight": "normal",
                           "id": "gkPEK",
                           "name": "已连接",
@@ -466,7 +466,7 @@
                         }
                       ],
                       "cornerRadius": 6,
-                      "fill": "$accent-dim",
+                      "fill": "$accent-soft",
                       "gap": 6,
                       "id": "Zoj8h",
                       "name": "Status Badge",
@@ -488,9 +488,9 @@
                   "children": [
                     {
                       "content": "baseUrl",
-                      "fill": "$text-muted",
+                      "fill": "$text-subtle",
                       "fontFamily": "$font-mono",
-                      "fontSize": 11,
+                      "fontSize": "$font-size-xs",
                       "fontWeight": "normal",
                       "id": "eskWN",
                       "name": "Label",
@@ -498,9 +498,9 @@
                     },
                     {
                       "content": "https://open.bigmodel.cn/api/paas/v4",
-                      "fill": "$text-secondary",
+                      "fill": "$text-muted",
                       "fontFamily": "$font-mono",
-                      "fontSize": 12,
+                      "fontSize": "$font-size-xs",
                       "fontWeight": "normal",
                       "id": "ECCrE",
                       "name": "Value",
@@ -509,7 +509,7 @@
                       "width": "fill_container"
                     },
                     {
-                      "fill": "$text-muted",
+                      "fill": "$text-subtle",
                       "height": 14,
                       "iconFontFamily": "lucide",
                       "iconFontName": "copy",
@@ -520,7 +520,7 @@
                     }
                   ],
                   "cornerRadius": 8,
-                  "fill": "$bg-surface",
+                  "fill": "$surface-raised",
                   "gap": 10,
                   "id": "IZbVK",
                   "name": "Base URL",
@@ -543,7 +543,7 @@
                       "alignItems": "center",
                       "children": [
                         {
-                          "fill": "$text-primary",
+                          "fill": "$text",
                           "height": 14,
                           "iconFontFamily": "lucide",
                           "iconFontName": "zap",
@@ -554,9 +554,9 @@
                         },
                         {
                           "content": "测试连通",
-                          "fill": "$text-primary",
-                          "fontFamily": "$font-ui",
-                          "fontSize": 13,
+                          "fill": "$text",
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-xs",
                           "fontWeight": "normal",
                           "id": "hlmeJ",
                           "name": "测试连通",
@@ -564,7 +564,7 @@
                         }
                       ],
                       "cornerRadius": 8,
-                      "fill": "$bg-surface",
+                      "fill": "$surface-raised",
                       "gap": 8,
                       "id": "yGcY7",
                       "name": "Test Connection",
@@ -583,7 +583,7 @@
                       "alignItems": "center",
                       "children": [
                         {
-                          "fill": "#0B1220",
+                          "fill": "$on-accent",
                           "height": 14,
                           "iconFontFamily": "lucide",
                           "iconFontName": "star",
@@ -594,9 +594,9 @@
                         },
                         {
                           "content": "设为默认档案",
-                          "fill": "#0B1220",
-                          "fontFamily": "$font-ui",
-                          "fontSize": 13,
+                          "fill": "$on-accent",
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-xs",
                           "fontWeight": "normal",
                           "id": "7XfrE",
                           "name": "设为默认档案",
@@ -604,7 +604,7 @@
                         }
                       ],
                       "cornerRadius": 8,
-                      "fill": "$accent",
+                      "fill": "$accent-strong",
                       "gap": 8,
                       "id": "6MLfg",
                       "name": "Set Default Profile",
@@ -634,9 +634,9 @@
                           "children": [
                             {
                               "content": "模型",
-                              "fill": "$text-muted",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 11,
+                              "fill": "$text-subtle",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "qBEBd",
                               "letterSpacing": 0.5,
@@ -653,9 +653,9 @@
                           "children": [
                             {
                               "content": "上下文",
-                              "fill": "$text-muted",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 11,
+                              "fill": "$text-subtle",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "QfpZe",
                               "letterSpacing": 0.5,
@@ -672,9 +672,9 @@
                           "children": [
                             {
                               "content": "状态",
-                              "fill": "$text-muted",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 11,
+                              "fill": "$text-subtle",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "fmrVA",
                               "letterSpacing": 0.5,
@@ -691,9 +691,9 @@
                           "children": [
                             {
                               "content": "操作",
-                              "fill": "$text-muted",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 11,
+                              "fill": "$text-subtle",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "IVEmA",
                               "letterSpacing": 0.5,
@@ -707,7 +707,7 @@
                           "width": "fill_container"
                         }
                       ],
-                      "fill": "$bg-panel",
+                      "fill": "$surface",
                       "gap": 16,
                       "id": "L4nJj",
                       "name": "Table Header",
@@ -733,16 +733,16 @@
                           "children": [
                             {
                               "content": "glm-5.3",
-                              "fill": "$text-primary",
+                              "fill": "$text",
                               "fontFamily": "$font-mono",
-                              "fontSize": 13,
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "WoTD8",
                               "name": "Model Name",
                               "type": "text"
                             },
                             {
-                              "fill": "$gold",
+                              "fill": "$warning",
                               "height": 13,
                               "iconFontFamily": "lucide",
                               "iconFontName": "star",
@@ -753,9 +753,9 @@
                             },
                             {
                               "content": "默认",
-                              "fill": "$gold",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 11,
+                              "fill": "$warning",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "SlZMO",
                               "name": "Default Label",
@@ -772,9 +772,9 @@
                           "children": [
                             {
                               "content": "128K",
-                              "fill": "$text-secondary",
+                              "fill": "$text-muted",
                               "fontFamily": "$font-mono",
-                              "fontSize": 12,
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "vSDtV",
                               "name": "Value",
@@ -799,9 +799,9 @@
                             },
                             {
                               "content": "可用",
-                              "fill": "$text-secondary",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 12,
+                              "fill": "$text-muted",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "r1WaL",
                               "name": "Value",
@@ -818,9 +818,9 @@
                           "children": [
                             {
                               "content": "设为默认",
-                              "fill": "$text-muted",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 12,
+                              "fill": "$text-subtle",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "DrOaM",
                               "name": "Action",
@@ -858,9 +858,9 @@
                           "children": [
                             {
                               "content": "glm-5.3-flash",
-                              "fill": "$text-primary",
+                              "fill": "$text",
                               "fontFamily": "$font-mono",
-                              "fontSize": 13,
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "RUtmY",
                               "name": "Model Name",
@@ -877,9 +877,9 @@
                           "children": [
                             {
                               "content": "128K",
-                              "fill": "$text-secondary",
+                              "fill": "$text-muted",
                               "fontFamily": "$font-mono",
-                              "fontSize": 12,
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "EaNHF",
                               "name": "Value",
@@ -904,9 +904,9 @@
                             },
                             {
                               "content": "可用",
-                              "fill": "$text-secondary",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 12,
+                              "fill": "$text-muted",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "JSKHY",
                               "name": "Value",
@@ -924,8 +924,8 @@
                             {
                               "content": "设为默认",
                               "fill": "$accent",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 12,
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "o19dV",
                               "name": "Action",
@@ -963,9 +963,9 @@
                           "children": [
                             {
                               "content": "glm-5.1",
-                              "fill": "$text-primary",
+                              "fill": "$text",
                               "fontFamily": "$font-mono",
-                              "fontSize": 13,
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "dBpb4",
                               "name": "Model Name",
@@ -982,9 +982,9 @@
                           "children": [
                             {
                               "content": "64K",
-                              "fill": "$text-secondary",
+                              "fill": "$text-muted",
                               "fontFamily": "$font-mono",
-                              "fontSize": 12,
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "oVrY2",
                               "name": "Value",
@@ -1009,9 +1009,9 @@
                             },
                             {
                               "content": "可用",
-                              "fill": "$text-secondary",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 12,
+                              "fill": "$text-muted",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "FWPkh",
                               "name": "Value",
@@ -1029,8 +1029,8 @@
                             {
                               "content": "设为默认",
                               "fill": "$accent",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 12,
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "sYQXL",
                               "name": "Action",
@@ -1068,9 +1068,9 @@
                           "children": [
                             {
                               "content": "glm-4.6",
-                              "fill": "$text-primary",
+                              "fill": "$text",
                               "fontFamily": "$font-mono",
-                              "fontSize": 13,
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "sF7Zd",
                               "name": "Model Name",
@@ -1087,9 +1087,9 @@
                           "children": [
                             {
                               "content": "32K",
-                              "fill": "$text-secondary",
+                              "fill": "$text-muted",
                               "fontFamily": "$font-mono",
-                              "fontSize": 12,
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "zTkxz",
                               "name": "Value",
@@ -1114,9 +1114,9 @@
                             },
                             {
                               "content": "可用",
-                              "fill": "$text-secondary",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 12,
+                              "fill": "$text-muted",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "vkJjh",
                               "name": "Value",
@@ -1134,8 +1134,8 @@
                             {
                               "content": "设为默认",
                               "fill": "$accent",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 12,
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "Jg82D",
                               "name": "Action",
@@ -1168,7 +1168,7 @@
                   ],
                   "clip": true,
                   "cornerRadius": 10,
-                  "fill": "$bg-surface",
+                  "fill": "$surface-raised",
                   "id": "ZWLX1",
                   "layout": "vertical",
                   "name": "Models Table",
@@ -1186,7 +1186,7 @@
                       "alignItems": "center",
                       "children": [
                         {
-                          "fill": "$text-muted",
+                          "fill": "$text-subtle",
                           "height": 14,
                           "iconFontFamily": "lucide",
                           "iconFontName": "chevron-right",
@@ -1197,9 +1197,9 @@
                         },
                         {
                           "content": "通道新模型",
-                          "fill": "$text-primary",
-                          "fontFamily": "$font-ui",
-                          "fontSize": 13,
+                          "fill": "$text",
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-xs",
                           "fontWeight": "600",
                           "id": "FocY2",
                           "name": "通道新模型",
@@ -1207,9 +1207,9 @@
                         },
                         {
                           "content": "(3)",
-                          "fill": "$text-muted",
-                          "fontFamily": "$font-ui",
-                          "fontSize": 12,
+                          "fill": "$text-subtle",
+                          "fontFamily": "$font-body",
+                          "fontSize": "$font-size-xs",
                           "fontWeight": "normal",
                           "id": "2IRGB",
                           "name": "Count",
@@ -1233,9 +1233,9 @@
                           "children": [
                             {
                               "content": "glm-5.3-air",
-                              "fill": "$text-secondary",
+                              "fill": "$text-muted",
                               "fontFamily": "$font-mono",
-                              "fontSize": 12,
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "Y9MvN",
                               "name": "Model Name",
@@ -1248,9 +1248,9 @@
                               "children": [
                                 {
                                   "content": "未配置",
-                                  "fill": "$text-muted",
-                                  "fontFamily": "$font-ui",
-                                  "fontSize": 10,
+                                  "fill": "$text-subtle",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": "$font-size-xs",
                                   "fontWeight": "normal",
                                   "id": "gtarw",
                                   "name": "Label",
@@ -1287,9 +1287,9 @@
                           "children": [
                             {
                               "content": "glm-5.2-air",
-                              "fill": "$text-secondary",
+                              "fill": "$text-muted",
                               "fontFamily": "$font-mono",
-                              "fontSize": 12,
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "AMcV2",
                               "name": "Model Name",
@@ -1302,9 +1302,9 @@
                               "children": [
                                 {
                                   "content": "未配置",
-                                  "fill": "$text-muted",
-                                  "fontFamily": "$font-ui",
-                                  "fontSize": 10,
+                                  "fill": "$text-subtle",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": "$font-size-xs",
                                   "fontWeight": "normal",
                                   "id": "9Zpqv",
                                   "name": "Label",
@@ -1341,9 +1341,9 @@
                           "children": [
                             {
                               "content": "glm-4.7x",
-                              "fill": "$text-secondary",
+                              "fill": "$text-muted",
                               "fontFamily": "$font-mono",
-                              "fontSize": 12,
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "VpUYW",
                               "name": "Model Name",
@@ -1356,9 +1356,9 @@
                               "children": [
                                 {
                                   "content": "未配置",
-                                  "fill": "$text-muted",
-                                  "fontFamily": "$font-ui",
-                                  "fontSize": 10,
+                                  "fill": "$text-subtle",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": "$font-size-xs",
                                   "fontWeight": "normal",
                                   "id": "0Pa6r",
                                   "name": "Label",
@@ -1392,7 +1392,7 @@
                         }
                       ],
                       "cornerRadius": 8,
-                      "fill": "$bg-surface",
+                      "fill": "$surface-raised",
                       "id": "Aw5zY",
                       "layout": "vertical",
                       "name": "Extra Model List",
@@ -1427,9 +1427,9 @@
                   "children": [
                     {
                       "content": "本地 Ollama",
-                      "fill": "$text-primary",
-                      "fontFamily": "$font-ui",
-                      "fontSize": 14,
+                      "fill": "$text",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-sm",
                       "fontWeight": "600",
                       "id": "M0puU",
                       "name": "本地 Ollama",
@@ -1437,9 +1437,9 @@
                     },
                     {
                       "content": "本地运行模型服务 · 自动探测已安装模型",
-                      "fill": "$text-muted",
-                      "fontFamily": "$font-ui",
-                      "fontSize": 11,
+                      "fill": "$text-subtle",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
                       "fontWeight": "normal",
                       "id": "sDVpt",
                       "name": "本地运行模型服务 · 自",
@@ -1453,9 +1453,9 @@
                           "children": [
                             {
                               "content": "http://localhost:11434",
-                              "fill": "$text-secondary",
+                              "fill": "$text-muted",
                               "fontFamily": "$font-mono",
-                              "fontSize": 12,
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "ET4yO",
                               "name": "Value",
@@ -1463,7 +1463,7 @@
                             }
                           ],
                           "cornerRadius": 8,
-                          "fill": "$bg-app",
+                          "fill": "$bg",
                           "height": 36,
                           "id": "JqTCC",
                           "name": "URL Input",
@@ -1483,7 +1483,7 @@
                           "alignItems": "center",
                           "children": [
                             {
-                              "fill": "$text-primary",
+                              "fill": "$text",
                               "height": 14,
                               "iconFontFamily": "lucide",
                               "iconFontName": "search",
@@ -1494,9 +1494,9 @@
                             },
                             {
                               "content": "探测",
-                              "fill": "$text-primary",
-                              "fontFamily": "$font-ui",
-                              "fontSize": 13,
+                              "fill": "$text",
+                              "fontFamily": "$font-body",
+                              "fontSize": "$font-size-xs",
                               "fontWeight": "normal",
                               "id": "JRre3",
                               "name": "探测",
@@ -1504,7 +1504,7 @@
                             }
                           ],
                           "cornerRadius": 8,
-                          "fill": "$bg-elevated",
+                          "fill": "$surface-hover",
                           "gap": 6,
                           "height": 36,
                           "id": "4iZH5",
@@ -1529,7 +1529,7 @@
                     }
                   ],
                   "cornerRadius": 10,
-                  "fill": "$bg-surface",
+                  "fill": "$surface-raised",
                   "gap": 12,
                   "id": "IO37M",
                   "layout": "vertical",
@@ -1544,7 +1544,7 @@
                   "width": "fill_container"
                 }
               ],
-              "fill": "$bg-app",
+              "fill": "$bg",
               "gap": 18,
               "height": "fill_container",
               "id": "a9veE",
@@ -1566,9 +1566,9 @@
         },
         {
           "content": "供应商档案",
-          "fill": "$text-muted",
-          "fontFamily": "$font-ui",
-          "fontSize": 11,
+          "fill": "$text-subtle",
+          "fontFamily": "$font-body",
+          "fontSize": "$font-size-xs",
           "fontWeight": "normal",
           "id": "lNL2e",
           "letterSpacing": 1,
@@ -1578,7 +1578,7 @@
       ],
       "clip": true,
       "cornerRadius": 14,
-      "fill": "$bg-app",
+      "fill": "$bg",
       "height": 780,
       "id": "YdPE3",
       "layout": "vertical",
@@ -1597,7 +1597,7 @@
               "alignItems": "center",
               "children": [
                 {
-                  "fill": "#FF5F57",
+                  "fill": "$danger",
                   "height": 12,
                   "id": "ABReu",
                   "name": "Close",
@@ -1605,7 +1605,7 @@
                   "width": 12
                 },
                 {
-                  "fill": "#FEBC2E",
+                  "fill": "$warning",
                   "height": 12,
                   "id": "xJWeZ",
                   "name": "Minimize",
@@ -1613,7 +1613,7 @@
                   "width": 12
                 },
                 {
-                  "fill": "#28C840",
+                  "fill": "$success",
                   "height": 12,
                   "id": "fcPJh",
                   "name": "Zoom",
@@ -1631,9 +1631,9 @@
               "children": [
                 {
                   "content": "AI 助手",
-                  "fill": "$text-primary",
-                  "fontFamily": "$font-ui",
-                  "fontSize": 13,
+                  "fill": "$text",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
                   "fontWeight": "600",
                   "id": "XnGRS",
                   "name": "AI 助手",
@@ -1656,7 +1656,7 @@
               "width": 52
             }
           ],
-          "fill": "$bg-panel",
+          "fill": "$surface",
           "gap": 16,
           "height": 46,
           "id": "ePyFT",
@@ -1693,16 +1693,16 @@
                 },
                 {
                   "content": "GLM-5.3",
-                  "fill": "$text-primary",
-                  "fontFamily": "$font-ui",
-                  "fontSize": 13,
+                  "fill": "$text",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
                   "fontWeight": "500",
                   "id": "BVNDv",
                   "name": "Model",
                   "type": "text"
                 },
                 {
-                  "fill": "$text-muted",
+                  "fill": "$text-subtle",
                   "height": 14,
                   "iconFontFamily": "lucide",
                   "iconFontName": "chevron-down",
@@ -1713,7 +1713,7 @@
                 }
               ],
               "cornerRadius": 8,
-              "fill": "$bg-elevated",
+              "fill": "$surface-hover",
               "gap": 8,
               "id": "fYpij",
               "name": "Model Chip",
@@ -1742,7 +1742,7 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "fill": "#0B1220",
+                      "fill": "$on-accent",
                       "height": 11,
                       "iconFontFamily": "lucide",
                       "iconFontName": "check",
@@ -1753,7 +1753,7 @@
                     }
                   ],
                   "cornerRadius": 4,
-                  "fill": "$accent",
+                  "fill": "$accent-strong",
                   "height": 16,
                   "id": "RMblT",
                   "justifyContent": "center",
@@ -1763,9 +1763,9 @@
                 },
                 {
                   "content": "总结播报",
-                  "fill": "$text-secondary",
-                  "fontFamily": "$font-ui",
-                  "fontSize": 12,
+                  "fill": "$text-muted",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
                   "fontWeight": "normal",
                   "id": "th0Uc",
                   "name": "Label",
@@ -1781,7 +1781,7 @@
               "alignItems": "center",
               "children": [
                 {
-                  "fill": "$text-primary",
+                  "fill": "$text",
                   "height": 14,
                   "iconFontFamily": "lucide",
                   "iconFontName": "message-square-plus",
@@ -1792,9 +1792,9 @@
                 },
                 {
                   "content": "新会话",
-                  "fill": "$text-primary",
-                  "fontFamily": "$font-ui",
-                  "fontSize": 12,
+                  "fill": "$text",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
                   "fontWeight": "normal",
                   "id": "qlNs9",
                   "name": "新会话",
@@ -1802,7 +1802,7 @@
                 }
               ],
               "cornerRadius": 8,
-              "fill": "$bg-elevated",
+              "fill": "$surface-hover",
               "gap": 6,
               "id": "pTg6A",
               "name": "New Session",
@@ -1821,7 +1821,7 @@
               "alignItems": "center",
               "children": [
                 {
-                  "fill": "$text-muted",
+                  "fill": "$text-subtle",
                   "height": 16,
                   "iconFontFamily": "lucide",
                   "iconFontName": "x",
@@ -1840,7 +1840,7 @@
               "width": 28
             }
           ],
-          "fill": "$bg-panel",
+          "fill": "$surface",
           "gap": 12,
           "height": 56,
           "id": "Bl82D",
@@ -1869,9 +1869,9 @@
                   "children": [
                     {
                       "content": "帮我把今天的会议要点整理成三条待办",
-                      "fill": "$text-primary",
-                      "fontFamily": "$font-ui",
-                      "fontSize": 13,
+                      "fill": "$text",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
                       "fontWeight": "normal",
                       "id": "2k4xN",
                       "name": "帮我把今天的会议要点整理",
@@ -1879,7 +1879,7 @@
                     }
                   ],
                   "cornerRadius": 12,
-                  "fill": "$bg-elevated",
+                  "fill": "$surface-hover",
                   "id": "TXJW7",
                   "name": "User Bubble",
                   "padding": [
@@ -1901,9 +1901,9 @@
                   "children": [
                     {
                       "content": "已整理 3 条待办，并存入「会议待办」列表。",
-                      "fill": "$text-secondary",
-                      "fontFamily": "$font-ui",
-                      "fontSize": 13,
+                      "fill": "$text-muted",
+                      "fontFamily": "$font-body",
+                      "fontSize": "$font-size-xs",
                       "fontWeight": "normal",
                       "id": "qJjOw",
                       "name": "已整理 3 条待办，并存",
@@ -1911,7 +1911,7 @@
                     }
                   ],
                   "cornerRadius": 12,
-                  "fill": "$bg-surface",
+                  "fill": "$surface-raised",
                   "id": "3qN2h",
                   "name": "Assistant Bubble",
                   "padding": [
@@ -1932,7 +1932,7 @@
               "width": "fill_container"
             }
           ],
-          "fill": "$bg-app",
+          "fill": "$bg",
           "gap": 12,
           "height": 418,
           "id": "xyCrt",
@@ -1948,9 +1948,9 @@
           "children": [
             {
               "content": "最近使用",
-              "fill": "$text-muted",
-              "fontFamily": "$font-ui",
-              "fontSize": 11,
+              "fill": "$text-subtle",
+              "fontFamily": "$font-body",
+              "fontSize": "$font-size-xs",
               "fontWeight": "normal",
               "id": "Gstur",
               "name": "Section Label",
@@ -1961,9 +1961,9 @@
               "children": [
                 {
                   "content": "GLM-5.3",
-                  "fill": "$text-primary",
-                  "fontFamily": "$font-ui",
-                  "fontSize": 13,
+                  "fill": "$text",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
                   "fontWeight": "normal",
                   "id": "oSRlo",
                   "name": "Model",
@@ -1983,7 +1983,7 @@
                 }
               ],
               "cornerRadius": 6,
-              "fill": "$bg-surface",
+              "fill": "$surface-raised",
               "gap": 10,
               "id": "6zHvz",
               "name": "Item GLM-5.3",
@@ -1999,9 +1999,9 @@
               "children": [
                 {
                   "content": "GLM-5.3-flash",
-                  "fill": "$text-secondary",
-                  "fontFamily": "$font-ui",
-                  "fontSize": 13,
+                  "fill": "$text-muted",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
                   "fontWeight": "normal",
                   "id": "G9SVQ",
                   "name": "Model",
@@ -2026,9 +2026,9 @@
               "children": [
                 {
                   "content": "DeepSeek-V3",
-                  "fill": "$text-secondary",
-                  "fontFamily": "$font-ui",
-                  "fontSize": 13,
+                  "fill": "$text-muted",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
                   "fontWeight": "normal",
                   "id": "F3f0N",
                   "name": "Model",
@@ -2058,9 +2058,9 @@
             },
             {
               "content": "全部档案",
-              "fill": "$text-muted",
-              "fontFamily": "$font-ui",
-              "fontSize": 11,
+              "fill": "$text-subtle",
+              "fontFamily": "$font-body",
+              "fontSize": "$font-size-xs",
               "fontWeight": "normal",
               "id": "9vYzN",
               "name": "Section Label",
@@ -2071,9 +2071,9 @@
               "children": [
                 {
                   "content": "Kimi K2",
-                  "fill": "$text-secondary",
-                  "fontFamily": "$font-ui",
-                  "fontSize": 13,
+                  "fill": "$text-muted",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
                   "fontWeight": "normal",
                   "id": "9oouz",
                   "name": "Model",
@@ -2098,9 +2098,9 @@
               "children": [
                 {
                   "content": "MiniMax M2",
-                  "fill": "$text-secondary",
-                  "fontFamily": "$font-ui",
-                  "fontSize": 13,
+                  "fill": "$text-muted",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
                   "fontWeight": "normal",
                   "id": "fVTtj",
                   "name": "Model",
@@ -2125,9 +2125,9 @@
               "children": [
                 {
                   "content": "GPT-5",
-                  "fill": "$text-secondary",
-                  "fontFamily": "$font-ui",
-                  "fontSize": 13,
+                  "fill": "$text-muted",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
                   "fontWeight": "normal",
                   "id": "8kKfX",
                   "name": "Model",
@@ -2152,9 +2152,9 @@
               "children": [
                 {
                   "content": "Qwen3-32B（本地）",
-                  "fill": "$text-secondary",
-                  "fontFamily": "$font-ui",
-                  "fontSize": 13,
+                  "fill": "$text-muted",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
                   "fontWeight": "normal",
                   "id": "L7ZIY",
                   "name": "Model",
@@ -2186,7 +2186,7 @@
               "alignItems": "center",
               "children": [
                 {
-                  "fill": "$text-secondary",
+                  "fill": "$text-muted",
                   "height": 15,
                   "iconFontFamily": "lucide",
                   "iconFontName": "settings",
@@ -2197,9 +2197,9 @@
                 },
                 {
                   "content": "模型设置…",
-                  "fill": "$text-secondary",
-                  "fontFamily": "$font-ui",
-                  "fontSize": 13,
+                  "fill": "$text-muted",
+                  "fontFamily": "$font-body",
+                  "fontSize": "$font-size-xs",
                   "fontWeight": "normal",
                   "id": "CA7IP",
                   "name": "Label",
@@ -2218,7 +2218,7 @@
             }
           ],
           "cornerRadius": 10,
-          "fill": "$bg-elevated",
+          "fill": "$surface-hover",
           "gap": 2,
           "id": "uRukW",
           "layout": "vertical",
@@ -2237,7 +2237,7 @@
       ],
       "clip": true,
       "cornerRadius": 14,
-      "fill": "$bg-app",
+      "fill": "$bg",
       "height": 520,
       "id": "9dKaX",
       "layout": "none",
@@ -2251,11 +2251,20 @@
   "variables": {
     "accent": {
       "type": "color",
-      "value": "#4C8DFF"
-    },
-    "accent-dim": {
-      "type": "color",
-      "value": "#1B2A47"
+      "value": [
+        {
+          "value": "#9baeff",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#4057c4",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "amber": {
       "type": "color",
@@ -2263,63 +2272,92 @@
     },
     "bg": {
       "type": "color",
-      "value": "#0E1014"
-    },
-    "bg-app": {
-      "type": "color",
-      "value": "#0E1116"
-    },
-    "bg-elevated": {
-      "type": "color",
-      "value": "#222834"
-    },
-    "bg-panel": {
-      "type": "color",
-      "value": "#14181F"
-    },
-    "bg-surface": {
-      "type": "color",
-      "value": "#1A1F28"
+      "value": [
+        {
+          "value": "#17191f",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#f4f6fa",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "border": {
       "type": "color",
-      "value": "#2A3038"
+      "value": [
+        {
+          "value": "#414a5c",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#cbd3e1",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "border-strong": {
       "type": "color",
-      "value": "#363E4C"
-    },
-    "font": {
-      "type": "string",
-      "value": "Noto Sans SC"
+      "value": [
+        {
+          "value": "#4d5668",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#b3bdd0",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "font-mono": {
       "type": "string",
       "value": "JetBrains Mono"
     },
-    "font-ui": {
-      "type": "string",
-      "value": "Noto Sans SC"
-    },
-    "gold": {
-      "type": "color",
-      "value": "#E3B341"
-    },
-    "green": {
-      "type": "color",
-      "value": "#3FB950"
-    },
-    "mono": {
-      "type": "string",
-      "value": "Roboto Mono"
-    },
     "success": {
       "type": "color",
-      "value": "#3FB950"
+      "value": [
+        {
+          "value": "#85dab0",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#1d7251",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "surface": {
       "type": "color",
-      "value": "#15181D"
+      "value": [
+        {
+          "value": "#22252e",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#ffffff",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "surface-2": {
       "type": "color",
@@ -2327,19 +2365,382 @@
     },
     "text-muted": {
       "type": "color",
-      "value": "#6C7482"
-    },
-    "text-primary": {
-      "type": "color",
-      "value": "#E9ECF2"
-    },
-    "text-secondary": {
-      "type": "color",
-      "value": "#9AA3B0"
+      "value": [
+        {
+          "value": "#b0b8c9",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#526078",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "warning": {
       "type": "color",
-      "value": "#D29922"
+      "value": [
+        {
+          "value": "#efc47b",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#8b590c",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "surface-raised": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#2d313c",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#eef1f7",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "surface-hover": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#353b48",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#e3e8f2",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "input": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#1c1f27",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#ffffff",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "text": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#edf0f7",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#202636",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "text-subtle": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#8b96aa",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#64728a",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "accent-strong": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#4f63d8",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#4057c4",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "on-accent": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#ffffff",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#ffffff",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "accent-soft": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#303b64",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#e6eaff",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "success-soft": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#1b3a31",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#e1f3e9",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "warning-soft": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#3e3422",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#fff0d5",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "danger": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#ff9da5",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#b33346",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "danger-soft": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#44282f",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#fde7eb",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "info": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#97c9ff",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#245f9d",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "info-soft": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#22394f",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#e4f0ff",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "scrim": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#00000066",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#10182840",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "font-body": {
+      "type": "string",
+      "value": "Noto Sans SC"
+    },
+    "font-size-xs": {
+      "type": "number",
+      "value": 12
+    },
+    "font-size-sm": {
+      "type": "number",
+      "value": 14
+    },
+    "font-size-base": {
+      "type": "number",
+      "value": 16
+    },
+    "font-size-md": {
+      "type": "number",
+      "value": 17
+    },
+    "font-size-lg": {
+      "type": "number",
+      "value": 18
+    },
+    "font-size-xl": {
+      "type": "number",
+      "value": 21
+    },
+    "font-size-title": {
+      "type": "number",
+      "value": 25
+    },
+    "font-size-display": {
+      "type": "number",
+      "value": 32
+    },
+    "line-height": {
+      "type": "number",
+      "value": 1.5
+    },
+    "radius-sm": {
+      "type": "number",
+      "value": 6
+    },
+    "radius-md": {
+      "type": "number",
+      "value": 10
+    },
+    "radius-lg": {
+      "type": "number",
+      "value": 16
+    },
+    "space-1": {
+      "type": "number",
+      "value": 4
+    },
+    "space-2": {
+      "type": "number",
+      "value": 8
+    },
+    "space-3": {
+      "type": "number",
+      "value": 12
+    },
+    "space-4": {
+      "type": "number",
+      "value": 16
+    },
+    "space-5": {
+      "type": "number",
+      "value": 24
+    },
+    "space-6": {
+      "type": "number",
+      "value": 32
+    },
+    "space-7": {
+      "type": "number",
+      "value": 40
+    },
+    "space-8": {
+      "type": "number",
+      "value": 48
     }
+  },
+  "themes": {
+    "mode": [
+      "dark",
+      "light"
+    ]
   }
 }

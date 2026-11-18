@@ -11,17 +11,16 @@ export function loadTokens() { return JSON.parse(readFileSync(join(DESIGNS_DIR, 
 export function buildVariables(tokens = loadTokens()) {
   const common = tokens.common
   const dark = tokens.themes.dark.tokens
-  const light = tokens.themes.light.tokens
   const variables = {}
 
   for (const key of Object.keys(dark)) {
     if (key === 'shadow') continue
     variables[key] = {
       type: 'color',
-      value: [
-        { value: dark[key], theme: { mode: 'dark' } },
-        { value: light[key], theme: { mode: 'light' } },
-      ],
+      value: Object.entries(tokens.themes).map(([id, theme]) => {
+        if (typeof theme.tokens[key] !== 'string') throw Error(`Missing ${id} theme token: ${key}`)
+        return { value: theme.tokens[key], theme: { mode: id } }
+      }),
     }
   }
 
@@ -48,4 +47,5 @@ export function buildVariables(tokens = loadTokens()) {
   return variables
 }
 
-export const THEME_AXIS = { mode: ['dark', 'light'] }
+export function themeAxes(tokens = loadTokens()) { return { mode: Object.keys(tokens.themes) } }
+export const THEME_AXIS = themeAxes()

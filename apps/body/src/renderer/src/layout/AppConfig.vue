@@ -7,6 +7,7 @@ import { useI18n } from '@renderer/composables/useI18n'
 import { useLayout } from '@renderer/layout/composables/layout'
 import { onMounted, ref, watch } from 'vue'
 import { currentTheme } from '@renderer/theme'
+import { themeScheme } from '@shared/theme'
 
 defineProps({
   simple: {
@@ -450,12 +451,12 @@ function toggleDarkMode() {
 
 function executeDarkModeToggle() {
   void window.electron.ipcRenderer.invoke('theme-set', {
-    id: currentTheme.value.id === 'dark' ? 'light' : 'dark',
+    id: themeScheme(currentTheme.value.id) === 'dark' ? 'light' : 'dark',
     fontScale: currentTheme.value.fontScale
   })
 }
 watch(currentTheme, theme => {
-  layoutConfig.darkTheme = theme.id === 'dark'
+  layoutConfig.darkTheme = themeScheme(theme.id) === 'dark'
   if (layoutConfig.darkTheme && layoutConfig.layoutTheme === 'primaryColor') {
     layoutConfig.layoutTheme = 'colorScheme'
     layoutTheme.value = 'colorScheme'

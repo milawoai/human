@@ -1,12 +1,12 @@
 import { electronAPI } from '@electron-toolkit/preload'
 import { contextBridge, webUtils, ipcRenderer, webFrame } from 'electron'
-import { defaultTheme, themeBootstrapCss } from '../shared/theme'
+import { defaultTheme, themeBootstrapCss, themeScheme } from '../shared/theme'
 const initialTheme = ipcRenderer.sendSync('theme-bootstrap') ?? { ...defaultTheme, revision: 0 }
 void webFrame.insertCSS(themeBootstrapCss(initialTheme))
 window.addEventListener('DOMContentLoaded', () => {
   if (document.documentElement.dataset.humanTheme) return
   document.documentElement.dataset.humanTheme = initialTheme.id
-  document.documentElement.classList.toggle('app-dark', initialTheme.id === 'dark')
+  document.documentElement.classList.toggle('app-dark', themeScheme(initialTheme.id) === 'dark')
 }, { once: true })
 
 // Custom APIs for renderer

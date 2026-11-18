@@ -1,5 +1,5 @@
 import { shallowRef } from 'vue'
-import { defaultTheme, themeVariables } from '@shared/theme'
+import { defaultTheme, themeVariables, themeScheme } from '@shared/theme'
 import type { ThemeSnapshot } from '@shared/theme'
 import { ThemeReceiver } from '@shared/theme-receiver'
 export const currentTheme = shallowRef<ThemeSnapshot>({ ...defaultTheme, revision: -1 })
@@ -8,7 +8,8 @@ export function initializeRendererTheme() {
   const receiver = new ThemeReceiver(snapshot => {
     for (const [key, value] of Object.entries(themeVariables(snapshot))) root.style.setProperty(key, value)
     root.dataset.humanTheme = snapshot.id
-    root.classList.toggle('app-dark', snapshot.id === 'dark')
+    root.classList.toggle('app-dark', themeScheme(snapshot.id) === 'dark')
+    root.style.colorScheme = themeScheme(snapshot.id)
     currentTheme.value = snapshot
   })
   const ipc = window.electron.ipcRenderer

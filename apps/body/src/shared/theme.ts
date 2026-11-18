@@ -11,6 +11,11 @@ export function validateTheme(value: unknown): ThemePreference {
   }
   return { id: preference.id, fontScale: preference.fontScale }
 }
+export function themeScheme(id: ThemeId): 'dark' | 'light' {
+  const scheme = definitions.themes[id].scheme
+  if (scheme !== 'dark' && scheme !== 'light') throw Error('Invalid theme color scheme')
+  return scheme
+}
 export function themeVariables(preference: ThemePreference): Record<string, string> {
   const valid = validateTheme(preference)
   const tokens = { ...definitions.common, ...definitions.themes[valid.id].tokens }
@@ -21,5 +26,5 @@ export function themeVariables(preference: ThemePreference): Record<string, stri
 }
 export function themeBootstrapCss(preference: ThemePreference): string {
   const variables = Object.entries(themeVariables(preference)).map(([key, value]) => `${key}:${value}`).join(';')
-  return `:root{${variables};color-scheme:${preference.id}}html{font-size:var(--human-root-size)!important}`
+  return `:root{${variables};color-scheme:${themeScheme(preference.id)}}html{font-size:var(--human-root-size)!important}`
 }

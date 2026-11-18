@@ -17,6 +17,8 @@
     "verify:startup-window": "yarn workspace electron_with_serve build:no-lint && yarn workspace electron_with_serve test:startup && node scripts/verify-startup-window.cjs",
     "verify:theme": "yarn workspace electron_with_serve build:no-lint && yarn workspace electron_with_serve test:theme && node scripts/theme/check-contrast.mjs && node scripts/verify-theme.cjs",
     "verify:desktop-electron": "yarn verify:process-boundaries && node scripts/verify-desktop-electron.cjs",
+    "theme:sync": "node scripts/theme/sync-theme.mjs",
+    "theme:test-sync": "node --test scripts/theme/sync-theme.test.mjs",
     "theme:build": "node scripts/theme/build-theme-pen.mjs",
     "theme:check": "node scripts/theme/check-contrast.mjs"
   },
