@@ -63,6 +63,9 @@ async function main() {
     assert.equal(jobs.result('scope-a', done.jobId).report, 'read complete');
     assert.throws(complete, errorCode('JOB_STALE_VERSION'));
     const limited = new JobRepository(source, 'owner-a', 1);
+    assert.throws(() => limited.submit('scope-a', input(), 31), errorCode('JOB_SCHEMA_INCOMPATIBLE'),
+      'each repository instance must validate the schema before use');
+    limited.initialize();
     assert.equal(limited.submit('scope-a', input(), 31).reused, true, 'replay survives retention capacity');
     assert.throws(() => limited.submit('scope-a', input('new'), 31), errorCode('JOB_CAPACITY'));
     await source.query(`CREATE TRIGGER fixture_reject BEFORE INSERT ON motor_jobs
