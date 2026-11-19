@@ -1,13 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import type { DataSource } from 'typeorm';
 import { JobError } from '../jobs.errors';
-import type { JobSnapshot, WorkerOutcome } from '../jobs.types';
+import type { JobSnapshot, JobProgress, WorkerOutcome } from '../jobs.types';
 import { parseSubmitJob, fingerprintJob } from '../core/job-input';
 import { decideJobAdmission } from '../core/job-admission';
 import { transitionJob, type JobTransition } from '../core/job-state';
 import { jobDatabase, jobTransaction } from './job-database';
 import { initializeJobSchema } from './job-schema';
-import { jobSnapshot, type JobRow } from './job-row';
+import { jobSnapshot, storedSpec, type JobRow } from './job-row';
+import { validateJobProgress } from '../core/job-progress';
 import { insertJobResult, readJobResult } from './job-result';
 
 export class JobRepository {
@@ -64,6 +65,28 @@ export class JobRepository {
     return readJobResult(this.db, jobId);
   }
 
+  executionSpec(scopeKey: string, jobId: string) {
+    this.ready();
+    return storedSpec(this.ownedRow(scopeKey, jobId));
+  }
+
+  progress(scopeKey: string, jobId: string, update: JobProgress, now: number): JobSnapshot {
+    this.ready();
+    const progress = validateJobProgress(update);
+    return jobTransaction(this.db, () => {
+      const row = this.ownedRow(scopeKey, jobId);
+      if (row.state !== 'running' && row.state !== 'cancelling') {
+        throw new JobError('JOB_INVALID_TRANSITION', 'Only an active executor can update progress');
+      }
+      const current = jobSnapshot(row);
+      if (!Number.isSafeInteger(now) || now < Math.max(current.createdAt, current.startedAt ?? 0, current.cancelRequestedAt ?? 0)
+        || !Number.isSafeInteger(current.seq + 1)) throw new JobError('JOB_INVALID_INPUT', 'Invalid progress time or version');
+      const next = { ...current, progress, seq: row.seq + 1 };
+      this.update(row, next);
+      return next;
+    });
+  }
+
   transition(scopeKey: string, jobId: string, seq: number, event: Exclude<JobTransition, { type: 'settle' }>, now: number): JobSnapshot {
     this.ready();
     return jobTransaction(this.db, () => {
@@ -106,10 +129,11 @@ export class JobRepository {
 
   private update(row: JobRow, next: JobSnapshot): void {
     const result = this.db.prepare(`UPDATE motor_jobs SET state = ?, seq = ?, started_at = ?, finished_at = ?,
-      cancel_requested_at = ?, result_ref = ?, error_json = ?, reason = ?
+      cancel_requested_at = ?, result_ref = ?, error_json = ?, reason = ?, progress_json = ?
       WHERE job_id = ? AND scope_key = ? AND state = ? AND seq = ? AND owner_instance_id = ?`)
       .run(next.state, next.seq, next.startedAt ?? null, next.finishedAt ?? null, next.cancelRequestedAt ?? null,
         next.resultRef ?? null, next.error ? JSON.stringify(next.error) : null, next.reason ?? null,
+        next.progress ? JSON.stringify(next.progress) : null,
         row.job_id, row.scope_key, row.state, row.seq, this.ownerInstanceId);
     if (result.changes !== 1) throw new JobError('JOB_STALE_VERSION', 'Job owner or state changed before commit');
   }

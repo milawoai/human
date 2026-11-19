@@ -1,0 +1,108 @@
+import type { JobSnapshot, WorkerOutcome } from '../jobs.types';
+import type { JobRepository } from '../persistence/job.repository';
+import { JobError } from '../jobs.errors';
+import type { JobExecutorRegistry } from './executor-registry';
+import { JobProgressBuffer } from './job-progress';
+
+interface DispatchHandle {
+  controller: AbortController;
+  finished: Promise<void>;
+}
+interface DispatchOptions {
+  runTimeoutMs?: number;
+  changed?: (job: JobSnapshot) => void | Promise<void>;
+  diagnostic?: (error: unknown) => void;
+}
+
+export class JobDispatcher {
+  // Transient cancellation/wait handles only. Job state is always read from SQLite.
+  private readonly handles = new Map<string, DispatchHandle>();
+  private readonly timeoutMs: number;
+
+  constructor(private readonly repository: JobRepository, private readonly executors: JobExecutorRegistry,
+    private readonly options: DispatchOptions = {}) {
+    this.timeoutMs = options.runTimeoutMs ?? 300_000;
+    if (!Number.isSafeInteger(this.timeoutMs) || this.timeoutMs < 1) {
+      throw new JobError('JOB_INVALID_INPUT', 'Invalid execution timeout');
+    }
+  }
+
+  schedule(scopeKey: string, job: JobSnapshot): void {
+    if (this.handles.has(job.jobId)) return;
+    let finish!: () => void;
+    const handle: DispatchHandle = { controller: new AbortController(),
+      finished: new Promise<void>(resolve => { finish = resolve; }) };
+    this.handles.set(job.jobId, handle);
+    setImmediate(() => {
+      void this.run(scopeKey, job.jobId, handle).catch(error => this.diagnostic(error)).finally(() => {
+        this.handles.delete(job.jobId);
+        finish();
+      });
+    });
+    this.changed(job);
+  }
+
+  cancel(scopeKey: string, jobId: string): { requested: boolean; job: JobSnapshot } {
+    const current = this.repository.get(scopeKey, jobId);
+    const next = this.repository.transition(scopeKey, jobId, current.seq, { type: 'cancel' }, Date.now());
+    const requested = next.seq !== current.seq;
+    if (requested) {
+      this.changed(next);
+      if (next.state === 'cancelling') this.handles.get(jobId)?.controller.abort();
+    }
+    return { requested, job: next };
+  }
+
+  async waitForIdle(): Promise<void> {
+    while (this.handles.size) await Promise.all([...this.handles.values()].map(handle => handle.finished));
+  }
+
+  private async run(scopeKey: string, jobId: string, handle: DispatchHandle): Promise<void> {
+    let budget: ReturnType<typeof setTimeout> | undefined;
+    const progress = new JobProgressBuffer(update => {
+      this.changed(this.repository.progress(scopeKey, jobId, update, Date.now()));
+    }, error => this.diagnostic(error));
+    try {
+      const accepted = this.repository.get(scopeKey, jobId);
+      if (accepted.state !== 'accepted') return; // cancellation already won; do not load a model
+      const spec = this.repository.executionSpec(scopeKey, jobId);
+      const running = this.repository.transition(scopeKey, jobId, accepted.seq, { type: 'dispatch' }, Date.now());
+      this.changed(running);
+      budget = setTimeout(() => {
+        try { this.cancel(scopeKey, jobId); } catch (error) { this.diagnostic(error); }
+      }, this.timeoutMs);
+      budget.unref();
+      let outcome: WorkerOutcome;
+      try {
+        const executor = this.executors.require(running.kind);
+        outcome = await executor.execute(spec, { jobId, signal: handle.controller.signal,
+          progress: update => progress.update(update) });
+      } catch (error) {
+        this.diagnostic(error);
+        outcome = { outcome: 'failed', error: { code: 'WORKER_EXECUTION_FAILED',
+          message: 'Background executor rejected the execution' } };
+      }
+      // A progress/notification failure does not rewrite the actual execution outcome.
+      try { progress.close(); } catch (error) { this.diagnostic(error); }
+      const current = this.repository.get(scopeKey, jobId);
+      this.changed(this.repository.settle(scopeKey, jobId, current.seq, outcome, Date.now()));
+    } finally {
+      if (budget) clearTimeout(budget);
+      try { progress.close(); } catch (error) { this.diagnostic(error); }
+    }
+  }
+
+  private changed(job: JobSnapshot): void {
+    try {
+      const notification = this.options.changed?.(structuredClone(job));
+      if (notification) void Promise.resolve(notification).catch(error => this.diagnostic(error));
+    } catch (error) { this.diagnostic(error); }
+  }
+
+  private diagnostic(error: unknown): void {
+    try {
+      if (this.options.diagnostic) this.options.diagnostic(error);
+      else console.warn('[jobs] background operation failed', error instanceof JobError ? error.code : 'JOB_INTERNAL_ERROR');
+    } catch { /* diagnostics must not become another execution-state authority */ }
+  }
+}
