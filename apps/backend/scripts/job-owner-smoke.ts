@@ -33,6 +33,9 @@ async function main() {
     old.transition('s', submitted.job.jobId, 2, { type: 'cancel' }, 12);
     const nextIdentity = { ...identity, instanceId: 'next', pid: process.pid };
     const next = new JobOwner(source, nextIdentity);
+    const reusedIdentity = new JobOwner(source, { ...nextIdentity, instanceId: 'old' });
+    assert.throws(() => reusedIdentity.acquire(), (e: unknown) => e instanceof JobError && e.code === 'JOB_HOST_BUSY',
+      'a reused instanceId must not bypass the live process guard');
     assert.throws(() => next.acquire(), (e: unknown) => e instanceof JobError && e.code === 'JOB_HOST_BUSY');
     const unsure = new JobOwner(source, nextIdentity, () => 'unknown');
     assert.throws(() => unsure.acquire(), (e: unknown) => e instanceof JobError && e.code === 'JOB_HOST_BUSY');

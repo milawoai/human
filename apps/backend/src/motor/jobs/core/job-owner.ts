@@ -22,7 +22,8 @@ export class JobOwner {
     return jobTransaction(this.db, () => {
       const previous = readJobOwner(this.db);
       const rows = this.db.prepare("SELECT * FROM motor_jobs WHERE state IN ('accepted','running','cancelling')").all() as JobRow[];
-      if (previous?.instance_id === this.identity.instanceId) {
+      if (previous?.instance_id === this.identity.instanceId && previous.pid === this.identity.pid
+        && previous.started_at === this.identity.startedAt) {
         assertJobOwner(this.db, this.identity.instanceId); return [];
       }
       // Any live PID, including a recycled PID, blocks takeover. Never infer death from heartbeat age.
