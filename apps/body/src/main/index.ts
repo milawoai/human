@@ -19,7 +19,7 @@ import { acquireDesktopInstance } from './services/backend-lifecycle/desktop-sta
 import { startupProgress } from './services/startup'
 import { waitForStartupDisplay } from './services/startup/display'
 import { runStartupTasks } from './services/startup/tasks'
-import { initializeTheme } from './services/theme'
+import { initializeTheme, status as themeStatus } from './services/theme'
 import { configureBackendServices, startBackendServices, closeBackendServices } from './services/backend-lifecycle'
 import { installAsyncQuit, installSessionQuit } from './services/backend-lifecycle/shutdown'
 
@@ -65,7 +65,7 @@ const applyStartupSettings = async () => {
 async function initializeApp() {
   const windows = WindowManager.getInstance()
   createWindow()
-  windows.createHelloWindow()
+  windows.createHelloWindow(themeStatus().fontScale)
   const hello = windows.getHelloWindow()
   const displayed = hello
     ? waitForStartupDisplay(hello, startupController.signal)
@@ -110,7 +110,7 @@ if (primaryInstance) app.whenReady().then(async () => {
 
   installSessionQuit(powerMonitor, app)
   initializeHandlers()
-  initializeTheme()
+  initializeTheme(snapshot => WindowManager.getInstance().resizeHelloWindow(snapshot.fontScale))
   initializeTray()
   initialGlobalShortcut()
 

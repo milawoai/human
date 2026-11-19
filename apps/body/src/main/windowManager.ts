@@ -11,6 +11,7 @@ import { BrowserWindow, screen, shell } from 'electron'
 import { join } from 'path'
 import icon from '../../resources/icon.png?asset'
 import { generateUserAgent } from './utils'
+import { startupWindowBounds } from './services/startup/window-size'
 
 interface ChildWindowOptions {
   width?: number
@@ -411,24 +412,18 @@ export class WindowManager {
     return this.floatWindow
   }
 
-  createHelloWindow() {
+  createHelloWindow(fontScale = 1) {
     try {
       if (this.helloWindow && !this.helloWindow.isDestroyed()) {
         this.helloWindow.show()
         return { success: true, message: 'HelloWindow已显示' }
       }
 
-      const primaryDisplay = screen.getPrimaryDisplay()
-      const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
-      const width = 480
-      const height = 320
+      const bounds = startupWindowBounds(fontScale, screen.getPrimaryDisplay().workArea)
 
       this.helloWindow = new BrowserWindow({
         backgroundColor: '#00000000',
-        width,
-        height,
-        x: Math.round((screenWidth - width) / 2),
-        y: Math.round((screenHeight - height) / 2),
+        ...bounds,
         frame: false,
         transparent: true,
         resizable: false,
@@ -464,6 +459,12 @@ export class WindowManager {
       const errorMessage = error instanceof Error ? error.message : String(error)
       return { success: false, msg: errorMessage }
     }
+  }
+
+  resizeHelloWindow(fontScale: number) {
+    const window = this.helloWindow
+    if (!window || window.isDestroyed()) return
+    window.setBounds(startupWindowBounds(fontScale, screen.getDisplayMatching(window.getBounds()).workArea))
   }
 
   closeHelloWindow() {
