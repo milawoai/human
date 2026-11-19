@@ -50,3 +50,6 @@ daemon.pid
 # They would override fork protection in .git/info/exclude.
 # Config files (metadata.json, config.yaml) are tracked by git by default
 # since no pattern above ignores them.
+
+# bd 自动备份（每 15 分钟重建的 Dolt 快照，派生物，不进 git）
+backup/
