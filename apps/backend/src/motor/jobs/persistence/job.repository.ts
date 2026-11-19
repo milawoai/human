@@ -10,6 +10,7 @@ import { initializeJobSchema } from './job-schema';
 import { jobSnapshot, storedSpec, type JobRow } from './job-row';
 import { validateJobProgress } from '../core/job-progress';
 import { insertJobResult, readJobResult } from './job-result';
+import { assertJobOwner } from './job-owner-row';
 
 export class JobRepository {
   private readonly db;
@@ -43,6 +44,7 @@ export class JobRepository {
       const decision = decideJobAdmission(request, row ? { scopeKey: row.scope_key,
         idempotencyKey: row.idempotency_key, specHash: row.spec_hash, jobId: row.job_id, state: row.state } : undefined, busy);
       if (decision.kind === 'reuse') return { job: jobSnapshot(row!), reused: true };
+      assertJobOwner(this.db, this.ownerInstanceId);
       const count = this.db.prepare("SELECT count(*) AS n FROM motor_jobs WHERE state NOT IN ('accepted','running','cancelling')")
         .get() as { n: number };
       if (count.n >= this.capacity) throw new JobError('JOB_CAPACITY', 'Job retention limit reached; explicit maintenance is required');
@@ -122,6 +124,7 @@ export class JobRepository {
   }
 
   private ownedRow(scopeKey: string, jobId: string): JobRow {
+    assertJobOwner(this.db, this.ownerInstanceId);
     const row = this.row(scopeKey, jobId);
     if (row.owner_instance_id !== this.ownerInstanceId) throw new JobError('JOB_OWNER_MISMATCH', 'Job belongs to a different host instance');
     return row;

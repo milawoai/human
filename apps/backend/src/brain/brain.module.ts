@@ -22,12 +22,15 @@ import { MemoryModule } from './hippocampus/memory.module';
 import { BrainSpeechService } from './speech/brain-speech.service';
 import { ToolRoutingLogStore } from './basal-ganglia/tool-routing-log.store';
 import { ToolRouterService } from './basal-ganglia/tool-router.service';
+import { JobsModule } from '../motor/jobs/jobs.module';
+import { PiReadonlyWorkerService } from './agent/worker/pi-readonly-worker.service';
 
 
 @Global()
 @Module({
-  imports: [NeuralModule, BrainLanguageCenterModule, MemoryModule, MotorToolRunnerModule],
+  imports: [NeuralModule, BrainLanguageCenterModule, MemoryModule, MotorToolRunnerModule, JobsModule],
   providers: [
+    PiReadonlyWorkerService,
     BrainInitService,
     BrainCortexService,
     BrainAgentService,

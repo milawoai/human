@@ -5,6 +5,7 @@ import type { JobExecutorRegistry } from './executor-registry';
 import { JobProgressBuffer } from './job-progress';
 
 interface DispatchHandle {
+  scopeKey: string;
   controller: AbortController;
   finished: Promise<void>;
 }
@@ -30,7 +31,7 @@ export class JobDispatcher {
   schedule(scopeKey: string, job: JobSnapshot): void {
     if (this.handles.has(job.jobId)) return;
     let finish!: () => void;
-    const handle: DispatchHandle = { controller: new AbortController(),
+    const handle: DispatchHandle = { scopeKey, controller: new AbortController(),
       finished: new Promise<void>(resolve => { finish = resolve; }) };
     this.handles.set(job.jobId, handle);
     setImmediate(() => {
@@ -55,6 +56,17 @@ export class JobDispatcher {
 
   async waitForIdle(): Promise<void> {
     while (this.handles.size) await Promise.all([...this.handles.values()].map(handle => handle.finished));
+  }
+
+  async shutdown(timeoutMs = 10_000): Promise<boolean> {
+    for (const [jobId, handle] of this.handles) {
+      try { this.cancel(handle.scopeKey, jobId); } catch (error) { this.diagnostic(error); }
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([this.waitForIdle().then(() => true),
+        new Promise<boolean>(resolve => { timer = setTimeout(() => resolve(false), timeoutMs); })]);
+    } finally { if (timer) clearTimeout(timer); }
   }
 
   private async run(scopeKey: string, jobId: string, handle: DispatchHandle): Promise<void> {

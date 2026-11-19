@@ -10,6 +10,7 @@ Neural Topics — Python 常量导出
 # ──────────────────────────────────────────────
 
 NS = {
+    "MOTOR_JOB": "motor.job",
     "SENSORY_HEARING": "sensory.hearing.caption_stream",
     "SENSORY_HEARING_QUESTION": "sensory.hearing.question",
     "MOTOR_ANIMATION": "motor.animation.focused_app",
@@ -28,6 +29,12 @@ NS = {
 # ──────────────────────────────────────────────
 
 TOPICS = {
+    "MOTOR_JOB_SUBMIT": "motor.job.submit",
+    "MOTOR_JOB_GET": "motor.job.get",
+    "MOTOR_JOB_CANCEL": "motor.job.cancel",
+    "MOTOR_JOB_RESULT": "motor.job.result",
+    "MOTOR_JOB_CHANGED": "motor.job.changed",
+    "MOTOR_JOB_SETTLED": "motor.job.settled",
     # control
     "SENSORY_HEARING_ENABLE": "sensory.hearing.caption_stream.enable",
     "SENSORY_HEARING_DISABLE": "sensory.hearing.caption_stream.disable",

@@ -21,6 +21,9 @@ const definitions = {
     WHERE state IN ('accepted','running','cancelling')`,
 };
 const normalized = (sql: string) => sql.replace(/\s+/g, ' ').trim().toLowerCase();
+const runtimeSql = `CREATE TABLE motor_job_runtime (singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
+  instance_id TEXT NOT NULL, deployment_id TEXT NOT NULL, pid INTEGER NOT NULL,
+  started_at TEXT NOT NULL, active INTEGER NOT NULL, updated_at INTEGER NOT NULL)`;
 const incompatible = (): never => { throw new JobError('JOB_SCHEMA_INCOMPATIBLE', 'Unsupported Job schema; migration is required'); };
 
 export function initializeJobSchema(db: Database): void {
@@ -30,14 +33,21 @@ export function initializeJobSchema(db: Database): void {
       .all(...names) as Array<{ name: string; sql: string }>;
     if (present.length === 0) {
       for (const sql of Object.values(definitions)) db.exec(sql);
-      db.prepare('INSERT INTO motor_job_schema (singleton, version) VALUES (1, 1)').run();
+      db.exec(runtimeSql);
+      db.prepare('INSERT INTO motor_job_schema (singleton, version) VALUES (1, 2)').run();
     } else {
       if (present.length !== names.length) incompatible();
       for (const row of present) {
         if (normalized(row.sql) !== normalized(definitions[row.name as keyof typeof definitions])) incompatible();
       }
       const versions = db.prepare('SELECT version FROM motor_job_schema').all() as Array<{ version: number }>;
-      if (versions.length !== 1 || versions[0].version !== 1) incompatible();
+      if (versions.length !== 1 || ![1, 2].includes(versions[0].version)) incompatible();
+      const runtime = db.prepare("SELECT sql FROM sqlite_master WHERE name = 'motor_job_runtime'").get() as { sql: string } | undefined;
+      if (versions[0].version === 1) {
+        if (runtime) incompatible();
+        db.exec(runtimeSql); // validated, additive v1 -> v2 migration; no Job rows rewritten
+        db.prepare('UPDATE motor_job_schema SET version = 2 WHERE singleton = 1').run();
+      } else if (!runtime || normalized(runtime.sql) !== normalized(runtimeSql)) incompatible();
     }
   });
 }

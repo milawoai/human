@@ -1,6 +1,25 @@
 {
   "version": "1.0.0",
   "topics": {
+    "motor.job": {
+      "description": "后台Job提交、观察、取消与确认结算",
+      "actor": { "actorId": "motor-jobs", "runtime": "nest", "system": "motor", "module": "jobs" },
+      "capabilities": [
+        { "id": "motor.job.submit", "topic": "motor.job.submit", "kinds": ["command"], "mode": "once" },
+        { "id": "motor.job.get", "topic": "motor.job.get", "kinds": ["query"], "mode": "once" },
+        { "id": "motor.job.cancel", "topic": "motor.job.cancel", "kinds": ["command"], "mode": "once" },
+        { "id": "motor.job.result", "topic": "motor.job.result", "kinds": ["query"], "mode": "once" }
+      ],
+      "subscribeTopics": [], "subscribeKinds": [],
+      "actions": {
+        "submit": { "kind": "command", "direction": "body/brain → nest", "description": "持久化准入；首期忙时拒绝" },
+        "get": { "kind": "query", "direction": "body/brain → nest", "description": "查询Job快照" },
+        "cancel": { "kind": "command", "direction": "body/brain → nest", "description": "请求取消，等待真实执行确认" },
+        "result": { "kind": "query", "direction": "body/brain → nest", "description": "查询受控报告与IO证据" },
+        "changed": { "kind": "event", "direction": "nest → subscribers", "description": "已提交快照与seq" },
+        "settled": { "kind": "event", "direction": "nest → subscribers", "description": "确认成功/失败/取消；不含unknown" }
+      }
+    },
     "sensory.hearing.caption_stream": {
       "description": "听觉感知 — 字幕流控制与事件",
       "actor": {

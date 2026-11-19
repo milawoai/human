@@ -145,6 +145,12 @@ export class NeuralHttpService implements OnModuleInit {
     }
 
     // ── 其他: 走 WS 发送逻辑 ──
+    // Let a known local handler reject an invalid command/query kind explicitly,
+    // rather than acknowledging a message which was delivered to nobody.
+    if ((message.kind === 'command' || message.kind === 'query') &&
+      this.commandHandlers.some(handler => handler.canHandle(message.topic))) {
+      return this.dispatchInternal(message);
+    }
     this.logger.log(`[trigger] 路由决策 → WS 发送 (默认)`);
     const result = this.coreService.route(message);
     const sentCount = this.dispatchMessage(message, result);
