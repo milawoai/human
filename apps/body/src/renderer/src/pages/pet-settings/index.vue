@@ -44,7 +44,7 @@ const saving = ref(false)
 const hearingSaving = ref(false)
 const serverLoading = ref(false)
 const statusText = ref('')
-const activeTab = ref<'settings' | 'interfaces' | 'hearing' | 'workspaces'>('settings')
+const activeTab = ref<'general' | 'lifecycle' | 'interfaces' | 'hearing' | 'workspaces'>('general')
 const serverInterfaces = ref<ServerInterfaces | null>(null)
 const live2dPetModels = ref<Live2DPetModelConfig[]>([])
 const jobWorkspaceCatalog = ref<JobWorkspaceCatalog>(createEmptyWorkspaceCatalog())
@@ -311,16 +311,22 @@ onMounted(async () => {
       <Button label="打开 Live2D" severity="info" @click="openLive2DWindow" />
     </section>
 
-    <ThemeSettings />
-
     <nav class="tab-nav" aria-label="Pet settings tabs">
       <button
         class="tab-button"
-        :class="{ active: activeTab === 'settings' }"
+        :class="{ active: activeTab === 'general' }"
         type="button"
-        @click="activeTab = 'settings'"
+        @click="activeTab = 'general'"
       >
-        Pet 配置
+        通用配置
+      </button>
+      <button
+        class="tab-button"
+        :class="{ active: activeTab === 'lifecycle' }"
+        type="button"
+        @click="activeTab = 'lifecycle'"
+      >
+        服务检测
       </button>
       <button
         class="tab-button"
@@ -348,10 +354,10 @@ onMounted(async () => {
       </button>
     </nav>
 
-    <BackendLifecyclePanel />
+    <!-- 通用配置 Tab：主题 + 模型 + 启动选项 -->
+    <template v-if="activeTab === 'general'">
+      <ThemeSettings />
 
-    <!-- Pet 配置 Tab -->
-    <template v-if="activeTab === 'settings'">
       <section class="settings-section">
         <div class="section-title">
           <h2>模型列表</h2>
@@ -416,6 +422,9 @@ onMounted(async () => {
         </label>
       </section>
     </template>
+
+    <!-- 服务检测 Tab -->
+    <BackendLifecyclePanel v-else-if="activeTab === 'lifecycle'" />
 
     <!-- 服务接口 Tab -->
     <section v-else-if="activeTab === 'interfaces'" class="settings-section">

@@ -4,7 +4,7 @@ export type JobState = 'accepted' | 'running' | 'cancelling'
 export interface SubmitJob {
   idempotencyKey: string;
   kind: 'pi-workspace';
-  spec: { prompt: string; workspaceId?: string; cwd: string; profileName?: string };
+  spec: { prompt: string; workspaceId?: string; workspace?: string; cwd: string; profileName?: string };
 }
 
 export interface JobFailure { code: string; message: string }

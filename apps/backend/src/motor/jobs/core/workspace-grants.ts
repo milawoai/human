@@ -16,7 +16,7 @@ const denied = (message: string): never => { throw new JobError('JOB_WORKSPACE_D
 export class JobWorkspaceGrants {
   constructor(private readonly configPath = process.env.HUMAN_JOB_WORKSPACES_FILE) {}
 
-  resolve(requestedId?: string): ResolvedJobWorkspace {
+  resolve(requestedId?: string, requestedWorkspace?: string): ResolvedJobWorkspace {
     const configPath = this.configPath;
     if (!configPath || !isAbsolute(configPath)) return denied('No Job workspace settings are configured');
     try {
@@ -42,13 +42,20 @@ export class JobWorkspaceGrants {
         denied('Job workspace default is invalid');
       }
       if (config.workspaces.length === 0 && config.defaultWorkspaceId !== null) denied('Job workspace default is invalid');
-      const id = requestedId ?? config.defaultWorkspaceId;
-      if (typeof id !== 'string' || !id) return denied('Choose or configure a Job workspace first');
-      const grant = config.workspaces.find(item => item.id === id);
+      let grant: JobWorkspaceGrant | undefined;
+      if (requestedWorkspace !== undefined) {
+        if (!isAbsolute(requestedWorkspace)) return denied('Job workspace path must be absolute');
+        const requestedRoot = realpathSync(requestedWorkspace);
+        grant = config.workspaces.find(item => item.path === requestedRoot);
+      } else {
+        const id = requestedId ?? config.defaultWorkspaceId;
+        if (typeof id !== 'string' || !id) return denied('Choose or configure a Job workspace first');
+        grant = config.workspaces.find(item => item.id === id);
+      }
       if (!grant) return denied('The requested Job workspace has not been authorized');
       const root = realpathSync(grant.path);
       if (root === parse(root).root || !lstatSync(root).isDirectory()) denied('Job workspace must be a user-selected directory');
-      return { id, root, ...(typeof grant.label === 'string' ? { label: grant.label } : {}) };
+      return { id: grant.id, root, ...(typeof grant.label === 'string' ? { label: grant.label } : {}) };
     } catch (error) {
       if (error instanceof JobError) throw error;
       return denied('Job workspace settings or selected directory are unavailable');

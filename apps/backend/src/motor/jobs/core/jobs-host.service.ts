@@ -17,7 +17,7 @@ import { parseSubmitJob } from './job-input';
 export class JobsHostService implements OnModuleInit, OnApplicationBootstrap, BeforeApplicationShutdown {
   private readonly logger = new Logger(JobsHostService.name);
   private readonly registry = new JobExecutorRegistry();
-  private resolveWorkspace?: (workspaceId: string | undefined, cwd: string) => string;
+  private resolveWorkspace?: (workspaceId: string | undefined, workspace: string | undefined, cwd: string) => string;
   private repository?: JobRepository;
   private owner?: JobOwner;
   private dispatcher?: JobDispatcher;
@@ -46,7 +46,8 @@ export class JobsHostService implements OnModuleInit, OnApplicationBootstrap, Be
     } catch { this.failure = new JobError('JOB_NOT_READY', 'Job storage or prompt configuration is unavailable'); }
   }
 
-  registerExecutor(executor: JobExecutor, resolveWorkspace: (workspaceId: string | undefined, cwd: string) => string): void {
+  registerExecutor(executor: JobExecutor,
+    resolveWorkspace: (workspaceId: string | undefined, workspace: string | undefined, cwd: string) => string): void {
     this.registry.register('pi-workspace', executor);
     this.resolveWorkspace = resolveWorkspace;
   }
@@ -74,8 +75,10 @@ export class JobsHostService implements OnModuleInit, OnApplicationBootstrap, Be
   submit(value: unknown) {
     this.ready();
     const input = parseSubmitJob(value, this.promptMaxChars);
-    const workspaceId = this.resolveWorkspace!(input.spec.workspaceId, input.spec.cwd);
-    return this.service!.submit(this.scopeKey, { ...input, spec: { ...input.spec, workspaceId } });
+    const workspaceId = this.resolveWorkspace!(input.spec.workspaceId, input.spec.workspace, input.spec.cwd);
+    const spec = { ...input.spec };
+    delete spec.workspace;
+    return this.service!.submit(this.scopeKey, { ...input, spec: { ...spec, workspaceId } });
   }
   get(jobId: string) { this.ready(); return this.service!.get(this.scopeKey, jobId); }
   result(jobId: string) { this.ready(); return this.service!.result(this.scopeKey, jobId); }

@@ -7,9 +7,9 @@ import { JobError } from '@/motor/jobs/jobs.errors';
 
 export function verifyWorkerRegistrationDoesNotDependOnModuleOrder(): void {
   let registered = false;
-  let resolveWorkspace: ((workspaceId: string | undefined, cwd: string) => string) | undefined;
+  let resolveWorkspace: ((workspaceId: string | undefined, workspace: string | undefined, cwd: string) => string) | undefined;
   const host = {
-    registerExecutor(_executor: unknown, resolve: (workspaceId: string | undefined, cwd: string) => string) {
+    registerExecutor(_executor: unknown, resolve: (workspaceId: string | undefined, workspace: string | undefined, cwd: string) => string) {
       registered = true;
       resolveWorkspace = resolve;
     },
@@ -17,7 +17,7 @@ export function verifyWorkerRegistrationDoesNotDependOnModuleOrder(): void {
 
   new PiWorkspaceWorkerService(host, {} as LlmService, {} as ProviderAuthService).onModuleInit();
   assert.ok(registered, 'worker must register even when JobsHost.onModuleInit has not run yet');
-  assert.throws(() => resolveWorkspace?.(undefined, '.'),
+  assert.throws(() => resolveWorkspace?.(undefined, undefined, '.'),
     (error: unknown) => error instanceof JobError && error.code === 'JOB_WORKSPACE_DENIED',
     'worker registration does not grant access to the monorepo or any implicit directory');
 }

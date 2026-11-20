@@ -9,6 +9,9 @@ assert.doesNotThrow(() => parseSubmitJob(input), 'workspace jobs use an authoriz
 const parsed = parseSubmitJob(input);
 assert.deepEqual(parsed, input);
 assert.notEqual(parsed.spec, input.spec, 'validated DTO must not retain caller-owned objects');
+const pathSelected = parseSubmitJob({ ...input, spec: { prompt: 'Read README', workspace: '/approved/project', cwd: '.' } }) as
+  ReturnType<typeof parseSubmitJob> & { spec: { workspace?: string } };
+assert.equal(pathSelected.spec.workspace, '/approved/project', 'an absolute path may select a previously authorized workspace');
 assert.equal(fingerprintJob(parsed), fingerprintJob(parseSubmitJob({
   spec: { cwd: '.', workspaceId: 'grant-a', prompt: 'Read README' }, kind: 'pi-workspace', idempotencyKey: 'another-key',
 })), 'key and property order do not change execution identity');
@@ -22,7 +25,8 @@ for (const spec of [
 const invalid: unknown[] = [null, [], {}, { ...input, kind: 'shell' },
   { ...input, idempotencyKey: '' }, { ...input, idempotencyKey: 'x'.repeat(129) },
   { ...input, scopeKey: 'spoof' }, { ...input, signal: {} },
-  ...[{ prompt: ' ' }, { cwd: '../escape' }, { cwd: '/absolute/path' }, { cwd: 'a\0b' }, { workspaceId: '' }, { profileName: '' },
+  ...[{ prompt: ' ' }, { cwd: '../escape' }, { cwd: '/absolute/path' }, { cwd: 'a\0b' }, { workspaceId: '' }, { workspace: '' },
+    { workspace: 'relative/path' }, { profileName: '' },
     { allowedTools: ['bash'] }, { prompt: 1 }].map(change => ({ ...input, spec: { ...input.spec, ...change } })),
 ];
 for (const value of invalid) assert.throws(() => parseSubmitJob(value),

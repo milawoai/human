@@ -13,8 +13,8 @@ export class PiWorkspaceWorkerService implements OnModuleInit {
   onModuleInit(): void {
     // BrainModule may initialize before JobsModule; workspace grants are resolved per submission.
     const grants = new JobWorkspaceGrants();
-    this.host.registerExecutor(new PiWorkspaceExecutor(grants, this.llm, this.auth), (workspaceId, cwd) => {
-      const grant = grants.resolve(workspaceId);
+    this.host.registerExecutor(new PiWorkspaceExecutor(grants, this.llm, this.auth), (workspaceId, workspace, cwd) => {
+      const grant = grants.resolve(workspaceId, workspace);
       new WorkspacePolicy(grant.root).authorizeCwd(cwd);
       return grant.id;
     });
