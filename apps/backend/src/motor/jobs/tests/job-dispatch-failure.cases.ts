@@ -7,7 +7,7 @@ export async function runDispatchFailureCases() {
   try {
     const gate = f.gate();
     const aborted = deferred<void>();
-    f.registry.register('pi-readonly', { async execute(spec, { signal }) {
+    f.registry.register('pi-workspace', { async execute(spec, { signal }) {
       if (spec.prompt === 'throw') throw new Error('fixture failure');
       signal.addEventListener('abort', () => aborted.resolve());
       return gate.promise;
@@ -32,7 +32,7 @@ export async function runDispatchFailureCases() {
   const broken = await dispatchFixture();
   try {
     const gate = broken.gate();
-    broken.registry.register('pi-readonly', { execute: () => gate.promise });
+    broken.registry.register('pi-workspace', { execute: () => gate.promise });
     const job = broken.service.submit('s', input('write-failure'));
     await tick();
     await broken.source.query(`CREATE TRIGGER reject_settle BEFORE UPDATE ON motor_jobs

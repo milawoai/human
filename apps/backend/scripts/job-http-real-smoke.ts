@@ -6,7 +6,7 @@ async function main() {
   if (process.env.HUMAN_JOB_REAL_PI !== '1') throw new Error('Set HUMAN_JOB_REAL_PI=1 explicitly to allow a real model request');
   const f = await jobHttpFixture(true);
   try {
-    const payload = { idempotencyKey: 'real-http', kind: 'pi-readonly', spec: { cwd: f.workspace,
+    const payload = { idempotencyKey: 'real-http', kind: 'pi-workspace', spec: { cwd: '.',
       profileName: process.env.HUMAN_JOB_PROFILE,
       prompt: 'Use read to read public.txt. Summarize its content in one short sentence with the filename.' } };
     const started = performance.now();

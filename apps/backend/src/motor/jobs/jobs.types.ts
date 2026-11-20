@@ -3,15 +3,15 @@ export type JobState = 'accepted' | 'running' | 'cancelling'
 
 export interface SubmitJob {
   idempotencyKey: string;
-  kind: 'pi-readonly';
-  spec: { prompt: string; cwd: string; profileName?: string };
+  kind: 'pi-workspace';
+  spec: { prompt: string; workspaceId?: string; cwd: string; profileName?: string };
 }
 
 export interface JobFailure { code: string; message: string }
 export interface JobProgress { message: string; completed?: number; total?: number }
 export interface JobSnapshot {
   jobId: string;
-  kind: 'pi-readonly';
+  kind: 'pi-workspace';
   state: JobState;
   seq: number;
   createdAt: number;

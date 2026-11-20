@@ -35,7 +35,8 @@ export class ProcessBackendPorts implements BackendPorts {
     const command = this.commands(name), instanceId = randomUUID(), token = randomBytes(32).toString('hex')
     const env = { ...process.env, HUMAN_RUNTIME_OWNED: '1', HUMAN_DEPLOYMENT_ID: command.deploymentId,
       PORT: String(this.config.node.port), HUMAN_PYTHON_PORT: String(this.config.python.port),
-      HUMAN_NEURAL_URL: `${this.probeClient.url('node')}/neural`, HUMAN_PYTHON_URL: this.probeClient.url('python') }
+      HUMAN_NEURAL_URL: `${this.probeClient.url('node')}/neural`, HUMAN_PYTHON_URL: this.probeClient.url('python'),
+      ...command.env }
     const child = spawnRuntime(command, env)
     let resolveExit!: () => void
     const exited = new Promise<void>(resolve => { resolveExit = resolve })

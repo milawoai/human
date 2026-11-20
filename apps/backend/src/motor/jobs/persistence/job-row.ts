@@ -10,7 +10,7 @@ export interface JobRow {
 
 export function jobSnapshot(row: JobRow): JobSnapshot {
   return {
-    jobId: row.job_id, kind: 'pi-readonly', state: row.state, seq: row.seq,
+    jobId: row.job_id, kind: 'pi-workspace', state: row.state, seq: row.seq,
     createdAt: row.created_at,
     ...(row.started_at === null ? {} : { startedAt: row.started_at }),
     ...(row.finished_at === null ? {} : { finishedAt: row.finished_at }),

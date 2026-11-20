@@ -37,13 +37,13 @@ test('owned backend forwards allowlisted diagnostics but drains raw prompt outpu
     python: { policy: 'auto' as const, host: '127.0.0.1' as const, port: await freePort() } }
   const messages: string[] = []
   const script = [
-    `process.stdout.write('[Nest] WARN [JobsHostService] No authorized Job workspace/executor is configured\\n')`,
+    `process.stdout.write(process.env.HUMAN_JOB_WORKSPACES_FILE === '/tmp/job-workspaces.json' ? '[Nest] WARN [JobsHostService] No authorized Job workspace/executor is configured\\n' : 'workspace catalog env missing\\n')`,
     `process.stdout.write('[Nest] LOG [NeuralHttpService] payload={"prompt":"private-prompt"}\\n')`,
     `process.stderr.write('[Nest] WARN [PiReadonlyWorkerService] Readonly Job workspace unavailable; Job submission disabled: /Users/private/path\\n')`,
     'process.stdin.resume()', 'process.stdin.on("end", () => process.exit(0))',
   ].join(';')
   const ports = new ProcessBackendPorts(config, root, () => ({ executable: process.execPath, args: ['-e', script], cwd: root,
-    deploymentId: root }), () => {}, line => messages.push(line))
+    deploymentId: root, env: { HUMAN_JOB_WORKSPACES_FILE: '/tmp/job-workspaces.json' } }), () => {}, line => messages.push(line))
   const instance = await ports.launch('node', new AbortController().signal)
   try {
     await sleep(100)

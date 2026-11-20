@@ -20,8 +20,8 @@ async function main() {
     socket.emit('register', { protocolVersion: 1, serviceInstanceId: 'job-test-client',
       actor: { actorId: 'job-test-client', runtime: 'electron', system: 'body' } }); await registered;
     const subscribed = wait('subscribed'); socket.emit('subscribe', { topics: ['motor.job.*'], kinds: ['event'] }); await subscribed;
-    const submit = (key: string, prompt = 'Read public.txt and report.') => f.trigger('motor.job.submit', {
-      idempotencyKey: key, kind: 'pi-readonly', spec: { cwd: f.workspace, prompt },
+    const submit = (key: string, prompt = 'Read public.txt and report.', workspaceId?: string) => f.trigger('motor.job.submit', {
+      idempotencyKey: key, kind: 'pi-workspace', spec: { cwd: '.', prompt, ...(workspaceId ? { workspaceId } : {}) },
     });
     const first = await submit('http-1'); assert.equal(first.success, true, JSON.stringify(first));
     assert.equal(first.data.state, 'accepted'); assert.equal(first.data.seq, 1);
@@ -29,13 +29,20 @@ async function main() {
     assert.equal(done.state, 'succeeded', JSON.stringify(done));
     const result = await f.trigger('motor.job.result', { jobId: done.jobId });
     assert.equal(result.success, true); assert.equal(result.data.evidence[0].path, 'public.txt');
-    assert.equal((await submit('http-1')).data.reused, true); assert.equal(f.requests(), 2);
+    const alternate = await submit('alternate-workspace', 'ALTERNATE workspace', 'alternate-workspace');
+    assert.equal(alternate.success, true, JSON.stringify(alternate));
+    const alternateDone = await pollJob(f, alternate.data.jobId, state => ['succeeded', 'failed'].includes(state));
+    assert.equal(alternateDone.state, 'succeeded', JSON.stringify(alternateDone));
+    const alternateResult = await f.trigger('motor.job.result', { jobId: alternateDone.jobId });
+    assert.ok(alternateResult.data.evidence.some((item: { path: string }) => item.path === 'alternate-only.txt'),
+      'explicit workspaceId must route IO into that authorized workspace');
+    assert.equal((await submit('http-1')).data.reused, true); assert.equal(f.requests(), 4);
     assert.equal((await submit('http-1', 'changed')).code, 'JOB_IDEMPOTENCY_CONFLICT');
     assert.equal((await f.trigger('motor.job.get', { jobId: 'missing' })).code, 'JOB_NOT_FOUND');
     assert.equal((await f.trigger('motor.job.get', { jobId: done.jobId, scopeKey: 'spoof' })).code, 'JOB_INVALID_INPUT');
     assert.equal((await f.trigger('motor.job.submit', {}, 'query')).success, false, 'wrong message kind must not fake a delivery acknowledgement');
-    assert.equal((await f.trigger('motor.job.submit', { idempotencyKey: 'outside', kind: 'pi-readonly',
-      spec: { cwd: '/', prompt: 'read' } })).code, 'JOB_WORKSPACE_DENIED');
+    assert.equal((await f.trigger('motor.job.submit', { idempotencyKey: 'unknown-workspace', kind: 'pi-workspace',
+      spec: { workspaceId: 'not-authorized', cwd: '.', prompt: 'read' } })).code, 'JOB_WORKSPACE_DENIED');
     const waiting = await submit('wait', 'WAIT_FOR_CANCEL');
     await pollJob(f, waiting.data.jobId, state => state === 'running');
     assert.equal((await submit('busy')).code, 'JOB_BUSY');

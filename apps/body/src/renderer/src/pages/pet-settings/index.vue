@@ -10,6 +10,7 @@ import type { IpcProxy } from '@renderer/plugin/ipc'
 import type { Live2DPetModelConfig } from '@shared/live2dPetModels'
 import { defaultPetSettings, type PetSettings } from '@shared/petSettings'
 import { defaultHearingSettings, type HearingSettings } from '@shared/hearingSettings'
+import { createEmptyWorkspaceCatalog, type JobWorkspaceCatalog } from '@shared/jobWorkspaceCatalog'
 import SelectFolderLine from '@renderer/components/SelectFolderLine.vue'
 
 const ipc = inject<IpcProxy>('ipc')!
@@ -43,9 +44,12 @@ const saving = ref(false)
 const hearingSaving = ref(false)
 const serverLoading = ref(false)
 const statusText = ref('')
-const activeTab = ref<'settings' | 'interfaces' | 'hearing'>('settings')
+const activeTab = ref<'settings' | 'interfaces' | 'hearing' | 'workspaces'>('settings')
 const serverInterfaces = ref<ServerInterfaces | null>(null)
 const live2dPetModels = ref<Live2DPetModelConfig[]>([])
+const jobWorkspaceCatalog = ref<JobWorkspaceCatalog>(createEmptyWorkspaceCatalog())
+const workspaceBusy = ref(false)
+const workspaceLoading = ref(false)
 
 const modelOptions = ref<{ label: string; value: string }[]>([])
 
@@ -225,6 +229,56 @@ const onSaveDirUpdate = async (data: { key: string; path: string }) => {
   await saveHearingSettingsPatch({ saveDir: data.path })
 }
 
+const loadJobWorkspaces = async () => {
+  workspaceLoading.value = true
+  try {
+    const result = await ipc.jobWorkspaces.getSettings()
+    if (result.success && result.data) jobWorkspaceCatalog.value = result.data as JobWorkspaceCatalog
+    else statusText.value = result.msg || '读取 Job 工作区失败'
+  } finally { workspaceLoading.value = false }
+}
+
+const addJobWorkspace = async () => {
+  workspaceBusy.value = true
+  statusText.value = ''
+  try {
+    const result = await ipc.jobWorkspaces.addDirectory()
+    if (!result.success || !result.data) {
+      statusText.value = result.msg || '添加工作区失败'
+      return
+    }
+    const data = result.data as { catalog: JobWorkspaceCatalog; outcome: 'added' | 'duplicate' | 'cancelled' | 'denied' }
+    jobWorkspaceCatalog.value = data.catalog
+    statusText.value = ({ added: '工作区已授权并添加', duplicate: '该目录已在授权列表中',
+      cancelled: '已取消选择', denied: '未授予目录访问权限' })[data.outcome]
+  } finally { workspaceBusy.value = false }
+}
+
+const setJobWorkspaceDefault = async (id: string) => {
+  workspaceBusy.value = true
+  statusText.value = ''
+  try {
+    const result = await ipc.jobWorkspaces.setDefault(id)
+    if (result.success && result.data) {
+      jobWorkspaceCatalog.value = result.data as JobWorkspaceCatalog
+      statusText.value = '默认工作区已更新'
+    } else statusText.value = result.msg || '更新默认工作区失败'
+  } finally { workspaceBusy.value = false }
+}
+
+const revokeJobWorkspace = async (id: string) => {
+  workspaceBusy.value = true
+  statusText.value = ''
+  try {
+    const result = await ipc.jobWorkspaces.revoke(id)
+    if (result.success && result.data) {
+      const data = result.data as { catalog: JobWorkspaceCatalog; revoked: boolean }
+      jobWorkspaceCatalog.value = data.catalog
+      statusText.value = data.revoked ? '工作区授权已撤销' : '已保留工作区授权'
+    } else statusText.value = result.msg || '撤销工作区授权失败'
+  } finally { workspaceBusy.value = false }
+}
+
 // ──────────────────────────────────────────────
 // 其他
 // ──────────────────────────────────────────────
@@ -241,7 +295,8 @@ onMounted(async () => {
     loadServerStatus(),
     loadServerInterfaces(),
     loadHearingSettings(),
-    loadAsrModels()
+    loadAsrModels(),
+    loadJobWorkspaces()
   ])
 })
 </script>
@@ -282,6 +337,14 @@ onMounted(async () => {
         @click="activeTab = 'hearing'"
       >
         录音配置
+      </button>
+      <button
+        class="tab-button"
+        :class="{ active: activeTab === 'workspaces' }"
+        type="button"
+        @click="activeTab = 'workspaces'"
+      >
+        Job 工作区
       </button>
     </nav>
 
@@ -431,6 +494,40 @@ onMounted(async () => {
       </section>
     </template>
 
+    <section v-else-if="activeTab === 'workspaces'" class="settings-section">
+      <div class="workspace-heading">
+        <div class="section-title">
+          <h2>Job 工作区</h2>
+          <p>选择后台任务默认使用的目录。每个目录都要单独授权；Job 只能在授权目录内读取和创建或更新文件。</p>
+        </div>
+        <Button label="添加工作区" icon="pi pi-folder-open" :disabled="workspaceBusy" @click="addJobWorkspace" />
+      </div>
+
+      <p v-if="workspaceLoading" class="workspace-empty" role="status">正在读取已授权目录…</p>
+      <p v-else-if="jobWorkspaceCatalog.workspaces.length === 0" class="workspace-empty" role="status">
+        还没有授权目录。添加一个常用文件夹后，新 Job 会默认在其中工作。
+      </p>
+      <div v-else class="workspace-list" aria-label="已授权 Job 工作区">
+        <div v-for="workspace in jobWorkspaceCatalog.workspaces" :key="workspace.id" class="workspace-row">
+          <div class="workspace-details">
+            <div class="workspace-name">
+              <strong>{{ workspace.label }}</strong>
+              <Tag v-if="workspace.id === jobWorkspaceCatalog.defaultWorkspaceId" value="默认" severity="success" />
+            </div>
+            <code class="workspace-path">{{ workspace.path }}</code>
+            <p class="workspace-reference">单个 Job 使用此目录时填写：<code>{{ workspace.id }}</code></p>
+          </div>
+          <div class="workspace-actions">
+            <Button v-if="workspace.id !== jobWorkspaceCatalog.defaultWorkspaceId" label="设为默认" severity="secondary"
+              :disabled="workspaceBusy" @click="setJobWorkspaceDefault(workspace.id)" />
+            <Button label="撤销授权" severity="danger" outlined :disabled="workspaceBusy"
+              @click="revokeJobWorkspace(workspace.id)" />
+          </div>
+        </div>
+      </div>
+      <p class="workspace-note">Job 不会因为收到请求中的任意路径而自动获得访问权限。移除目录后，后续提交不能再使用该授权。</p>
+    </section>
+
     <p v-if="statusText" class="status-text">{{ statusText }}</p>
   </main>
 </template>
@@ -513,6 +610,92 @@ h2 {
   margin-top: var(--human-spacing-1);
   color:var(--human-text-muted);
   font-size:var(--human-text-base);
+}
+
+.workspace-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--human-space-related);
+}
+
+.workspace-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--human-space-related);
+}
+
+.workspace-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--human-space-section);
+  min-width: 0;
+  padding: var(--human-space-panel);
+  border: 1px solid var(--human-border);
+  border-radius: var(--human-radius-card);
+  background: var(--human-surface-raised);
+}
+
+.workspace-details {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--human-space-related);
+  min-width: 0;
+}
+
+.workspace-name,
+.workspace-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--human-space-related);
+}
+
+.workspace-path {
+  overflow-wrap: anywhere;
+  color: var(--human-text-muted);
+  font-family: var(--human-font-mono);
+  font-size: var(--human-text-sm);
+}
+
+.workspace-reference {
+  color: var(--human-text-muted);
+  font-size: var(--human-text-sm);
+  overflow-wrap: anywhere;
+}
+
+.workspace-reference code {
+  color: var(--human-text);
+  font-family: var(--human-font-mono);
+}
+
+.workspace-empty,
+.workspace-note {
+  color: var(--human-text-muted);
+  font-size: var(--human-text-base);
+}
+
+.workspace-empty {
+  padding: var(--human-space-panel);
+  border: 1px dashed var(--human-border);
+  border-radius: var(--human-radius-card);
+}
+
+.workspace-note {
+  margin-top: var(--human-space-related);
+}
+
+@media (max-width: 760px) {
+  .workspace-heading,
+  .workspace-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workspace-actions {
+    flex-wrap: wrap;
+  }
 }
 
 .model-list {

@@ -7,14 +7,14 @@ export async function runDispatchCases() {
   try {
     const gate = f.gate();
     let calls = 0, aborts = 0;
-    f.registry.register('pi-readonly', { async execute(spec, context) {
+    f.registry.register('pi-workspace', { async execute(spec, context) {
       calls++; assert.equal(spec.prompt, 'fixture');
       context.signal.addEventListener('abort', () => aborts++);
       await context.progress({ message: 'reading', completed: 0, total: 1 });
       await context.progress({ message: 'read complete', completed: 1, total: 1 });
       return gate.promise;
     } });
-    assert.throws(() => f.registry.register('pi-readonly', { execute: async () => ({ outcome: 'cancelled' }) }), JobError);
+    assert.throws(() => f.registry.register('pi-workspace', { execute: async () => ({ outcome: 'cancelled' }) }), JobError);
     const before = f.service.submit('scope', input('before'));
     assert.equal(before.job.state, 'accepted'); assert.equal(calls, 0);
     const cancelled = f.service.cancel('scope', before.job.jobId);

@@ -1,7 +1,7 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import type { WorkerOutcome } from '@/motor/jobs/jobs.types';
 
-export function readonlyWorkerResult(messages: AgentMessage[], evidence: NonNullable<WorkerOutcome['evidence']>, aborted: boolean): WorkerOutcome {
+export function workspaceWorkerResult(messages: AgentMessage[], evidence: NonNullable<WorkerOutcome['evidence']>, aborted: boolean): WorkerOutcome {
   const last = [...messages].reverse().find(message => message.role === 'assistant');
   if (last?.role !== 'assistant') return aborted ? { outcome: 'cancelled', evidence }
     : { outcome: 'failed', evidence, error: { code: 'WORKER_NO_OUTPUT', message: 'Worker returned no assistant output' } };

@@ -3,7 +3,7 @@ import { transitionJob, occupiesJobSlot, isJobSettled } from '../core/job-state'
 import type { JobSnapshot, JobState } from '../jobs.types';
 import { JobError } from '../jobs.errors';
 
-const accepted: JobSnapshot = { jobId: 'j1', kind: 'pi-readonly', state: 'accepted', seq: 1, createdAt: 10 };
+const accepted: JobSnapshot = { jobId: 'j1', kind: 'pi-workspace', state: 'accepted', seq: 1, createdAt: 10 };
 const running = transitionJob(accepted, 1, { type: 'dispatch' }, 20);
 assert.equal(running.state, 'running');
 assert.equal(running.seq, 2);

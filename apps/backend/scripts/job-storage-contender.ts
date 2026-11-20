@@ -12,8 +12,8 @@ async function main() {
     process.send!({ type: 'ready' });
     await new Promise<void>(resolve => process.once('message', () => resolve()));
     try {
-      const result = jobs.submit('race-scope', { idempotencyKey: key, kind: 'pi-readonly',
-        spec: { prompt: 'same race fixture', cwd: '/fixture' } }, 100);
+      const result = jobs.submit('race-scope', { idempotencyKey: key, kind: 'pi-workspace',
+        spec: { prompt: 'same race fixture', workspaceId: 'fixture-workspace', cwd: '.' } }, 100);
       process.send!({ type: 'result', ...result, owner });
     } catch (error) {
       process.send!({ type: 'result', code: (error as { code?: string }).code, message: String(error), owner });

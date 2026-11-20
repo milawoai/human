@@ -28,12 +28,12 @@ async function main() {
     const old = await f.trigger('motor.job.get', { jobId });
     assert.equal(old.success, true, JSON.stringify(old)); assert.equal(old.data.state, 'unknown');
     assert.ok(old.data.seq > 1);
-    const replay = await f.trigger('motor.job.submit', { idempotencyKey: 'crash', kind: 'pi-readonly',
-      spec: { cwd: f.workspace, prompt: 'WAIT_FOR_CANCEL' } });
+    const replay = await f.trigger('motor.job.submit', { idempotencyKey: 'crash', kind: 'pi-workspace',
+      spec: { cwd: '.', prompt: 'WAIT_FOR_CANCEL' } });
     assert.equal(replay.data.jobId, jobId); assert.equal(replay.data.reused, true);
     assert.equal(replay.data.state, 'unknown'); assert.equal(f.requests(), 0, 'recovery must not rerun old model work');
-    const next = await f.trigger('motor.job.submit', { idempotencyKey: 'after-crash', kind: 'pi-readonly',
-      spec: { cwd: f.workspace, prompt: 'Read public.txt' } });
+    const next = await f.trigger('motor.job.submit', { idempotencyKey: 'after-crash', kind: 'pi-workspace',
+      spec: { cwd: '.', prompt: 'Read public.txt' } });
     assert.equal(next.success, true);
     assert.equal((await pollJob(f, next.data.jobId, state => ['succeeded', 'failed'].includes(state))).state, 'succeeded');
     console.log('Job CRASH HTTP: PASS real Node host killed during Pi SDK execution; restart unknown, replay without model call, new execution succeeds');

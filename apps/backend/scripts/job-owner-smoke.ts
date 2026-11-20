@@ -18,7 +18,7 @@ async function main() {
   try {
     await source.initialize(); await spawned;
     const old = new JobRepository(source, 'old'); old.initialize();
-    const historical = old.submit('s', { idempotencyKey: 'historical', kind: 'pi-readonly', spec: { prompt: 'read', cwd: '/fixture' } }, 1);
+    const historical = old.submit('s', { idempotencyKey: 'historical', kind: 'pi-workspace', spec: { prompt: 'read', workspaceId: 'fixture-workspace', cwd: '.' } }, 1);
     old.transition('s', historical.job.jobId, 1, { type: 'cancel' }, 2);
     await source.query('DROP TABLE motor_job_runtime');
     await source.query('UPDATE motor_job_schema SET version = 1');
@@ -28,7 +28,7 @@ async function main() {
     const identity = { instanceId: 'old', deploymentId: 'fixture', pid: child.pid!, startedAt: 'fixture' };
     const owner = new JobOwner(source, identity); owner.acquire();
     assert.equal(probeJobProcess(process.pid), 'alive');
-    const submitted = old.submit('s', { idempotencyKey: 'old', kind: 'pi-readonly', spec: { prompt: 'read', cwd: '/fixture' } }, 10);
+    const submitted = old.submit('s', { idempotencyKey: 'old', kind: 'pi-workspace', spec: { prompt: 'read', workspaceId: 'fixture-workspace', cwd: '.' } }, 10);
     old.transition('s', submitted.job.jobId, 1, { type: 'dispatch' }, 11);
     old.transition('s', submitted.job.jobId, 2, { type: 'cancel' }, 12);
     const nextIdentity = { ...identity, instanceId: 'next', pid: process.pid };
@@ -46,12 +46,12 @@ async function main() {
     const jobs = new JobRepository(source, 'next'); jobs.initialize();
     assert.equal(jobs.get('s', submitted.job.jobId).state, 'unknown');
     assert.equal(jobs.get('s', submitted.job.jobId).seq, 4);
-    assert.equal(jobs.submit('s', { idempotencyKey: 'old', kind: 'pi-readonly', spec: { prompt: 'read', cwd: '/fixture' } }, 20).reused, true);
+    assert.equal(jobs.submit('s', { idempotencyKey: 'old', kind: 'pi-workspace', spec: { prompt: 'read', workspaceId: 'fixture-workspace', cwd: '.' } }, 20).reused, true);
     assert.throws(() => old.transition('s', submitted.job.jobId, 4, { type: 'cancel' }, Date.now()), JobError);
-    const newJob = jobs.submit('s', { idempotencyKey: 'new', kind: 'pi-readonly', spec: { prompt: 'read', cwd: '/fixture' } }, Date.now());
+    const newJob = jobs.submit('s', { idempotencyKey: 'new', kind: 'pi-workspace', spec: { prompt: 'read', workspaceId: 'fixture-workspace', cwd: '.' } }, Date.now());
     next.markUncertain('shutdown wait expired'); next.release();
     assert.equal(jobs.get('s', newJob.job.jobId).state, 'unknown');
-    assert.throws(() => jobs.submit('s', { idempotencyKey: 'other', kind: 'pi-readonly', spec: { prompt: 'read', cwd: '/fixture' } }, Date.now()), JobError);
+    assert.throws(() => jobs.submit('s', { idempotencyKey: 'other', kind: 'pi-workspace', spec: { prompt: 'read', workspaceId: 'fixture-workspace', cwd: '.' } }, Date.now()), JobError);
     console.log('Job owner: PASS live/uncertain host rejection, killed host recovery, stale owner fencing and shutdown uncertainty');
   } finally {
     if (child.exitCode === null && child.signalCode === null) { child.kill('SIGKILL'); await once(child, 'exit'); }

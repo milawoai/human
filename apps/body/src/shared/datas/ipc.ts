@@ -17,6 +17,12 @@ export const defineHandlers = {
     applyConfig: { servicesName: 'backend-lifecycle', desc: '应用固定端口与启动策略' },
     openSettings: { servicesName: 'backend-lifecycle', desc: '打开后端诊断设置' }
   },
+  jobWorkspaces: {
+    getSettings: { desc: '读取 Job 工作区授权与默认目录' },
+    addDirectory: { desc: '选择并授权 Job 工作目录' },
+    setDefault: { desc: '设置 Job 默认工作目录' },
+    revoke: { desc: '撤销 Job 工作区授权' }
+  },
   agent: {
     openPanel: { desc: '打开 Agent 测试面板' },
     run: { desc: '执行 Pi Agent 任务' },

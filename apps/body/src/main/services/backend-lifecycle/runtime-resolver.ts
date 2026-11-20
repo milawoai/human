@@ -1,6 +1,11 @@
 import { existsSync, realpathSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-export interface RuntimeCommand { executable: string; args: string[]; cwd: string; deploymentId: string }
+export interface RuntimeCommand { executable: string; args: string[]; cwd: string; deploymentId: string; env?: Record<string, string> }
+export function attachJobWorkspaceCatalog(name: 'node' | 'python', command: RuntimeCommand, catalogPath: string): RuntimeCommand {
+  return name === 'node'
+    ? { ...command, env: { ...command.env, HUMAN_JOB_WORKSPACES_FILE: catalogPath } }
+    : command
+}
 export function projectRoot(start: string): string {
   let path = realpathSync(start)
   while (true) {

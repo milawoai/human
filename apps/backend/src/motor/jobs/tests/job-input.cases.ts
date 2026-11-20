@@ -4,23 +4,25 @@ import { JobError } from '../jobs.errors';
 import { configuredJobJsonBodyLimit, configuredJobPromptMaxChars } from '../jobs.config';
 import { payloadLogSummary } from '../../../neural/neural-http/payload-log';
 
-const input = { idempotencyKey: 'request-1', kind: 'pi-readonly', spec: { prompt: 'Read README', cwd: '/workspace' } };
+const input = { idempotencyKey: 'request-1', kind: 'pi-workspace', spec: { prompt: 'Read README', workspaceId: 'grant-a', cwd: '.' } };
+assert.doesNotThrow(() => parseSubmitJob(input), 'workspace jobs use an authorized workspace ID and relative cwd');
 const parsed = parseSubmitJob(input);
 assert.deepEqual(parsed, input);
 assert.notEqual(parsed.spec, input.spec, 'validated DTO must not retain caller-owned objects');
 assert.equal(fingerprintJob(parsed), fingerprintJob(parseSubmitJob({
-  spec: { cwd: '/workspace', prompt: 'Read README' }, kind: 'pi-readonly', idempotencyKey: 'another-key',
+  spec: { cwd: '.', workspaceId: 'grant-a', prompt: 'Read README' }, kind: 'pi-workspace', idempotencyKey: 'another-key',
 })), 'key and property order do not change execution identity');
 for (const spec of [
   { ...input.spec, prompt: 'Read package.json' },
-  { ...input.spec, cwd: '/other' },
+  { ...input.spec, cwd: 'src' },
+  { ...input.spec, workspaceId: 'grant-b' },
   { ...input.spec, profileName: 'other' },
 ]) assert.notEqual(fingerprintJob(parsed), fingerprintJob(parseSubmitJob({ ...input, spec })));
 
 const invalid: unknown[] = [null, [], {}, { ...input, kind: 'shell' },
   { ...input, idempotencyKey: '' }, { ...input, idempotencyKey: 'x'.repeat(129) },
   { ...input, scopeKey: 'spoof' }, { ...input, signal: {} },
-  ...[{ prompt: ' ' }, { cwd: 'relative/path' }, { cwd: '/a\0b' }, { profileName: '' },
+  ...[{ prompt: ' ' }, { cwd: '../escape' }, { cwd: '/absolute/path' }, { cwd: 'a\0b' }, { workspaceId: '' }, { profileName: '' },
     { allowedTools: ['bash'] }, { prompt: 1 }].map(change => ({ ...input, spec: { ...input.spec, ...change } })),
 ];
 for (const value of invalid) assert.throws(() => parseSubmitJob(value),

@@ -4,6 +4,8 @@ import test from 'node:test'
 import { resolveBackendConfig, backendTargets, captureBackendOverrides } from './config.ts'
 // @ts-expect-error Node strip-types needs a .ts extension.
 import { prepareDesktop, acquireDesktopInstance } from './desktop-startup.ts'
+// @ts-expect-error Node strip-types needs a .ts extension.
+import { attachJobWorkspaceCatalog } from './runtime-resolver.ts'
 
 test('legacy port migrates once, saved config wins and endpoints share one source', () => {
   const migrated = resolveBackendConfig(undefined, { nest_port: '13002' }, {}, [])
@@ -64,4 +66,12 @@ test('explicit launch overrides survive later loading of user env files', () => 
   inherited.HUMAN_BACKEND_NODE_POLICY = 'auto'
   const result = resolveBackendConfig(undefined, {}, { ...inherited, ...captured }, [])
   assert.equal(result.config.node.policy, 'connect-only')
+})
+
+test('workspace catalog path is injected into owned Node only', () => {
+  const node = { executable: 'node', args: [], cwd: '/app', deploymentId: 'dev' }
+  const python = { executable: 'python', args: [], cwd: '/app', deploymentId: 'dev' }
+  assert.deepEqual(attachJobWorkspaceCatalog('node', node, '/user/job-workspaces.json').env,
+    { HUMAN_JOB_WORKSPACES_FILE: '/user/job-workspaces.json' })
+  assert.equal(attachJobWorkspaceCatalog('python', python, '/user/job-workspaces.json').env, undefined)
 })

@@ -8,8 +8,8 @@ import { JobRepository } from '../src/motor/jobs/persistence/job.repository';
 import { JobError } from '../src/motor/jobs/jobs.errors';
 import { raceJobAdmission } from './job-storage-race';
 
-const input = (key = 'key') => ({ idempotencyKey: key, kind: 'pi-readonly' as const,
-  spec: { prompt: 'read public fixture', cwd: '/fixture' } });
+const input = (key = 'key') => ({ idempotencyKey: key, kind: 'pi-workspace' as const,
+  spec: { prompt: 'read public fixture', workspaceId: 'fixture-workspace', cwd: '.' } });
 const errorCode = (code: string) => (e: unknown) => e instanceof JobError && e.code === code;
 
 async function main() {

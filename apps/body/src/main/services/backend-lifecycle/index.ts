@@ -7,7 +7,8 @@ import { stopHearing } from '../sense'
 import { loadBackendSettings } from './settings'
 import { BACKEND_CONFIG_KEY, resolveBackendConfig, backendTargets } from './config'
 import { setNeuralTarget } from '../neural/impl/targets'
-import { projectRoot, resolveRuntime } from './runtime-resolver'
+import { attachJobWorkspaceCatalog, projectRoot, resolveRuntime } from './runtime-resolver'
+import { syncWorkspaceCatalog } from '../job-workspaces'
 import { LifecycleManager } from './manager'
 import { ServiceProbe } from './health-probe'
 import { createLifecycleLog } from './rotating-log'
@@ -29,7 +30,10 @@ export async function configureBackendServices(): Promise<void> {
   catch (error) { configurationError = String(error); throw error }
   setNeuralTarget(backendTargets(effective.config).neuralHttp)
   const root = app.isPackaged ? app.getAppPath() : projectRoot(app.getAppPath())
-  manager = new LifecycleManager(effective.config, root, name => resolveRuntime(name, root, app.isPackaged), {
+  await syncWorkspaceCatalog()
+  const workspaceCatalogPath = join(app.getPath('userData'), 'job-workspaces.json')
+  manager = new LifecycleManager(effective.config, root, name => attachJobWorkspaceCatalog(name,
+    resolveRuntime(name, root, app.isPackaged), workspaceCatalogPath), {
     nodeReady: async (instance, signal) => {
       await disconnectNeural()
       signal.throwIfAborted()

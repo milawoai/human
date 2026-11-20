@@ -1,6 +1,3 @@
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
-import { dirname, join, isAbsolute } from 'node:path';
-
 export const DEFAULT_JOB_PROMPT_MAX_CHARS = 100_000;
 const MAX_JOB_PROMPT_MAX_CHARS = 1_000_000;
 
@@ -16,17 +13,4 @@ export function configuredJobPromptMaxChars(env: NodeJS.ProcessEnv = process.env
 export function configuredJobJsonBodyLimit(env: NodeJS.ProcessEnv = process.env): string {
   const promptChars = configuredJobPromptMaxChars(env) ?? DEFAULT_JOB_PROMPT_MAX_CHARS;
   return `${promptChars * 4 + 16_384}b`;
-}
-
-export function configuredJobWorkspace(): string | undefined {
-  const configured = process.env.HUMAN_JOB_WORKSPACE_ROOT;
-  if (configured) return isAbsolute(configured) ? realpathSync(configured) : undefined;
-  let directory = realpathSync(process.cwd());
-  while (true) {
-    const manifest = join(directory, 'package.json');
-    if (existsSync(manifest) && JSON.parse(readFileSync(manifest, 'utf8')).name === 'human-monorepo') return directory;
-    const parent = dirname(directory);
-    if (parent === directory) return undefined;
-    directory = parent;
-  }
 }

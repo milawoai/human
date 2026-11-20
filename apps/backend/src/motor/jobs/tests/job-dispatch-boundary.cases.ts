@@ -12,7 +12,7 @@ export async function runDispatchBoundaryCases() {
     await f.dispatcher.waitForIdle();
     assert.equal(f.service.get('s', missing.job.jobId).state, 'failed', 'missing executor must not leave accepted forever');
     let lateProgress!: (progress: JobProgress) => Promise<void>;
-    f.registry.register('pi-readonly', { async execute(spec, context) {
+    f.registry.register('pi-workspace', { async execute(spec, context) {
       lateProgress = context.progress;
       if (spec.prompt === 'bad-progress') await context.progress({ message: 'bad', completed: -1 });
       return { outcome: 'succeeded', report: 'actual output' };

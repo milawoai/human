@@ -8,7 +8,7 @@ import { JobExecutorRegistry } from './executor-registry';
 import { JobDispatcher } from './job-dispatcher';
 import { JobService } from './job.service';
 import { JobError } from '../jobs.errors';
-import { configuredJobPromptMaxChars, configuredJobWorkspace } from '../jobs.config';
+import { configuredJobPromptMaxChars } from '../jobs.config';
 import { JobEvents } from '../neural/job-events';
 import type { JobExecutor } from '../jobs.types';
 import { parseSubmitJob } from './job-input';
@@ -17,8 +17,7 @@ import { parseSubmitJob } from './job-input';
 export class JobsHostService implements OnModuleInit, OnApplicationBootstrap, BeforeApplicationShutdown {
   private readonly logger = new Logger(JobsHostService.name);
   private readonly registry = new JobExecutorRegistry();
-  workspaceRoot?: string;
-  private authorizeCwd?: (cwd: string) => string;
+  private resolveWorkspace?: (workspaceId: string | undefined, cwd: string) => string;
   private repository?: JobRepository;
   private owner?: JobOwner;
   private dispatcher?: JobDispatcher;
@@ -34,7 +33,6 @@ export class JobsHostService implements OnModuleInit, OnApplicationBootstrap, Be
 
   onModuleInit(): void {
     try {
-      this.workspaceRoot = configuredJobWorkspace();
       const promptMaxChars = configuredJobPromptMaxChars();
       if (!promptMaxChars) throw new JobError('JOB_NOT_READY', 'HUMAN_JOB_PROMPT_MAX_CHARS must be an integer from 1 to 1000000');
       this.promptMaxChars = promptMaxChars;
@@ -45,23 +43,23 @@ export class JobsHostService implements OnModuleInit, OnApplicationBootstrap, Be
         changed: job => this.events.changed(job), diagnostic: () => this.logger.warn('Job background operation failed; inspect persisted state'),
       });
       this.service = new JobService(this.repository, this.dispatcher);
-    } catch { this.failure = new JobError('JOB_NOT_READY', 'Job storage or workspace configuration is unavailable'); }
+    } catch { this.failure = new JobError('JOB_NOT_READY', 'Job storage or prompt configuration is unavailable'); }
   }
 
-  registerExecutor(executor: JobExecutor, authorizeCwd: (cwd: string) => string): void {
-    this.registry.register('pi-readonly', executor);
-    this.authorizeCwd = authorizeCwd;
+  registerExecutor(executor: JobExecutor, resolveWorkspace: (workspaceId: string | undefined, cwd: string) => string): void {
+    this.registry.register('pi-workspace', executor);
+    this.resolveWorkspace = resolveWorkspace;
   }
 
   onApplicationBootstrap(): void {
     if (this.failure) return;
     try {
-      if (!this.workspaceRoot || !this.authorizeCwd) throw new JobError('JOB_NOT_READY', 'No authorized Job workspace/executor is configured');
-      this.registry.require('pi-readonly');
+      if (!this.resolveWorkspace) throw new JobError('JOB_NOT_READY', 'No Job workspace resolver/executor is registered');
+      this.registry.require('pi-workspace');
       const recovered = this.owner!.acquire();
       this.owns = true;
       this.scopeKey = createHash('sha256').update(JSON.stringify([
-        process.getuid?.() ?? 'local', runtimeIdentity.deploymentId, this.workspaceRoot,
+        process.getuid?.() ?? 'local', runtimeIdentity.deploymentId,
       ])).digest('hex');
       this.accepting = true;
       for (const job of recovered) {
@@ -76,8 +74,8 @@ export class JobsHostService implements OnModuleInit, OnApplicationBootstrap, Be
   submit(value: unknown) {
     this.ready();
     const input = parseSubmitJob(value, this.promptMaxChars);
-    const cwd = this.authorizeCwd!(input.spec.cwd);
-    return this.service!.submit(this.scopeKey, { ...input, spec: { ...input.spec, cwd } });
+    const workspaceId = this.resolveWorkspace!(input.spec.workspaceId, input.spec.cwd);
+    return this.service!.submit(this.scopeKey, { ...input, spec: { ...input.spec, workspaceId } });
   }
   get(jobId: string) { this.ready(); return this.service!.get(this.scopeKey, jobId); }
   result(jobId: string) { this.ready(); return this.service!.result(this.scopeKey, jobId); }

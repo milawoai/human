@@ -25,9 +25,10 @@ export async function fixtureJobLlm(onRequest?: () => void) {
         return stream;
       }
       const hasResult = transcript.includes('FRONTEND_PING') || context.messages.some(m => (m as { role?: string }).role === 'toolResult');
+      const requestedPath = transcript.includes('ALTERNATE workspace') ? 'alternate-only.txt' : 'public.txt';
       const message: AssistantMessage = { ...base, stopReason: hasResult ? 'stop' : 'toolUse', content: hasResult
         ? [{ type: 'text', text: 'Inspected public.txt; public fixture verified.' }]
-        : [{ type: 'toolCall', id: 'fixture-read', name: 'read', arguments: { path: 'public.txt' } }] };
+        : [{ type: 'toolCall', id: 'fixture-read', name: 'read', arguments: { path: requestedPath } }] };
       stream.push({ type: 'start', partial: message });
       stream.push({ type: 'done', reason: hasResult ? 'stop' : 'toolUse', message });
       return stream;

@@ -8,8 +8,8 @@ import { JobDispatcher } from '../core/job-dispatcher';
 import { JobService } from '../core/job.service';
 import type { JobSnapshot, WorkerOutcome } from '../jobs.types';
 
-export const input = (key: string) => ({ idempotencyKey: key, kind: 'pi-readonly' as const,
-  spec: { prompt: 'fixture', cwd: '/fixture' } });
+export const input = (key: string) => ({ idempotencyKey: key, kind: 'pi-workspace' as const,
+  spec: { prompt: 'fixture', workspaceId: 'fixture-workspace', cwd: '.' } });
 export const tick = () => new Promise<void>(resolve => setImmediate(resolve));
 export function deferred<T>() {
   let resolve!: (value: T) => void;
