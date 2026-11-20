@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { parseSubmitJob, fingerprintJob } from '../core/job-input';
 import { JobError } from '../jobs.errors';
+import { configuredJobJsonBodyLimit, configuredJobPromptMaxChars } from '../jobs.config';
+import { payloadLogSummary } from '../../../neural/neural-http/payload-log';
 
 const input = { idempotencyKey: 'request-1', kind: 'pi-readonly', spec: { prompt: 'Read README', cwd: '/workspace' } };
 const parsed = parseSubmitJob(input);
@@ -24,4 +26,16 @@ const invalid: unknown[] = [null, [], {}, { ...input, kind: 'shell' },
 for (const value of invalid) assert.throws(() => parseSubmitJob(value),
   (error: unknown) => error instanceof JobError && error.code === 'JOB_INVALID_INPUT');
 assert.equal(parsed.spec.prompt, 'Read README');
+assert.equal(parseSubmitJob({ ...input, spec: { ...input.spec, prompt: 'x'.repeat(41) } }, 41).spec.prompt.length, 41);
+assert.throws(() => parseSubmitJob({ ...input, spec: { ...input.spec, prompt: 'x'.repeat(42) } }, 41),
+  (error: unknown) => error instanceof JobError && error.code === 'JOB_INVALID_INPUT');
+assert.equal(configuredJobPromptMaxChars({}), 100_000);
+assert.equal(configuredJobPromptMaxChars({ HUMAN_JOB_PROMPT_MAX_CHARS: '250000' }), 250_000);
+assert.equal(configuredJobPromptMaxChars({ HUMAN_JOB_PROMPT_MAX_CHARS: '0' }), undefined);
+assert.equal(configuredJobJsonBodyLimit({}), '416384b');
+assert.equal(configuredJobJsonBodyLimit({ HUMAN_JOB_PROMPT_MAX_CHARS: '250000' }), '1016384b');
+const sensitivePayload = { prompt: 'secret prompt must not be logged', cwd: '/private/project' };
+const payloadLog = payloadLogSummary(sensitivePayload);
+assert.match(payloadLog, /payloadType=object/);
+assert.doesNotMatch(payloadLog, /secret prompt|private\/project/);
 console.log('PASS: input validation and stable execution fingerprint');

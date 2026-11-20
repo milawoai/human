@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { isAbsolute } from 'node:path';
 import { JobError } from '../jobs.errors';
+import { DEFAULT_JOB_PROMPT_MAX_CHARS } from '../jobs.config';
 import type { SubmitJob } from '../jobs.types';
 
 function invalid(message: string): never {
@@ -21,7 +22,8 @@ function text(value: unknown, name: string, max?: number): string {
 }
 
 /** Syntax validation only. Workspace authorization/realpath belongs at the IO boundary. */
-export function parseSubmitJob(value: unknown): SubmitJob {
+export function parseSubmitJob(value: unknown, maxPromptChars = DEFAULT_JOB_PROMPT_MAX_CHARS): SubmitJob {
+  if (!Number.isSafeInteger(maxPromptChars) || maxPromptChars < 1) invalid('Job prompt limit configuration is invalid');
   const payload = object(value, ['idempotencyKey', 'kind', 'spec'], 'payload');
   if (payload.kind !== 'pi-readonly') invalid('payload.kind must be pi-readonly');
   const spec = object(payload.spec, ['prompt', 'cwd', 'profileName'], 'payload.spec');
@@ -31,7 +33,7 @@ export function parseSubmitJob(value: unknown): SubmitJob {
     idempotencyKey: text(payload.idempotencyKey, 'payload.idempotencyKey', 128),
     kind: 'pi-readonly',
     spec: {
-      prompt: text(spec.prompt, 'payload.spec.prompt'),
+      prompt: text(spec.prompt, 'payload.spec.prompt', maxPromptChars),
       cwd,
       ...(spec.profileName === undefined ? {} : { profileName: text(spec.profileName, 'payload.spec.profileName') }),
     },

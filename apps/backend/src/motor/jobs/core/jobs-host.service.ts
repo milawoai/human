@@ -8,7 +8,7 @@ import { JobExecutorRegistry } from './executor-registry';
 import { JobDispatcher } from './job-dispatcher';
 import { JobService } from './job.service';
 import { JobError } from '../jobs.errors';
-import { configuredJobWorkspace } from '../jobs.config';
+import { configuredJobPromptMaxChars, configuredJobWorkspace } from '../jobs.config';
 import { JobEvents } from '../neural/job-events';
 import type { JobExecutor } from '../jobs.types';
 import { parseSubmitJob } from './job-input';
@@ -28,13 +28,17 @@ export class JobsHostService implements OnModuleInit, OnApplicationBootstrap, Be
   private failure?: JobError;
   private closing?: Promise<void>;
   private scopeKey = '';
+  private promptMaxChars = 0;
 
   constructor(private readonly source: DataSource, private readonly events: JobEvents) {}
 
   onModuleInit(): void {
     try {
       this.workspaceRoot = configuredJobWorkspace();
-      this.repository = new JobRepository(this.source, runtimeIdentity.instanceId);
+      const promptMaxChars = configuredJobPromptMaxChars();
+      if (!promptMaxChars) throw new JobError('JOB_NOT_READY', 'HUMAN_JOB_PROMPT_MAX_CHARS must be an integer from 1 to 1000000');
+      this.promptMaxChars = promptMaxChars;
+      this.repository = new JobRepository(this.source, runtimeIdentity.instanceId, undefined, promptMaxChars);
       this.repository.initialize();
       this.owner = new JobOwner(this.source, runtimeIdentity);
       this.dispatcher = new JobDispatcher(this.repository, this.registry, {
@@ -71,7 +75,7 @@ export class JobsHostService implements OnModuleInit, OnApplicationBootstrap, Be
 
   submit(value: unknown) {
     this.ready();
-    const input = parseSubmitJob(value);
+    const input = parseSubmitJob(value, this.promptMaxChars);
     const cwd = this.authorizeCwd!(input.spec.cwd);
     return this.service!.submit(this.scopeKey, { ...input, spec: { ...input.spec, cwd } });
   }

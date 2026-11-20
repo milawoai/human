@@ -2,12 +2,17 @@ import { prepareOwner } from './runtime/bootstrap';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import { configuredJobJsonBodyLimit } from './motor/jobs/jobs.config';
 
 async function bootstrap() {
   const installOwner = await prepareOwner();
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+    bodyParser: false,
   });
+  app.useBodyParser('json', { limit: configuredJobJsonBodyLimit() });
+  app.useBodyParser('urlencoded', { extended: true, limit: configuredJobJsonBodyLimit() });
 
   await installOwner(app);
   const logger = new Logger('Bootstrap');

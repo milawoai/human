@@ -11,14 +11,17 @@ import { jobSnapshot, storedSpec, type JobRow } from './job-row';
 import { validateJobProgress } from '../core/job-progress';
 import { insertJobResult, readJobResult } from './job-result';
 import { assertJobOwner } from './job-owner-row';
+import { DEFAULT_JOB_PROMPT_MAX_CHARS } from '../jobs.config';
 
 export class JobRepository {
   private readonly db;
   private initialized = false;
 
-  constructor(source: DataSource, private readonly ownerInstanceId: string, private readonly capacity = 5000) {
+  constructor(source: DataSource, private readonly ownerInstanceId: string, private readonly capacity = 5000,
+    private readonly maxPromptChars = DEFAULT_JOB_PROMPT_MAX_CHARS) {
     this.db = jobDatabase(source);
-    if (!ownerInstanceId.trim() || !Number.isSafeInteger(capacity) || capacity < 1) {
+    if (!ownerInstanceId.trim() || !Number.isSafeInteger(capacity) || capacity < 1
+      || !Number.isSafeInteger(maxPromptChars) || maxPromptChars < 1) {
       throw new JobError('JOB_INVALID_INPUT', 'Invalid host identity or retention capacity');
     }
   }
@@ -35,7 +38,7 @@ export class JobRepository {
     if (!scopeKey.trim() || !Number.isSafeInteger(now) || now < 0) {
       throw new JobError('JOB_INVALID_INPUT', 'Invalid scope or timestamp');
     }
-    const input = parseSubmitJob(value);
+    const input = parseSubmitJob(value, this.maxPromptChars);
     const request = { scopeKey, idempotencyKey: input.idempotencyKey, specHash: fingerprintJob(input) };
     return jobTransaction(this.db, () => {
       const row = this.db.prepare('SELECT * FROM motor_jobs WHERE scope_key = ? AND idempotency_key = ?')

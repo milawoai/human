@@ -10,6 +10,7 @@ import axios from 'axios';
 import type { BusMessage, MessageKind } from '../interfaces';
 import { NeuralCoreService } from '../neural-core/neural-core.service';
 import { NeuralWsGateway } from '../neural-ws/neural-ws.gateway';
+import { payloadLogSummary } from './payload-log';
 
 const PYTHON_SERVICE_URL = process.env.HUMAN_PYTHON_URL ?? 'http://127.0.0.1:12003';
 
@@ -115,7 +116,7 @@ export class NeuralHttpService implements OnModuleInit {
       payload: params.payload ?? {},
     };
 
-    this.logger.log(`[trigger] 收到触发请求: kind=${message.kind}, topic=${message.topic}, payload=${JSON.stringify(message.payload)}`);
+    this.logger.log(`[trigger] 收到触发请求: kind=${message.kind}, topic=${message.topic}, ${payloadLogSummary(message.payload)}`);
 
     // 查 Capability 找 target actor
     const capabilities = this.coreService.findCapabilities(
