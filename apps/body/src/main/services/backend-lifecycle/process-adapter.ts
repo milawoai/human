@@ -11,15 +11,19 @@ import { waitUntil } from './deadline.ts'
 import { spawnRuntime, isRunning, signalOwnedGroup, waitExit, assertGroupGone, reapOwnedGroup, groupAlive } from './platform-process.ts'
 import type { ProcessRecord } from './platform-process'
 import { setTimeout as sleep } from 'node:timers/promises'
+// @ts-expect-error Node strip-types needs a .ts extension.
+import { safeRuntimeDiagnostic } from './runtime-diagnostics.ts'
 export class ProcessBackendPorts implements BackendPorts {
   readonly probeClient: ServiceProbe
   private readonly records = new Map<BackendName, ProcessRecord>()
   private readonly commands: (name: BackendName) => RuntimeCommand
   private readonly config: BackendConfig
   private readonly log: (line: string) => void
+  private readonly diagnostic: (line: string) => void
   private readonly ownerId = randomUUID()
-  constructor(config: BackendConfig, deploymentId: string, commands: (name: BackendName) => RuntimeCommand, log: (line: string) => void = () => {}) {
-    this.config = config; this.commands = commands; this.log = log
+  constructor(config: BackendConfig, deploymentId: string, commands: (name: BackendName) => RuntimeCommand,
+    log: (line: string) => void = () => {}, diagnostic: (line: string) => void = () => {}) {
+    this.config = config; this.commands = commands; this.log = log; this.diagnostic = diagnostic
     this.probeClient = new ServiceProbe(config, deploymentId)
   }
   ownedAlive(name: BackendName): boolean { const record = this.records.get(name); return !!record && isRunning(record) }
@@ -39,12 +43,32 @@ export class ProcessBackendPorts implements BackendPorts {
     child.stdin.on('error', () => {})
     const record = { child, exited, instanceId, token }
     this.records.set(name, record)
-    // Never forward subprocess payloads: they may contain transcriptions or secrets.
-    child.stdout.on('data', () => {}); child.stderr.on('data', () => {})
+    // Forward only fixed allowlisted diagnostics. Raw child output can contain prompts or secrets.
+    const buffers: Record<'stdout' | 'stderr', string> = { stdout: '', stderr: '' }
+    const consume = (stream: 'stdout' | 'stderr', data: Buffer) => {
+      const lines = `${buffers[stream]}${data.toString('utf8')}`.split(/\r?\n/)
+      buffers[stream] = lines.pop() ?? ''
+      if (buffers[stream].length > 8192) buffers[stream] = ''
+      for (const line of lines) this.publishSafeDiagnostic(name, line)
+    }
+    child.stdout.on('data', data => consume('stdout', data as Buffer))
+    child.stderr.on('data', data => consume('stderr', data as Buffer))
+    child.once('exit', () => {
+      for (const stream of ['stdout', 'stderr'] as const) {
+        if (buffers[stream]) this.publishSafeDiagnostic(name, buffers[stream])
+      }
+    })
     child.stdin.write(JSON.stringify({ type: 'bootstrap', protocolVersion: 1, ownerInstanceId: this.ownerId,
       expectedServiceInstanceId: instanceId, ownerToken: token, neuralUrl: env.HUMAN_NEURAL_URL }) + '\n')
     this.log(`${name}: spawned owned process`)
     return { instanceId }
+  }
+  private publishSafeDiagnostic(name: BackendName, line: string): void {
+    const summary = safeRuntimeDiagnostic(line)
+    if (!summary) return
+    const message = `${name}: ${summary}`
+    this.log(message)
+    try { this.diagnostic(message) } catch { /* Diagnostics never affect process ownership. */ }
   }
   async waitReady(name: BackendName, instanceId: string, signal: AbortSignal) {
     const record = this.records.get(name)

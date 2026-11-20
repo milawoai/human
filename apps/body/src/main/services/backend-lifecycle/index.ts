@@ -54,7 +54,9 @@ export async function configureBackendServices(): Promise<void> {
       publishAvailability(snapshot)
       log(`node=${snapshot.node.phase}/${snapshot.node.ownership ?? '-'} python=${snapshot.python.phase}/${snapshot.python.ownership ?? '-'}`)
       for (const win of BrowserWindow.getAllWindows()) if (!win.isDestroyed()) win.webContents.send('backend:state', snapshot)
-    }, log
+    }, log, diagnostic: message => {
+      if (!app.isPackaged) console.warn(`[backend] ${message}`)
+    }
   })
   if (!neuralListenerInstalled) {
     neuralListenerInstalled = true

@@ -14,6 +14,7 @@ export interface LifecycleHooks {
   unavailable(): Promise<void>
   publish(snapshot: BackendSnapshot): void
   log(message: string): void
+  diagnostic?(message: string): void
 }
 export class LifecycleManager {
   readonly coordinator: BackendCoordinator
@@ -21,7 +22,7 @@ export class LifecycleManager {
   private stopMonitor?: () => void
   private closing?: Promise<void>
   constructor(config: BackendConfig, deploymentId: string, commands: (name: BackendName) => RuntimeCommand, hooks: LifecycleHooks) {
-    this.ports = new ProcessBackendPorts(config, deploymentId, commands, hooks.log)
+    this.ports = new ProcessBackendPorts(config, deploymentId, commands, hooks.log, hooks.diagnostic)
     const waitReady = this.ports.waitReady.bind(this.ports)
     this.ports.waitReady = async (name, instance, signal) => {
       await waitReady(name, instance, signal)

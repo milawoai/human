@@ -1,6 +1,6 @@
 import type { LlmService } from '../../language-center/llm.service';
 import type { ProviderAuthService } from '../../language-center/provider-auth.service';
-import type { JobExecutor, SubmitJob, WorkerOutcome } from '../../../motor/jobs/jobs.types';
+import type { JobExecutor, SubmitJob, WorkerOutcome } from '@/motor/jobs/jobs.types';
 import { createReadonlyJobTools } from './readonly-tools';
 import type { WorkspacePolicy } from './workspace-policy';
 import { readonlyWorkerResult } from './worker-result';

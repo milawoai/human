@@ -1,7 +1,7 @@
 import { Type } from '@sinclair/typebox';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
-import type { WorkerOutcome } from '../../../motor/jobs/jobs.types';
-import { JobError } from '../../../motor/jobs/jobs.errors';
+import type { WorkerOutcome } from '@/motor/jobs/jobs.types';
+import { JobError } from '@/motor/jobs/jobs.errors';
 import { createHash } from 'node:crypto';
 import { relative, resolve } from 'node:path';
 import type { WorkspacePolicy } from './workspace-policy';

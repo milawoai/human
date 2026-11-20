@@ -4,6 +4,8 @@ import { createServer } from 'node:net'
 import { join } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
 // @ts-expect-error Node strip-types needs a .ts extension.
+import { safeRuntimeDiagnostic } from '../runtime-diagnostics.ts'
+// @ts-expect-error Node strip-types needs a .ts extension.
 import { LifecycleManager } from '../manager.ts'
 // @ts-expect-error Node strip-types needs a .ts extension.
 import { ProcessBackendPorts } from '../process-adapter.ts'
@@ -21,6 +23,37 @@ const commands = (name: string) => name === 'node' ? {
     join(root, 'apps/backend/src/runtime/tests/desktop/fixture.ts')], cwd: join(root, 'apps/backend'), deploymentId: root
 } : { executable: join(root, 'apps/python-service/.venv/bin/python'), args: ['-m', 'runtime.runner'],
   cwd: join(root, 'apps/python-service'), deploymentId: root }
+
+test('backend diagnostics expose only fixed safe Job startup summaries', () => {
+  assert.equal(safeRuntimeDiagnostic('[Nest] WARN [JobsHostService] No authorized Job workspace/executor is configured'),
+    'Job host is not ready: workspace or read-only executor did not register.')
+  assert.equal(safeRuntimeDiagnostic('[Nest] WARN [PiReadonlyWorkerService] Readonly Job workspace unavailable; Job submission disabled: /Users/private/path'),
+    'Job worker registration failed while initializing its workspace policy.')
+  assert.equal(safeRuntimeDiagnostic('[Nest] LOG [NeuralHttpService] payload={"prompt":"private text"}'), undefined)
+})
+
+test('owned backend forwards allowlisted diagnostics but drains raw prompt output', { timeout: 10000 }, async () => {
+  const config = { schemaVersion: 1 as const, node: { policy: 'auto' as const, host: '127.0.0.1' as const, port: await freePort() },
+    python: { policy: 'auto' as const, host: '127.0.0.1' as const, port: await freePort() } }
+  const messages: string[] = []
+  const script = [
+    `process.stdout.write('[Nest] WARN [JobsHostService] No authorized Job workspace/executor is configured\\n')`,
+    `process.stdout.write('[Nest] LOG [NeuralHttpService] payload={"prompt":"private-prompt"}\\n')`,
+    `process.stderr.write('[Nest] WARN [PiReadonlyWorkerService] Readonly Job workspace unavailable; Job submission disabled: /Users/private/path\\n')`,
+    'process.stdin.resume()', 'process.stdin.on("end", () => process.exit(0))',
+  ].join(';')
+  const ports = new ProcessBackendPorts(config, root, () => ({ executable: process.execPath, args: ['-e', script], cwd: root,
+    deploymentId: root }), () => {}, line => messages.push(line))
+  const instance = await ports.launch('node', new AbortController().signal)
+  try {
+    await sleep(100)
+    assert.deepEqual(messages.sort(), [
+      'node: Job host is not ready: workspace or read-only executor did not register.',
+      'node: Job worker registration failed while initializing its workspace policy.',
+    ])
+    assert.doesNotMatch(messages.join('\n'), /private-prompt|\/Users\/private/)
+  } finally { await ports.stop('node', instance) }
+})
 
 test('real owned Node then Python register, Node restart re-registers Python, and both exit', { timeout: 30000 }, async context => {
   const config = { schemaVersion: 1 as const, node: { policy: 'auto' as const, host: '127.0.0.1' as const, port: await freePort() },

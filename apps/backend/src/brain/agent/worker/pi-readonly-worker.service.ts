@@ -1,10 +1,10 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { JobsHostService } from '../../../motor/jobs/core/jobs-host.service';
-import { LlmService } from '../../language-center/llm.service';
-import { ProviderAuthService } from '../../language-center/provider-auth.service';
-import { WorkspacePolicy } from './workspace-policy';
-import { PiReadonlyExecutor } from './pi-readonly-executor';
-import { configuredJobWorkspace } from '../../../motor/jobs/jobs.config';
+import { JobsHostService } from '@/motor/jobs/core/jobs-host.service';
+import { LlmService } from '@/brain/language-center/llm.service';
+import { ProviderAuthService } from '@/brain/language-center/provider-auth.service';
+import { WorkspacePolicy } from '@/brain/agent/worker/workspace-policy';
+import { PiReadonlyExecutor } from '@/brain/agent/worker/pi-readonly-executor';
+import { configuredJobWorkspace } from '@/motor/jobs/jobs.config';
 
 @Injectable()
 export class PiReadonlyWorkerService implements OnModuleInit {

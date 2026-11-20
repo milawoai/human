@@ -1,5 +1,5 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
-import type { WorkerOutcome } from '../../../motor/jobs/jobs.types';
+import type { WorkerOutcome } from '@/motor/jobs/jobs.types';
 
 export function readonlyWorkerResult(messages: AgentMessage[], evidence: NonNullable<WorkerOutcome['evidence']>, aborted: boolean): WorkerOutcome {
   const last = [...messages].reverse().find(message => message.role === 'assistant');

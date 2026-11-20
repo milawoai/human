@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { configuredJobWorkspace } from '../../../../motor/jobs/jobs.config';
-import type { JobsHostService } from '../../../../motor/jobs/core/jobs-host.service';
-import type { LlmService } from '../../../language-center/llm.service';
-import type { ProviderAuthService } from '../../../language-center/provider-auth.service';
-import { PiReadonlyWorkerService } from '../pi-readonly-worker.service';
+import { configuredJobWorkspace } from '@/motor/jobs/jobs.config';
+import type { JobsHostService } from '@/motor/jobs/core/jobs-host.service';
+import type { LlmService } from '@/brain/language-center/llm.service';
+import type { ProviderAuthService } from '@/brain/language-center/provider-auth.service';
+import { PiReadonlyWorkerService } from '@/brain/agent/worker/pi-readonly-worker.service';
 
 export function verifyWorkerRegistrationDoesNotDependOnModuleOrder(): void {
   const previousRoot = process.env.HUMAN_JOB_WORKSPACE_ROOT;

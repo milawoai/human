@@ -2,7 +2,7 @@ import { constants, openSync, closeSync, fstatSync, lstatSync, realpathSync, rea
 import { resolve, relative, isAbsolute, sep, parse, join } from 'node:path';
 import { homedir } from 'node:os';
 import { createHash } from 'node:crypto';
-import { JobError } from '../../../motor/jobs/jobs.errors';
+import { JobError } from '@/motor/jobs/jobs.errors';
 
 const denied = (message: string): never => { throw new JobError('JOB_WORKSPACE_DENIED', message); };
 const same = (a: { dev: number; ino: number }, b: { dev: number; ino: number }) => a.dev === b.dev && a.ino === b.ino;
