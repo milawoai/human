@@ -1,6 +1,7 @@
 import type { BackendName, BackendSnapshot } from '../../../shared/backendLifecycle'
 import type { BackendConfig } from './config'
 import type { RuntimeCommand } from './runtime-resolver'
+import type { DesktopApprovalHooks } from './job-approval-frames'
 // @ts-expect-error Node strip-types needs a .ts extension.
 import { BackendCoordinator } from './coordinator.ts'
 // @ts-expect-error Node strip-types needs a .ts extension.
@@ -15,6 +16,7 @@ export interface LifecycleHooks {
   publish(snapshot: BackendSnapshot): void
   log(message: string): void
   diagnostic?(message: string): void
+  approvals?: DesktopApprovalHooks
 }
 export class LifecycleManager {
   readonly coordinator: BackendCoordinator
@@ -22,7 +24,7 @@ export class LifecycleManager {
   private stopMonitor?: () => void
   private closing?: Promise<void>
   constructor(config: BackendConfig, deploymentId: string, commands: (name: BackendName) => RuntimeCommand, hooks: LifecycleHooks) {
-    this.ports = new ProcessBackendPorts(config, deploymentId, commands, hooks.log, hooks.diagnostic)
+    this.ports = new ProcessBackendPorts(config, deploymentId, commands, hooks.log, hooks.diagnostic, hooks.approvals)
     const waitReady = this.ports.waitReady.bind(this.ports)
     this.ports.waitReady = async (name, instance, signal) => {
       await waitReady(name, instance, signal)

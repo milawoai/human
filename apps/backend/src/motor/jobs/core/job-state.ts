@@ -2,11 +2,12 @@ import { JobError } from '../jobs.errors';
 import type { JobSnapshot, JobState, WorkerOutcome } from '../jobs.types';
 
 export type JobTransition = { type: 'dispatch' } | { type: 'cancel' }
+  | { type: 'await-approval' } | { type: 'resume-approval' }
   | { type: 'settle'; outcome: WorkerOutcome['outcome']; resultRef?: string; error?: WorkerOutcome['error'] }
   | { type: 'recover'; reason: string };
 
 export function occupiesJobSlot(state: JobState): boolean {
-  return state === 'accepted' || state === 'running' || state === 'cancelling';
+  return state === 'accepted' || state === 'running' || state === 'awaiting_approval' || state === 'cancelling';
 }
 
 export function isJobSettled(state: JobState): boolean {
@@ -35,9 +36,17 @@ export function transitionJob(
     case 'dispatch':
       if (job.state === 'accepted') return next({ state: 'running', startedAt: now });
       break;
+    case 'await-approval':
+      if (job.state === 'running') return next({ state: 'awaiting_approval' });
+      break;
+    case 'resume-approval':
+      if (job.state === 'awaiting_approval') return next({ state: 'running' });
+      break;
     case 'cancel':
       if (job.state === 'accepted') return next({ state: 'cancelled', cancelRequestedAt: now, finishedAt: now });
-      if (job.state === 'running') return next({ state: 'cancelling', cancelRequestedAt: now });
+      if (job.state === 'running' || job.state === 'awaiting_approval') {
+        return next({ state: 'cancelling', cancelRequestedAt: now });
+      }
       if (job.state === 'cancelling' || isJobSettled(job.state) || job.state === 'unknown') return job;
       break;
     case 'settle':

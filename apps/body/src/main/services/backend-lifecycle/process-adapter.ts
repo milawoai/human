@@ -13,6 +13,9 @@ import type { ProcessRecord } from './platform-process'
 import { setTimeout as sleep } from 'node:timers/promises'
 // @ts-expect-error Node strip-types needs a .ts extension.
 import { safeRuntimeDiagnostic } from './runtime-diagnostics.ts'
+// @ts-expect-error Node strip-types needs a .ts extension.
+import { createApprovalFrames } from './job-approval-frames.ts'
+import type { DesktopApprovalHooks } from './job-approval-frames'
 export class ProcessBackendPorts implements BackendPorts {
   readonly probeClient: ServiceProbe
   private readonly records = new Map<BackendName, ProcessRecord>()
@@ -20,11 +23,14 @@ export class ProcessBackendPorts implements BackendPorts {
   private readonly config: BackendConfig
   private readonly log: (line: string) => void
   private readonly diagnostic: (line: string) => void
+  private readonly approvals?: DesktopApprovalHooks
   private readonly ownerId = randomUUID()
   constructor(config: BackendConfig, deploymentId: string, commands: (name: BackendName) => RuntimeCommand,
-    log: (line: string) => void = () => {}, diagnostic: (line: string) => void = () => {}) {
+    log: (line: string) => void = () => {}, diagnostic: (line: string) => void = () => {},
+    approvals?: DesktopApprovalHooks) {
     this.config = config; this.commands = commands; this.log = log; this.diagnostic = diagnostic
     this.probeClient = new ServiceProbe(config, deploymentId)
+    this.approvals = approvals
   }
   ownedAlive(name: BackendName): boolean { const record = this.records.get(name); return !!record && isRunning(record) }
   probe(name: BackendName, signal: AbortSignal) { return this.probeClient.probe(name, signal) }
@@ -44,16 +50,22 @@ export class ProcessBackendPorts implements BackendPorts {
     child.stdin.on('error', () => {})
     const record = { child, exited, instanceId, token }
     this.records.set(name, record)
+    const approval = name === 'node' ? createApprovalFrames(token, instanceId,
+      line => { if (child.stdin.writable) child.stdin.write(line) }, this.approvals) : undefined
     // Forward only fixed allowlisted diagnostics. Raw child output can contain prompts or secrets.
     const buffers: Record<'stdout' | 'stderr', string> = { stdout: '', stderr: '' }
-    const consume = (stream: 'stdout' | 'stderr', data: Buffer) => {
-      const lines = `${buffers[stream]}${data.toString('utf8')}`.split(/\r?\n/)
+    const consume = (stream: 'stdout' | 'stderr', data: string) => {
+      const lines = `${buffers[stream]}${data}`.split(/\r?\n/)
       buffers[stream] = lines.pop() ?? ''
-      if (buffers[stream].length > 8192) buffers[stream] = ''
-      for (const line of lines) this.publishSafeDiagnostic(name, line)
+      if (buffers[stream].length > 32768) buffers[stream] = ''
+      for (const line of lines) {
+        if (stream === 'stdout' && approval?.consume(line)) continue
+        this.publishSafeDiagnostic(name, line)
+      }
     }
-    child.stdout.on('data', data => consume('stdout', data as Buffer))
-    child.stderr.on('data', data => consume('stderr', data as Buffer))
+    child.stdout.setEncoding('utf8').on('data', data => consume('stdout', data))
+    child.stderr.setEncoding('utf8').on('data', data => consume('stderr', data))
+    void exited.then(() => approval?.close())
     child.once('exit', () => {
       for (const stream of ['stdout', 'stderr'] as const) {
         if (buffers[stream]) this.publishSafeDiagnostic(name, buffers[stream])

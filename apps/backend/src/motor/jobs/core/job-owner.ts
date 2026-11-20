@@ -21,7 +21,7 @@ export class JobOwner {
   acquire(): JobSnapshot[] {
     return jobTransaction(this.db, () => {
       const previous = readJobOwner(this.db);
-      const rows = this.db.prepare("SELECT * FROM motor_jobs WHERE state IN ('accepted','running','cancelling')").all() as JobRow[];
+      const rows = this.db.prepare("SELECT * FROM motor_jobs WHERE state IN ('accepted','running','awaiting_approval','cancelling')").all() as JobRow[];
       if (previous?.instance_id === this.identity.instanceId && previous.pid === this.identity.pid
         && previous.started_at === this.identity.startedAt) {
         assertJobOwner(this.db, this.identity.instanceId); return [];
@@ -42,7 +42,7 @@ export class JobOwner {
   markUncertain(reason: string): JobSnapshot[] {
     return jobTransaction(this.db, () => {
       assertJobOwner(this.db, this.identity.instanceId);
-      const rows = this.db.prepare("SELECT * FROM motor_jobs WHERE owner_instance_id = ? AND state IN ('accepted','running','cancelling')")
+      const rows = this.db.prepare("SELECT * FROM motor_jobs WHERE owner_instance_id = ? AND state IN ('accepted','running','awaiting_approval','cancelling')")
         .all(this.identity.instanceId) as JobRow[];
       return this.uncertain(rows, reason);
     });
@@ -63,6 +63,10 @@ export class JobOwner {
         WHERE job_id=? AND owner_instance_id=? AND state=? AND seq=?`)
         .run(now, reason, row.job_id, row.owner_instance_id, row.state, row.seq);
       if (result.changes !== 1) throw new JobError('JOB_STALE_VERSION', 'Recovery conflicted with an execution update');
+      if (row.state === 'awaiting_approval') {
+        this.db.prepare("UPDATE motor_job_approvals SET status='invalidated', decided_at=? WHERE job_id=? AND status='pending'")
+          .run(now, row.job_id);
+      }
       return jobSnapshot({ ...row, state: 'unknown', seq: row.seq + 1, finished_at: now, reason });
     });
   }

@@ -1,27 +1,38 @@
 import { Type } from '@sinclair/typebox';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
-import type { WorkerOutcome } from '@/motor/jobs/jobs.types';
+import type { JobExecutor, WorkerOutcome } from '@/motor/jobs/jobs.types';
 import { JobError } from '@/motor/jobs/jobs.errors';
 import { createHash } from 'node:crypto';
 import { relative, resolve } from 'node:path';
 import type { WorkspacePolicy } from './workspace-policy';
+import { workspaceApproval } from './workspace-approval';
 
 const readWritePath = Type.Object({ path: Type.String({ minLength: 1 }) }, { additionalProperties: false });
 const writePath = Type.Object({ path: Type.String({ minLength: 1 }), content: Type.String(),
   overwrite: Type.Optional(Type.Boolean()) }, { additionalProperties: false });
 
-export function createJobWorkspaceTools(policy: WorkspacePolicy, cwd: string, signal: AbortSignal) {
+export function createJobWorkspaceTools(policy: WorkspacePolicy, cwd: string, signal: AbortSignal,
+  approve?: Parameters<JobExecutor['execute']>[1]['approve']) {
+  const authorize = workspaceApproval(policy, cwd, signal, approve);
+  const evidencePath = (input: string) => {
+    const path = resolve(cwd, input);
+    const local = relative(policy.root, path);
+    return local === '..' || local.startsWith('../') ? path : local || '.';
+  };
   const evidence: NonNullable<WorkerOutcome['evidence']> = [];
   let calls = 0, bytes = 0;
   const tools: AgentTool[] = [
     {
       name: 'read', label: 'Read workspace text',
-      description: 'Read a UTF-8 file inside the user-authorized workspace. Paths are relative; symlinks are blocked.',
+      description: 'Read a UTF-8 file. Paths outside the workspace require desktop approval. Symlinks are blocked.',
       parameters: readWritePath,
       async execute(_id, args: { path: string }) {
         signal.throwIfAborted();
         if (++calls > 20) throw new JobError('JOB_BUDGET_EXCEEDED', 'Job tool call budget exceeded');
-        const result = policy.read(cwd, args.path, 2 * 1024 * 1024 - bytes);
+        const target = await authorize('read', args.path);
+        signal.throwIfAborted();
+        const result = target.policy.read(target.cwd, target.input, 2 * 1024 * 1024 - bytes);
+        result.evidence.path = evidencePath(args.path);
         bytes += result.bytes;
         if (bytes > 2 * 1024 * 1024) throw new JobError('JOB_BUDGET_EXCEEDED', 'Job IO budget exceeded');
         evidence.push(result.evidence);
@@ -35,7 +46,10 @@ export function createJobWorkspaceTools(policy: WorkspacePolicy, cwd: string, si
       async execute(_id, args: { path: string; content: string; overwrite?: boolean }) {
         signal.throwIfAborted();
         if (++calls > 20) throw new JobError('JOB_BUDGET_EXCEEDED', 'Job tool call budget exceeded');
-        const result = policy.write(cwd, args.path, args.content, 2 * 1024 * 1024 - bytes, args.overwrite === true);
+        const target = await authorize('write', args.path, true);
+        signal.throwIfAborted();
+        const result = target.policy.write(target.cwd, target.input, args.content, 2 * 1024 * 1024 - bytes, args.overwrite === true);
+        result.evidence.path = evidencePath(args.path);
         bytes += result.bytes;
         if (bytes > 2 * 1024 * 1024) throw new JobError('JOB_BUDGET_EXCEEDED', 'Job IO budget exceeded');
         evidence.push(result.evidence);
@@ -50,11 +64,13 @@ export function createJobWorkspaceTools(policy: WorkspacePolicy, cwd: string, si
       async execute(_id, args: { path: string }) {
         signal.throwIfAborted();
         if (++calls > 20) throw new JobError('JOB_BUDGET_EXCEEDED', 'Job tool call budget exceeded');
-        const text = policy.list(cwd, args.path).join('\n');
+        const target = await authorize('ls', args.path);
+        signal.throwIfAborted();
+        const text = target.policy.list(target.cwd, target.input).join('\n');
         const data = Buffer.from(text);
         bytes += data.length;
         if (bytes > 2 * 1024 * 1024) throw new JobError('JOB_BUDGET_EXCEEDED', 'Job IO budget exceeded');
-        const item = { path: relative(policy.root, resolve(cwd, args.path)) || '.', contentHash: createHash('sha256').update(data).digest('hex') };
+        const item = { path: evidencePath(args.path), contentHash: createHash('sha256').update(data).digest('hex') };
         evidence.push(item);
         return { content: [{ type: 'text', text }], details: { evidence: item } };
       },

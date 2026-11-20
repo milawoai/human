@@ -34,6 +34,7 @@ export async function configureBackendServices(): Promise<void> {
   const workspaceCatalogPath = join(app.getPath('userData'), 'job-workspaces.json')
   manager = new LifecycleManager(effective.config, root, name => attachJobWorkspaceCatalog(name,
     resolveRuntime(name, root, app.isPackaged), workspaceCatalogPath), {
+    approvals: desktopJobApprovals,
     nodeReady: async (instance, signal) => {
       await disconnectNeural()
       signal.throwIfAborted()
@@ -113,3 +114,4 @@ async function applyBackendConfig(input: unknown) {
   return status()
 }
 export async function openSettings() { WindowManager.getInstance().showMainWindow('/pet-settings') }
+import { desktopJobApprovals } from '../job-workspaces/approval-dialog'

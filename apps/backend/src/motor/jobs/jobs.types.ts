@@ -1,4 +1,4 @@
-export type JobState = 'accepted' | 'running' | 'cancelling'
+export type JobState = 'accepted' | 'running' | 'awaiting_approval' | 'cancelling'
   | 'succeeded' | 'failed' | 'cancelled' | 'unknown';
 
 export interface SubmitJob {
@@ -9,6 +9,9 @@ export interface SubmitJob {
 
 export interface JobFailure { code: string; message: string }
 export interface JobProgress { message: string; completed?: number; total?: number }
+export interface JobApprovalTarget { operation: 'read' | 'write' | 'ls'; path: string; workspaceRoot: string }
+export interface JobApproval extends JobApprovalTarget { approvalId: string; jobId: string; seq: number; expiresAt: number }
+export type JobApprovalDecision = 'once' | 'directory' | 'deny';
 export interface JobSnapshot {
   jobId: string;
   kind: 'pi-workspace';
@@ -22,6 +25,7 @@ export interface JobSnapshot {
   error?: JobFailure;
   cancelRequestedAt?: number;
   reason?: string;
+  awaitingApproval?: Pick<JobApproval, 'approvalId' | 'operation' | 'path' | 'expiresAt'>;
 }
 
 export interface WorkerOutcome {
@@ -36,6 +40,7 @@ export interface JobExecutor {
     jobId: string;
     signal: AbortSignal;
     progress(update: JobProgress): Promise<void>;
+    approve?(target: JobApprovalTarget): Promise<boolean>;
   }): Promise<WorkerOutcome>;
 }
 

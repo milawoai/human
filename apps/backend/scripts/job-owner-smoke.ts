@@ -9,6 +9,7 @@ import { DataSource } from 'typeorm';
 import { JobOwner, probeJobProcess } from '../src/motor/jobs/core/job-owner';
 import { JobRepository } from '../src/motor/jobs/persistence/job.repository';
 import { JobError } from '../src/motor/jobs/jobs.errors';
+import { legacyJobSchema } from '../src/motor/jobs/persistence/job-schema';
 
 async function main() {
   const directory = mkdtempSync(join(tmpdir(), 'human-job-owner-'));
@@ -17,14 +18,17 @@ async function main() {
   const spawned = once(child, 'spawn');
   try {
     await source.initialize(); await spawned;
-    const old = new JobRepository(source, 'old'); old.initialize();
-    const historical = old.submit('s', { idempotencyKey: 'historical', kind: 'pi-workspace', spec: { prompt: 'read', workspaceId: 'fixture-workspace', cwd: '.' } }, 1);
-    old.transition('s', historical.job.jobId, 1, { type: 'cancel' }, 2);
-    await source.query('DROP TABLE motor_job_runtime');
-    await source.query('UPDATE motor_job_schema SET version = 1');
+    for (const sql of Object.values(legacyJobSchema)) await source.query(sql);
+    await source.query('INSERT INTO motor_job_schema VALUES (1, 1)');
+    await source.query(`INSERT INTO motor_jobs
+      (job_id, scope_key, idempotency_key, spec_hash, spec_json, state, seq, owner_instance_id, created_at, finished_at, result_ref)
+      VALUES ('historical', 's', 'historical', 'hash', '{}', 'succeeded', 3, 'old', 1, 2, 'result')`);
+    await source.query("INSERT INTO motor_job_results VALUES ('result', 'historical', 'historical report', '[]', 2)");
+    const old = new JobRepository(source, 'old');
     old.initialize();
-    assert.equal((await source.query('SELECT version FROM motor_job_schema'))[0].version, 2);
-    assert.equal(old.get('s', historical.job.jobId).state, 'cancelled', 'v1 -> v2 migration preserves historical jobs');
+    assert.equal((await source.query('SELECT version FROM motor_job_schema'))[0].version, 3);
+    assert.equal(old.get('s', 'historical').state, 'succeeded');
+    assert.equal((await source.query('SELECT report FROM motor_job_results'))[0].report, 'historical report');
     const identity = { instanceId: 'old', deploymentId: 'fixture', pid: child.pid!, startedAt: 'fixture' };
     const owner = new JobOwner(source, identity); owner.acquire();
     assert.equal(probeJobProcess(process.pid), 'alive');

@@ -3,6 +3,8 @@ import type { JobRepository } from '../persistence/job.repository';
 import { JobError } from '../jobs.errors';
 import type { JobExecutorRegistry } from './executor-registry';
 import { JobProgressBuffer } from './job-progress';
+import { requestApproval } from '../approval/request-approval';
+import { performance } from 'node:perf_hooks';
 
 interface DispatchHandle {
   scopeKey: string;
@@ -71,6 +73,15 @@ export class JobDispatcher {
 
   private async run(scopeKey: string, jobId: string, handle: DispatchHandle): Promise<void> {
     let budget: ReturnType<typeof setTimeout> | undefined;
+    let remaining = this.timeoutMs;
+    let started = 0;
+    const startBudget = () => {
+      started = performance.now();
+      budget = setTimeout(() => {
+        try { this.cancel(scopeKey, jobId); } catch (error) { this.diagnostic(error); }
+      }, Math.max(1, remaining));
+      budget.unref();
+    };
     const progress = new JobProgressBuffer(update => {
       this.changed(this.repository.progress(scopeKey, jobId, update, Date.now()));
     }, error => this.diagnostic(error));
@@ -80,18 +91,26 @@ export class JobDispatcher {
       const spec = this.repository.executionSpec(scopeKey, jobId);
       const running = this.repository.transition(scopeKey, jobId, accepted.seq, { type: 'dispatch' }, Date.now());
       this.changed(running);
-      budget = setTimeout(() => {
-        try { this.cancel(scopeKey, jobId); } catch (error) { this.diagnostic(error); }
-      }, this.timeoutMs);
-      budget.unref();
+      startBudget();
       let outcome: WorkerOutcome;
       try {
         const executor = this.executors.require(running.kind);
         outcome = await executor.execute(spec, { jobId, signal: handle.controller.signal,
-          progress: update => progress.update(update) });
+          progress: update => progress.update(update),
+          approve: async target => {
+            clearTimeout(budget);
+            remaining -= performance.now() - started;
+            try {
+              if (remaining <= 0) this.cancel(scopeKey, jobId);
+              return await requestApproval(this.repository, scopeKey, jobId, target,
+                handle.controller.signal, job => this.changed(job));
+            } finally {
+              if (!handle.controller.signal.aborted) startBudget();
+            }
+          } });
       } catch (error) {
         this.diagnostic(error);
-        outcome = { outcome: 'failed', error: { code: 'WORKER_EXECUTION_FAILED',
+        outcome = handle.controller.signal.aborted ? { outcome: 'cancelled' } : { outcome: 'failed', error: { code: 'WORKER_EXECUTION_FAILED',
           message: 'Background executor rejected the execution' } };
       }
       // A progress/notification failure does not rewrite the actual execution outcome.

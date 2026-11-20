@@ -14,6 +14,7 @@ function statusResponse(job: JobSnapshot): JobSnapshot {
   const messageByState: Record<JobSnapshot['state'], string> = {
     accepted: '等待执行',
     running: job.progress?.message ?? '正在执行',
+    awaiting_approval: '等待权限审批',
     cancelling: '正在取消',
     succeeded: '任务已完成',
     failed: '任务失败',

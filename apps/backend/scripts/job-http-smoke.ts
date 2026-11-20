@@ -3,6 +3,7 @@ import { performance } from 'node:perf_hooks';
 import { io } from 'socket.io-client';
 import { jobHttpFixture, pollJob } from './job-http-fixture';
 import { JobsHostService } from '../src/motor/jobs/core/jobs-host.service';
+import { verifyJobApproval } from './job-approval-cases';
 
 async function main() {
   const f = await jobHttpFixture();
@@ -81,6 +82,7 @@ async function main() {
     const p95 = (values: number[]) => values.sort((a, b) => a - b)[94];
     assert.ok(p95(submitTimes) <= 200); assert.ok(p95(getTimes) <= 200);
     console.log(`Job HTTP latency: PASS newSubmitP95=${p95(submitTimes).toFixed(1)}ms; getP95=${p95(getTimes).toFixed(1)}ms; n=100`);
+    await verifyJobApproval(f);
     const beforeUnsettled = f.requests();
     const unsettled = await submit('shutdown', 'UNCOOPERATIVE_WAIT');
     await pollJob(f, unsettled.data.jobId, state => state === 'running');

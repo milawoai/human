@@ -85,3 +85,13 @@ export async function addDirectory(): Promise<{ catalog: JobWorkspaceCatalog; ou
 export async function syncWorkspaceCatalog(): Promise<void> {
   writeWorkspaceCatalogFile(catalogPath(), readCatalog())
 }
+
+export function grantApprovedDirectory(directory: string): void {
+  if (realpathSync(directory) !== directory || !statSync(directory).isDirectory()) {
+    throw Error('Job authorization directory changed')
+  }
+  const current = readCatalog()
+  if (current.workspaces.some(item => item.path === directory)) return
+  if (current.workspaces.length >= 100) throw Error('最多只能授权 100 个 Job 工作区')
+  writeCatalog(addWorkspace(current, { id: randomUUID(), path: directory, label: basename(directory) || directory }))
+}

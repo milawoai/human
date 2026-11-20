@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { DataSource } from 'typeorm';
 import { JobError } from '../jobs.errors';
-import type { JobSnapshot, JobProgress, WorkerOutcome } from '../jobs.types';
+import type { JobApproval, JobApprovalTarget, JobSnapshot, JobProgress, WorkerOutcome } from '../jobs.types';
 import { parseSubmitJob, fingerprintJob } from '../core/job-input';
 import { decideJobAdmission } from '../core/job-admission';
 import { transitionJob, type JobTransition } from '../core/job-state';
@@ -43,12 +43,12 @@ export class JobRepository {
     return jobTransaction(this.db, () => {
       const row = this.db.prepare('SELECT * FROM motor_jobs WHERE scope_key = ? AND idempotency_key = ?')
         .get(scopeKey, input.idempotencyKey) as JobRow | undefined;
-      const busy = !!this.db.prepare("SELECT 1 FROM motor_jobs WHERE state IN ('accepted','running','cancelling') LIMIT 1").get();
+      const busy = !!this.db.prepare("SELECT 1 FROM motor_jobs WHERE state IN ('accepted','running','awaiting_approval','cancelling') LIMIT 1").get();
       const decision = decideJobAdmission(request, row ? { scopeKey: row.scope_key,
         idempotencyKey: row.idempotency_key, specHash: row.spec_hash, jobId: row.job_id, state: row.state } : undefined, busy);
       if (decision.kind === 'reuse') return { job: jobSnapshot(row!), reused: true };
       assertJobOwner(this.db, this.ownerInstanceId);
-      const count = this.db.prepare("SELECT count(*) AS n FROM motor_jobs WHERE state NOT IN ('accepted','running','cancelling')")
+      const count = this.db.prepare("SELECT count(*) AS n FROM motor_jobs WHERE state NOT IN ('accepted','running','awaiting_approval','cancelling')")
         .get() as { n: number };
       if (count.n >= this.capacity) throw new JobError('JOB_CAPACITY', 'Job retention limit reached; explicit maintenance is required');
       const jobId = randomUUID();
@@ -61,7 +61,13 @@ export class JobRepository {
 
   get(scopeKey: string, jobId: string): JobSnapshot {
     this.ready();
-    return jobSnapshot(this.row(scopeKey, jobId));
+    const job = jobSnapshot(this.row(scopeKey, jobId));
+    if (job.state === 'awaiting_approval') {
+      job.awaitingApproval = this.db.prepare(`SELECT approval_id approvalId, operation, canonical_path path,
+        expires_at expiresAt FROM motor_job_approvals WHERE job_id=? AND job_seq=? AND status='pending'`)
+        .get(jobId, job.seq) as JobSnapshot['awaitingApproval'];
+    }
+    return job;
   }
 
   result(scopeKey: string, jobId: string) {
@@ -73,6 +79,35 @@ export class JobRepository {
   executionSpec(scopeKey: string, jobId: string) {
     this.ready();
     return storedSpec(this.ownedRow(scopeKey, jobId));
+  }
+
+  beginApproval(scope: string, jobId: string, target: JobApprovalTarget, now: number, expiresAt: number) {
+    this.ready();
+    return jobTransaction(this.db, () => {
+      const row = this.ownedRow(scope, jobId);
+      const job = transitionJob(jobSnapshot(row), row.seq, { type: 'await-approval' }, now);
+      const approval: JobApproval = { ...target, approvalId: randomUUID(), jobId, seq: job.seq, expiresAt };
+      this.db.prepare(`INSERT INTO motor_job_approvals
+        (approval_id,job_id,job_seq,operation,canonical_path,workspace_root,status,created_at,expires_at)
+        VALUES (?,?,?,?,?,?,'pending',?,?)`).run(approval.approvalId, jobId, job.seq, target.operation,
+        target.path, target.workspaceRoot, now, expiresAt);
+      this.update(row, job);
+      return { job, approval };
+    });
+  }
+
+  finishApproval(scope: string, request: JobApproval, status: 'approved' | 'denied' | 'expired', now: number) {
+    this.ready();
+    return jobTransaction(this.db, () => {
+      const row = this.ownedRow(scope, request.jobId);
+      const job = transitionJob(jobSnapshot(row), request.seq, { type: 'resume-approval' }, now);
+      const updated = this.db.prepare(`UPDATE motor_job_approvals SET status=?, decided_at=?, decision_source=?
+        WHERE approval_id=? AND job_id=? AND job_seq=? AND status='pending'`)
+        .run(status, now, status === 'expired' ? 'timeout' : 'electron', request.approvalId, request.jobId, request.seq);
+      if (updated.changes !== 1) throw new JobError('JOB_STALE_VERSION', 'Approval is no longer pending');
+      this.update(row, job);
+      return job;
+    });
   }
 
   progress(scopeKey: string, jobId: string, update: JobProgress, now: number): JobSnapshot {
@@ -98,6 +133,10 @@ export class JobRepository {
       const row = this.ownedRow(scopeKey, jobId);
       const current = jobSnapshot(row);
       const next = transitionJob(current, seq, event, now);
+      if (row.state === 'awaiting_approval' && event.type === 'cancel') {
+        this.db.prepare("UPDATE motor_job_approvals SET status='invalidated', decided_at=? WHERE job_id=? AND status='pending'")
+          .run(now, jobId);
+      }
       if (next !== current) this.update(row, next);
       return next;
     });

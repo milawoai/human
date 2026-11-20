@@ -30,6 +30,8 @@ export class WorkspacePolicy {
     return path;
   }
 
+  assertCurrentGrant(): void { this.assertAuthorized(); }
+
   read(cwd: string, input: string, remainingBytes = MAX_FILE_BYTES) {
     const limit = Math.min(MAX_FILE_BYTES, remainingBytes);
     if (!Number.isSafeInteger(limit) || limit < 0) denied('Invalid remaining read budget');
