@@ -5,9 +5,24 @@ import { NeuralHttpService } from '../../../neural/neural-http/neural-http.servi
 import type { BusMessage, Capability } from '../../../neural/interfaces';
 import { JobsHostService } from '../core/jobs-host.service';
 import { JobError } from '../jobs.errors';
+import type { JobSnapshot } from '../jobs.types';
 import { JOB_ACTOR } from './job-events';
 
 const topics = [TOPIC.MOTOR_JOB_SUBMIT, TOPIC.MOTOR_JOB_GET, TOPIC.MOTOR_JOB_CANCEL, TOPIC.MOTOR_JOB_RESULT];
+
+function statusResponse(job: JobSnapshot): JobSnapshot {
+  const messageByState: Record<JobSnapshot['state'], string> = {
+    accepted: '等待执行',
+    running: job.progress?.message ?? '正在执行',
+    cancelling: '正在取消',
+    succeeded: '任务已完成',
+    failed: '任务失败',
+    cancelled: '任务已取消',
+    unknown: '任务状态未知',
+  };
+  return { ...job, progress: { ...job.progress, message: messageByState[job.state] } };
+}
+
 @Injectable()
 export class JobHandler implements OnModuleInit {
   constructor(private readonly host: JobsHostService, private readonly core: NeuralCoreService,
@@ -35,7 +50,7 @@ export class JobHandler implements OnModuleInit {
         || typeof payload.jobId !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(payload.jobId)) {
         throw new JobError('JOB_INVALID_INPUT', 'Expected only a valid jobId');
       }
-      const data = message.topic === TOPIC.MOTOR_JOB_GET ? this.host.get(payload.jobId)
+      const data = message.topic === TOPIC.MOTOR_JOB_GET ? statusResponse(this.host.get(payload.jobId))
         : message.topic === TOPIC.MOTOR_JOB_CANCEL ? this.host.cancel(payload.jobId) : this.host.result(payload.jobId);
       return { success: true, data };
     } catch (error) {
