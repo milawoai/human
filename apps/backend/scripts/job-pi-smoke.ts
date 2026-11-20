@@ -8,8 +8,11 @@ import { fixtureJobLlm } from './job-pi-fixture';
 import { ModelConfigService } from '../src/brain/language-center/model-config.service';
 import { ProviderAuthService } from '../src/brain/language-center/provider-auth.service';
 import { LlmService } from '../src/brain/language-center/llm.service';
+import { verifyWorkerRegistrationDoesNotDependOnModuleOrder } from '../src/brain/agent/worker/tests/bootstrap.cases';
 
 async function main() {
+  verifyWorkerRegistrationDoesNotDependOnModuleOrder();
+  console.log('Job bootstrap: PASS worker registration is independent of Nest module init order');
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'human-job-pi-')));
   writeFileSync(join(root, 'public.txt'), 'Public read-only fixture. No secrets.\n');
   try {

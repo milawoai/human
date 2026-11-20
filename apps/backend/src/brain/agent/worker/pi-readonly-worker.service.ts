@@ -4,6 +4,7 @@ import { LlmService } from '../../language-center/llm.service';
 import { ProviderAuthService } from '../../language-center/provider-auth.service';
 import { WorkspacePolicy } from './workspace-policy';
 import { PiReadonlyExecutor } from './pi-readonly-executor';
+import { configuredJobWorkspace } from '../../../motor/jobs/jobs.config';
 
 @Injectable()
 export class PiReadonlyWorkerService implements OnModuleInit {
@@ -12,9 +13,16 @@ export class PiReadonlyWorkerService implements OnModuleInit {
     private readonly auth: ProviderAuthService) {}
   onModuleInit(): void {
     try {
-      if (!this.host.workspaceRoot) return;
-      const policy = new WorkspacePolicy(this.host.workspaceRoot);
+      // BrainModule is global, so Nest may run this hook before JobsModule initializes its host.
+      const workspaceRoot = configuredJobWorkspace();
+      if (!workspaceRoot) {
+        this.logger.warn('Job workspace could not be resolved; read-only executor was not registered');
+        return;
+      }
+      const policy = new WorkspacePolicy(workspaceRoot);
       this.host.registerExecutor(new PiReadonlyExecutor(policy, this.llm, this.auth), cwd => policy.authorizeCwd(cwd));
-    } catch { this.logger.warn('Readonly Job workspace unavailable; Job submission disabled'); }
+    } catch (error) {
+      this.logger.warn(`Readonly Job workspace unavailable; Job submission disabled: ${error instanceof Error ? error.message : 'unknown error'}`);
+    }
   }
 }
