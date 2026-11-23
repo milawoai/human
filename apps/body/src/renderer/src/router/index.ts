@@ -43,11 +43,6 @@ const routes = [
     path: '/chat-panel',
     name: 'chat-panel',
     component: () => import('@renderer/pages/chat-panel/index.vue')
-  },
-  {
-    path: '/config',
-    name: 'config',
-    component: () => import('@renderer/pages/config/index.vue')
   }
 ]
 

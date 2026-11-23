@@ -27,7 +27,3 @@ export const movePetWindowBy = async (deltaX: number, deltaY: number) => {
 export const getPetCursorPosition = async () => {
   return WindowManager.getInstance().getPetCursorPosition()
 }
-
-export const openConfigWindow = async () => {
-  return WindowManager.getInstance().openConfigWindow()
-}

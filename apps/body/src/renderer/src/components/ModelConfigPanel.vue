@@ -1,14 +1,14 @@
 <script setup lang="ts">
 /**
- * 模型配置窗口（human-48b 可视化模型配置）
+ * 模型配置面板（human-48b 可视化模型配置；自 /config 独立页面迁入设置页 tab）
  *
  * 档案 → 模型两级管理：查看默认、一键切换、连通测试、通道新模型对比、Ollama 探测。
- * 密钥不经过本页面（全部能力走 backend 代理）。
+ * 密钥不经过本组件（全部能力走 backend 代理）。
  */
 import { computed, inject, onMounted, ref } from 'vue'
 import type { IpcProxy } from '@renderer/plugin/ipc'
 
-// 与 chat-panel 相同：经应用插件注入的 IPC 代理（config 窗口加载同一 SPA 入口）
+// 经应用插件注入的 IPC 代理
 const ipc = inject<IpcProxy>('ipc')!
 
 interface ProfileItem {
@@ -144,8 +144,6 @@ const copyText = async (text: string) => {
   }
 }
 
-const closeWindow = () => window.close()
-
 const dotClass = (name: string) => {
   const s = testState.value[name] ?? 'unknown'
   return { unknown: s === 'unknown', testing: s === 'testing', ok: s === 'ok', fail: s === 'fail' }
@@ -157,14 +155,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="config-page">
-    <header class="page-header">
-      <h1><i class="pi pi-cog" /> 模型设置</h1>
-      <div class="header-actions">
-        <button class="btn ghost" @click="loadProfiles">刷新</button>
-        <button class="btn ghost" @click="closeWindow">关闭</button>
-      </div>
-    </header>
+  <section class="model-config-panel" aria-label="模型配置">
+    <div class="panel-actions">
+      <button class="btn ghost small" @click="loadProfiles">刷新</button>
+    </div>
 
     <div class="layout">
       <!-- 左：档案列表 -->
@@ -274,39 +268,21 @@ onMounted(() => {
     <Transition name="fade">
       <div v-if="toast" class="toast">{{ toast }}</div>
     </Transition>
-  </main>
+  </section>
 </template>
 
 <style scoped>
-.config-page {
+.model-config-panel {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  padding: var(--human-space-page);
-  box-sizing: border-box;
   font-family:var(--human-font-body);
   color:var(--human-text);
-  background: var(--human-bg);
   gap: var(--human-space-section);
-  overflow: auto;
 }
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.page-header h1 {
-  font-size:var(--human-text-title);
-  margin: 0;
-  display: flex;
-  gap: var(--human-spacing-2);
-  align-items: center;
-}
-.header-actions { display: flex; gap: var(--human-spacing-2); }
+.panel-actions { display: flex; justify-content: flex-end; }
 .layout {
   display: flex;
   gap: var(--human-spacing-4);
-  flex: 1;
   min-height: 0;
 }
 .profile-list {
@@ -422,6 +398,6 @@ onMounted(() => {
 @media (max-width: 760px) {
   .layout { flex-direction: column; flex: none; }
   .profile-list { width: auto; }
-  .detail-header, .page-header { flex-wrap: wrap; gap: var(--human-space-related); }
+  .detail-header { flex-wrap: wrap; gap: var(--human-space-related); }
 }
 </style>

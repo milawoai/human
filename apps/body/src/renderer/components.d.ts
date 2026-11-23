@@ -25,6 +25,7 @@ declare module 'vue' {
     InputText: typeof import('primevue/inputtext')['default']
     LanguageSwitcher: typeof import('./src/components/LanguageSwitcher.vue')['default']
     ListInput: typeof import('./src/components/form/ListInput.vue')['default']
+    ModelConfigPanel: typeof import('./src/components/ModelConfigPanel.vue')['default']
     ObjectInput: typeof import('./src/components/form/ObjectInput.vue')['default']
     Password: typeof import('primevue/password')['default']
     RadioButton: typeof import('primevue/radiobutton')['default']

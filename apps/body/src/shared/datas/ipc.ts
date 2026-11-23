@@ -230,9 +230,6 @@ export const defineHandlers = {
     }
   },
   window: {
-    openConfigWindow: {
-      desc: '打开模型配置窗口'
-    },
     createPetWindow: {
       desc: '创建Pet窗口'
     },

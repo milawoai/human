@@ -435,11 +435,6 @@ const doSwitchModel = async (profile: string, model: string) => {
   }
 }
 
-const openConfigWindow = () => {
-  modelMenuOpen.value = false
-  void ipc.window.openConfigWindow()
-}
-
 onMounted(() => {
   window.addEventListener('beforeunload', beforeUnloadSpeech)
   void loadModels()
@@ -503,10 +498,6 @@ onUnmounted(() => {
                 <i v-if="p.name === defaultProfile && m === p.model" class="pi pi-check" />
               </button>
             </template>
-            <div class="menu-sep" />
-            <button class="menu-item" @click="openConfigWindow">
-              <i class="pi pi-cog" /> 模型设置…
-            </button>
           </div>
           <Transition name="fade">
             <div v-if="modelToast" class="model-toast">{{ modelToast }}</div>
@@ -890,7 +881,6 @@ onUnmounted(() => {
 .menu-item:hover { background:var(--human-surface); }
 .menu-item.current { color:var(--human-accent); }
 .menu-sub { margin-left:auto; color:var(--human-text-subtle); font-size:var(--human-text-xs); }
-.menu-sep { height:1px; background:var(--human-surface-raised); margin:var(--human-spacing-1) var(--human-spacing-1); }
 .model-toast {
   position: fixed;
   bottom: 84px;

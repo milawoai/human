@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import BackendLifecyclePanel from '@renderer/components/BackendLifecyclePanel.vue'
+import ModelConfigPanel from '@renderer/components/ModelConfigPanel.vue'
 import ThemeSettings from '@renderer/components/ThemeSettings.vue'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import Tag from 'primevue/tag'
 import ToggleSwitch from 'primevue/toggleswitch'
-import { inject, onMounted, ref, computed } from 'vue'
+import { inject, onMounted, ref, computed, watch } from 'vue'
 import type { IpcProxy } from '@renderer/plugin/ipc'
 import type { Live2DPetModelConfig } from '@shared/live2dPetModels'
 import { defaultPetSettings, type PetSettings } from '@shared/petSettings'
@@ -44,7 +45,7 @@ const saving = ref(false)
 const hearingSaving = ref(false)
 const serverLoading = ref(false)
 const statusText = ref('')
-const activeTab = ref<'general' | 'lifecycle' | 'interfaces' | 'hearing' | 'workspaces'>('general')
+const activeTab = ref<'general' | 'modelConfig' | 'lifecycle' | 'interfaces' | 'hearing' | 'workspaces'>('general')
 const serverInterfaces = ref<ServerInterfaces | null>(null)
 const live2dPetModels = ref<Live2DPetModelConfig[]>([])
 const jobWorkspaceCatalog = ref<JobWorkspaceCatalog>(createEmptyWorkspaceCatalog())
@@ -288,6 +289,26 @@ const openLive2DWindow = async () => {
   await ipc.window.createPetWindow()
 }
 
+const reloading = ref(false)
+const reloadAll = async () => {
+  reloading.value = true
+  statusText.value = ''
+  try {
+    await Promise.all([
+      loadLive2DModels(),
+      loadSettings(),
+      loadServerStatus(),
+      loadServerInterfaces(),
+      loadHearingSettings(),
+      loadAsrModels(),
+      loadJobWorkspaces()
+    ])
+    statusText.value = '已重新加载'
+  } finally {
+    reloading.value = false
+  }
+}
+
 onMounted(async () => {
   await Promise.all([
     loadLive2DModels(),
@@ -299,6 +320,24 @@ onMounted(async () => {
     loadJobWorkspaces()
   ])
 })
+
+// 切换 tab 即刷新该 tab 数据；后端由桌面托管拉起，首开时可能未就绪，切入时重取可自愈。
+// modelConfig / lifecycle 为 v-else-if 组件，切入时重挂载自刷新，无需在此处理。
+watch(activeTab, (tab) => {
+  if (tab === 'general') {
+    void loadLive2DModels()
+    void loadSettings()
+    void loadServerStatus()
+  } else if (tab === 'interfaces') {
+    void loadServerInterfaces()
+    void loadServerStatus()
+  } else if (tab === 'hearing') {
+    void loadHearingSettings()
+    void loadAsrModels()
+  } else if (tab === 'workspaces') {
+    void loadJobWorkspaces()
+  }
+})
 </script>
 
 <template>
@@ -308,7 +347,10 @@ onMounted(async () => {
         <p class="eyebrow">桌面秘书</p>
         <h1>Pet 配置</h1>
       </div>
-      <Button label="打开 Live2D" severity="info" @click="openLive2DWindow" />
+      <div class="header-actions">
+        <Button label="重新加载" severity="secondary" :loading="reloading" @click="reloadAll" />
+        <Button label="打开 Live2D" severity="info" @click="openLive2DWindow" />
+      </div>
     </section>
 
     <nav class="tab-nav" aria-label="Pet settings tabs">
@@ -319,6 +361,14 @@ onMounted(async () => {
         @click="activeTab = 'general'"
       >
         通用配置
+      </button>
+      <button
+        class="tab-button"
+        :class="{ active: activeTab === 'modelConfig' }"
+        type="button"
+        @click="activeTab = 'modelConfig'"
+      >
+        模型配置
       </button>
       <button
         class="tab-button"
@@ -360,8 +410,8 @@ onMounted(async () => {
 
       <section class="settings-section">
         <div class="section-title">
-          <h2>模型列表</h2>
-          <p>当前先使用本地配置，后续可以改为从本地 server 接口读取。</p>
+          <h2>Live2D 形象</h2>
+          <p>选择桌宠显示的 Live2D 模型；当前先使用本地配置，后续可以改为从本地 server 接口读取。</p>
         </div>
 
         <div class="model-list">
@@ -379,7 +429,7 @@ onMounted(async () => {
         </div>
 
         <label class="field-row">
-          <span>默认模型</span>
+          <span>默认形象</span>
           <Select
             :model-value="settings.selectedModelId"
             :options="modelOptions"
@@ -422,6 +472,9 @@ onMounted(async () => {
         </label>
       </section>
     </template>
+
+    <!-- 模型配置 Tab：大模型档案（LLM profiles） -->
+    <ModelConfigPanel v-else-if="activeTab === 'modelConfig'" />
 
     <!-- 服务检测 Tab -->
     <BackendLifecyclePanel v-else-if="activeTab === 'lifecycle'" />
@@ -559,6 +612,12 @@ onMounted(async () => {
   align-items: center;
   gap: var(--human-spacing-4);
   margin-bottom: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--human-space-related);
 }
 
 .eyebrow {

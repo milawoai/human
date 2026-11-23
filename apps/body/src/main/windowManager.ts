@@ -163,23 +163,6 @@ export class WindowManager {
     this.mainWindow.focus()
   }
 
-  /** 打开模型配置窗口（human-48b）：单例，已开则聚焦 */
-  openConfigWindow(): void {
-    const existing = this.childWindows.get('config-window')
-    if (existing && !existing.isDestroyed()) {
-      existing.show()
-      existing.focus()
-      return
-    }
-    this.createChildWindow({
-      windowId: 'config-window',
-      width: 1040,
-      height: 680,
-      resizable: true,
-      routePath: '/config'
-    })
-  }
-
   createChildWindow(options: ChildWindowOptions) {
     try {
       const {

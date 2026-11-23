@@ -51,10 +51,6 @@ export const refreshTrayMenu = async () => {
         }
       },
       {
-        label: '模型设置',
-        click: () => windowManager.showMainWindow('/config')
-      },
-      {
         label: '配置页',
         click: openSettingsWindow
       },
