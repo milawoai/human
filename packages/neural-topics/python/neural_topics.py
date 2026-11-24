@@ -21,6 +21,7 @@ NS = {
     "BRAIN_LANGUAGE_MODELS": "brain.language.models",
     "BRAIN_LANGUAGE_OAUTH": "brain.language.oauth",
     "BRAIN_AGENT": "brain.agent",
+    "BRAIN_CONVERSATION": "brain.conversation",
     "BRAIN_HIPPOCAMPUS_MEMORY": "brain.hippocampus.memory",
 }
 
@@ -81,6 +82,10 @@ TOPICS = {
     "BRAIN_AGENT_RUN_GET": "brain.agent.run.get",
     "BRAIN_AGENT_RUN_CANCEL": "brain.agent.run.cancel",
     "BRAIN_AGENT_RUN_STATE": "brain.agent.run.state",
+    # brain.conversation — command/query
+    "BRAIN_CONVERSATION_CREATE": "brain.conversation.create",
+    "BRAIN_CONVERSATION_CURRENT_GET": "brain.conversation.current.get",
+    "BRAIN_CONVERSATION_TRANSCRIPT_GET": "brain.conversation.transcript.get",
     # brain.hippocampus.memory — command/query
     "BRAIN_HIPPOCAMPUS_MEMORY_WRITE": "brain.hippocampus.memory.write",
     "BRAIN_HIPPOCAMPUS_MEMORY_SEARCH": "brain.hippocampus.memory.search",
@@ -146,6 +151,12 @@ ACTORS = {
         "runtime": "nest",
         "system": "brain",
         "module": "agent",
+    },
+    "BRAIN_CONVERSATION": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "conversation",
     },
     "BRAIN_HIPPOCAMPUS": {
         "actorId": "brain-main",
@@ -272,6 +283,33 @@ CAPABILITIES = [
         "id": "brain.agent.session.list",
         "actor": ACTORS["BRAIN_AGENT"],
         "topic": TOPICS["BRAIN_AGENT_SESSION_LIST"],
+        "kinds": ["query"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.conversation.create",
+        "actor": ACTORS["BRAIN_CONVERSATION"],
+        "topic": TOPICS["BRAIN_CONVERSATION_CREATE"],
+        "kinds": ["command"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.conversation.current.get",
+        "actor": ACTORS["BRAIN_CONVERSATION"],
+        "topic": TOPICS["BRAIN_CONVERSATION_CURRENT_GET"],
+        "kinds": ["query"],
+        "mode": "once",
+        "enabled": True,
+        "online": True,
+    },
+    {
+        "id": "brain.conversation.transcript.get",
+        "actor": ACTORS["BRAIN_CONVERSATION"],
+        "topic": TOPICS["BRAIN_CONVERSATION_TRANSCRIPT_GET"],
         "kinds": ["query"],
         "mode": "once",
         "enabled": True,

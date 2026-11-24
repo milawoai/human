@@ -24,8 +24,17 @@ import { PluginResolver } from '../src/motor/motor-tool-runner/core/plugin-resol
 import { ToolExecutor } from '../src/motor/motor-tool-runner/core/tool-executor';
 import { resolveCacheFile } from '../src/motor/motor-tool-runner/tts-cache.controller';
 import { ToolConfigService } from '../src/brain/tool-config/tool-config.service';
+import { CAP, TOPIC } from 'neural-topics';
 
 async function main(): Promise<void> {
+  assert.strictEqual(TOPIC.BRAIN_CONVERSATION_CREATE, 'brain.conversation.create');
+  assert.strictEqual(TOPIC.BRAIN_CONVERSATION_CURRENT_GET, 'brain.conversation.current.get');
+  assert.strictEqual(TOPIC.BRAIN_CONVERSATION_TRANSCRIPT_GET, 'brain.conversation.transcript.get');
+  assert.strictEqual(CAP.BRAIN_CONVERSATION_CREATE.topic, TOPIC.BRAIN_CONVERSATION_CREATE);
+  assert.strictEqual(CAP.BRAIN_CONVERSATION_CURRENT_GET.kinds[0], 'query');
+  assert.strictEqual(CAP.BRAIN_CONVERSATION_TRANSCRIPT_GET.kinds[0], 'query');
+  console.log('✓ Conversation Neural topics（create/current/transcript）');
+
   // ──────────────────────────────────────────────
   // 1. 类别契约校验
   // ──────────────────────────────────────────────

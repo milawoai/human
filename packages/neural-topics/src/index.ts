@@ -21,6 +21,7 @@ export const NS = {
   BRAIN_LANGUAGE_MODELS: 'brain.language.models',
   BRAIN_LANGUAGE_OAUTH: 'brain.language.oauth',
   BRAIN_AGENT: 'brain.agent',
+  BRAIN_CONVERSATION: 'brain.conversation',
   BRAIN_HIPPOCAMPUS_MEMORY: 'brain.hippocampus.memory',
 } as const
 
@@ -84,6 +85,10 @@ export const TOPIC = {
   BRAIN_AGENT_RUN_STATE: 'brain.agent.run.state',
   BRAIN_AGENT_SESSION_GET: 'brain.agent.session.get',
   BRAIN_AGENT_SESSION_LIST: 'brain.agent.session.list',
+  // brain.conversation — command/query
+  BRAIN_CONVERSATION_CREATE: 'brain.conversation.create',
+  BRAIN_CONVERSATION_CURRENT_GET: 'brain.conversation.current.get',
+  BRAIN_CONVERSATION_TRANSCRIPT_GET: 'brain.conversation.transcript.get',
   // brain.hippocampus.memory — command/query
   BRAIN_HIPPOCAMPUS_MEMORY_WRITE: 'brain.hippocampus.memory.write',
   BRAIN_HIPPOCAMPUS_MEMORY_SEARCH: 'brain.hippocampus.memory.search',
@@ -149,6 +154,12 @@ export const ACTOR = {
     runtime: 'nest' as const,
     system: 'brain' as const,
     module: 'agent',
+  },
+  BRAIN_CONVERSATION: {
+    actorId: 'brain-main',
+    runtime: 'nest' as const,
+    system: 'brain' as const,
+    module: 'conversation',
   },
   BRAIN_HIPPOCAMPUS: {
     actorId: 'brain-main',
@@ -310,6 +321,33 @@ export const CAP = {
     id: 'brain.agent.session.list',
     actor: ACTOR.BRAIN_AGENT,
     topic: TOPIC.BRAIN_AGENT_SESSION_LIST,
+    kinds: ['query'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_CONVERSATION_CREATE: {
+    id: 'brain.conversation.create',
+    actor: ACTOR.BRAIN_CONVERSATION,
+    topic: TOPIC.BRAIN_CONVERSATION_CREATE,
+    kinds: ['command'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_CONVERSATION_CURRENT_GET: {
+    id: 'brain.conversation.current.get',
+    actor: ACTOR.BRAIN_CONVERSATION,
+    topic: TOPIC.BRAIN_CONVERSATION_CURRENT_GET,
+    kinds: ['query'] as const,
+    mode: 'once' as const,
+    enabled: true,
+    online: true,
+  },
+  BRAIN_CONVERSATION_TRANSCRIPT_GET: {
+    id: 'brain.conversation.transcript.get',
+    actor: ACTOR.BRAIN_CONVERSATION,
+    topic: TOPIC.BRAIN_CONVERSATION_TRANSCRIPT_GET,
     kinds: ['query'] as const,
     mode: 'once' as const,
     enabled: true,

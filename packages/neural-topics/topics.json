@@ -309,6 +309,27 @@
         "session_list": { "kind": "query",   "direction": "body → nest", "description": "读取会话列表" }
       }
     },
+    "brain.conversation": {
+      "description": "脑系统 — 陪伴会话创建、恢复与完整历史读取",
+      "actor": {
+        "actorId": "brain-main",
+        "runtime": "nest",
+        "system": "brain",
+        "module": "conversation"
+      },
+      "capabilities": [
+        { "id": "brain.conversation.create", "topic": "brain.conversation.create", "kinds": ["command"], "mode": "once" },
+        { "id": "brain.conversation.current.get", "topic": "brain.conversation.current.get", "kinds": ["query"], "mode": "once" },
+        { "id": "brain.conversation.transcript.get", "topic": "brain.conversation.transcript.get", "kinds": ["query"], "mode": "once" }
+      ],
+      "subscribeTopics": [],
+      "subscribeKinds": [],
+      "actions": {
+        "create": { "kind": "command", "direction": "body → nest", "description": "创建并打开新的陪伴会话" },
+        "current_get": { "kind": "query", "direction": "body → nest", "description": "读取最后打开的陪伴会话" },
+        "transcript_get": { "kind": "query", "direction": "body → nest", "description": "读取指定会话的完整历史" }
+      }
+    },
     "brain.hippocampus.memory": {
       "description": "脑系统 — Memory Store 写入、检索与重建",
       "actor": {

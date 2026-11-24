@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit",
     "verify:brain-language": "ts-node -r tsconfig-paths/register scripts/brain-language-smoke.ts",
     "verify:pi-conversation-sdk": "ts-node -r tsconfig-paths/register scripts/pi-conversation-sdk-smoke.ts",
+    "verify:companion-conversation": "ts-node -r tsconfig-paths/register scripts/companion-conversation-smoke.ts",
     "verify:brain-init-config": "ts-node scripts/brain-init-config-smoke.ts",
     "verify:model-config-profiles": "ts-node scripts/model-config-profiles-smoke.ts",
     "verify:memory-smoke": "ts-node scripts/memory-smoke.ts",
