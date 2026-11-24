@@ -154,7 +154,9 @@ async function main() {
     payload: {},
   });
   assert.equal(listResult.success, true);
-  assert.ok(Array.isArray(listResult.data));
+  assert.equal(listResult.data?.defaultProfile, 'faux-default');
+  assert.ok(Array.isArray(listResult.data?.profiles));
+  assert.equal(listResult.data.profiles.length, 2);
 
   (faux as any).unregister?.();
   console.log('brain-language-smoke: OK');
