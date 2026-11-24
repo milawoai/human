@@ -15,6 +15,9 @@ import {
   openChatPanel,
   closeChatPanel,
   consumePendingHearingConfirmed,
+  getCurrentCompanionConversation,
+  createCompanionConversation,
+  getCompanionTranscript,
   submitCompanionQuestion,
   listAsrModels
 } from './impl/hearing'
@@ -31,6 +34,9 @@ export {
   openChatPanel,
   closeChatPanel,
   consumePendingHearingConfirmed,
+  getCurrentCompanionConversation,
+  createCompanionConversation,
+  getCompanionTranscript,
   submitCompanionQuestion,
   listAsrModels
 }

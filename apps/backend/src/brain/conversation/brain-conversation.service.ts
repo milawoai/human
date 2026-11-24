@@ -16,6 +16,12 @@ const CAPABILITIES = [
   CAP.BRAIN_CONVERSATION_TRANSCRIPT_GET,
 ] as unknown as Capability[];
 
+class BrainConversationError extends Error {
+  constructor(public readonly code: string, message: string) {
+    super(message);
+  }
+}
+
 @Injectable()
 export class BrainConversationService implements OnModuleInit, InternalCommandHandler {
   private readonly logger = new Logger(BrainConversationService.name);
@@ -60,7 +66,7 @@ export class BrainConversationService implements OnModuleInit, InternalCommandHa
     } catch (error) {
       return {
         success: false,
-        code: 'CONVERSATION_INVALID_REQUEST',
+        code: error instanceof BrainConversationError ? error.code : 'CONVERSATION_INVALID_REQUEST',
         msg: error instanceof Error ? error.message : String(error),
       };
     }
@@ -68,22 +74,29 @@ export class BrainConversationService implements OnModuleInit, InternalCommandHa
 
   private async readTranscript(conversationId: string) {
     const record = this.index.getInternalRecord(conversationId);
-    if (!record) throw new Error('Conversation not found');
+    if (!record) throw new BrainConversationError('CONVERSATION_NOT_FOUND', 'Conversation not found');
     if (record.status === 'pending') return { conversationId, messages: [] };
     if (record.status !== 'available' || !record.piSessionPath || !fs.existsSync(record.piSessionPath)) {
-      throw new Error('Conversation transcript is unavailable');
+      throw new BrainConversationError('CONVERSATION_UNAVAILABLE', 'Conversation transcript is unavailable');
     }
     const { SessionManager } = await loadPi();
-    const manager = SessionManager.open(record.piSessionPath);
-    const messages = manager.getBranch()
-      .filter((entry): entry is Extract<typeof entry, { type: 'message' }> => entry.type === 'message')
-      .filter(entry => entry.message.role === 'user' || entry.message.role === 'assistant')
-      .map(entry => ({
-        id: entry.id,
-        role: entry.message.role,
-        content: this.messageText(entry.message),
-        timestamp: entry.message.timestamp,
-      }));
+    let messages: Array<{ id: string; role: 'user' | 'assistant'; content: string; timestamp: number }>;
+    try {
+      const manager = SessionManager.open(record.piSessionPath);
+      const branchMessages = manager.getBranch()
+        .filter((entry): entry is Extract<typeof entry, { type: 'message' }> => entry.type === 'message')
+        .filter(entry => entry.message.role === 'user' || entry.message.role === 'assistant')
+        .map(entry => ({
+          id: entry.id,
+          role: entry.message.role as 'user' | 'assistant',
+          content: this.messageText(entry.message),
+          timestamp: entry.message.timestamp,
+        }))
+        .filter(message => message.role !== 'assistant' || message.content.trim().length > 0);
+      messages = branchMessages;
+    } catch {
+      throw new BrainConversationError('CONVERSATION_UNAVAILABLE', 'Conversation transcript is unavailable');
+    }
     return { conversationId, messages };
   }
 

@@ -59,6 +59,7 @@ interface RuntimeEntry {
 export class CompanionRuntimeService implements OnModuleDestroy {
   private readonly logger = new Logger(CompanionRuntimeService.name);
   private readonly runtimes = new Map<string, RuntimeEntry>();
+  private readonly inFlight = new Set<string>();
 
   constructor(
     private readonly factory: PiConversationFactory,
@@ -66,9 +67,25 @@ export class CompanionRuntimeService implements OnModuleDestroy {
   ) {}
 
   async ask(input: CompanionAskInput, onEvent?: (event: CompanionRuntimeEvent) => void): Promise<CompanionAskResult> {
-    if (!this.index.get(input.conversationId)) {
+    const conversation = this.index.get(input.conversationId);
+    if (!conversation) {
       throw new CompanionRuntimeError('CONVERSATION_NOT_FOUND', 'Conversation not found');
     }
+    if (conversation.status === 'unavailable') {
+      throw new CompanionRuntimeError('CONVERSATION_UNAVAILABLE', 'Conversation is unavailable');
+    }
+    if (this.inFlight.has(input.conversationId)) {
+      throw new CompanionRuntimeError('CONVERSATION_BUSY', 'Conversation is busy');
+    }
+    this.inFlight.add(input.conversationId);
+    try {
+      return await this.askReserved(input, onEvent);
+    } finally {
+      this.inFlight.delete(input.conversationId);
+    }
+  }
+
+  private async askReserved(input: CompanionAskInput, onEvent?: (event: CompanionRuntimeEvent) => void): Promise<CompanionAskResult> {
     const profileKey = await this.factory.resolveProfileKey(input.profileName);
     let entry = this.runtimes.get(input.conversationId);
     if (entry?.active) throw new CompanionRuntimeError('CONVERSATION_BUSY', 'Conversation is busy');
@@ -127,6 +144,14 @@ export class CompanionRuntimeService implements OnModuleDestroy {
         stopReason: finalMessage?.stopReason,
       };
     } catch (error) {
+      if (entry.active === active) {
+        entry.session.abort();
+        entry.active = undefined;
+        active.resolveSettled();
+        entry.unsubscribe();
+        entry.dispose();
+        if (this.runtimes.get(input.conversationId) === entry) this.runtimes.delete(input.conversationId);
+      }
       if (error instanceof CompanionRuntimeError) throw error;
       this.logger.error(`Pi companion request failed requestId=${input.requestId}`, error);
       throw new CompanionRuntimeError('CONVERSATION_FAILED', 'Conversation request failed');

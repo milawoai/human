@@ -70,4 +70,87 @@ export async function runCompanionRuntimeCases(): Promise<void> {
   assert.strictEqual(aborted, true);
   await runtime.onModuleDestroy();
   console.log('PASS: companion runtime event mapping, busy guard, cancellation and settlement');
+
+  await verifyConcurrentFirstOpenIsRejected();
+  await verifyPromptFailureReleasesConversation();
+  await verifyUnavailableConversationHasStableCode();
+}
+
+async function verifyConcurrentFirstOpenIsRejected(): Promise<void> {
+  let releaseOpen!: () => void;
+  let openCalls = 0;
+  const listeners = new Set<(event: any) => void>();
+  const session: any = {
+    state: { messages: [assistant('一次回答')] },
+    sessionManager: { getSessionFile: () => '/managed/first-open.jsonl' },
+    subscribe(listener: (event: any) => void) { listeners.add(listener); return () => listeners.delete(listener); },
+    async prompt() { listeners.forEach(listener => listener({ type: 'agent_settled', aborted: false })); },
+    abort() {},
+    dispose() {},
+  };
+  const factory: any = {
+    resolveProfileKey: async () => 'default',
+    async open() {
+      openCalls += 1;
+      await new Promise<void>(resolve => { releaseOpen = resolve; });
+      return { session, dispose: () => session.dispose() };
+    },
+  };
+  const index: any = { get: () => ({ status: 'pending' }), markAvailable() {} };
+  const runtime = new CompanionRuntimeService(factory, index);
+  const first = runtime.ask({ conversationId: 'first-open', requestId: 'first', question: 'first' });
+  await new Promise(resolve => setImmediate(resolve));
+  const second = runtime.ask({ conversationId: 'first-open', requestId: 'second', question: 'second' });
+  await assert.rejects(second, (error: any) => error.code === 'CONVERSATION_BUSY');
+  assert.strictEqual(openCalls, 1);
+  releaseOpen();
+  await first;
+  await runtime.onModuleDestroy();
+  console.log('PASS: concurrent first question reserves the conversation before Pi opens');
+}
+
+async function verifyPromptFailureReleasesConversation(): Promise<void> {
+  let promptCalls = 0;
+  const listeners = new Set<(event: any) => void>();
+  const session: any = {
+    state: { messages: [assistant('重试成功')] },
+    sessionManager: { getSessionFile: () => '/managed/retry.jsonl' },
+    subscribe(listener: (event: any) => void) { listeners.add(listener); return () => listeners.delete(listener); },
+    async prompt() {
+      promptCalls += 1;
+      if (promptCalls === 1) throw new Error('model unavailable before run');
+      listeners.forEach(listener => listener({ type: 'agent_settled', aborted: false }));
+    },
+    abort() {},
+    dispose() {},
+  };
+  const factory: any = {
+    resolveProfileKey: async () => 'default',
+    open: async () => ({ session, dispose: () => session.dispose() }),
+  };
+  const index: any = { get: () => ({ status: 'pending' }), markAvailable() {} };
+  const runtime = new CompanionRuntimeService(factory, index);
+  await assert.rejects(
+    runtime.ask({ conversationId: 'prompt-failure', requestId: 'failed', question: 'first' }),
+    (error: any) => error.code === 'CONVERSATION_FAILED',
+  );
+  const retried = await runtime.ask({ conversationId: 'prompt-failure', requestId: 'retry', question: 'retry' });
+  assert.strictEqual(retried.answer, '重试成功');
+  await runtime.onModuleDestroy();
+  console.log('PASS: prompt failure releases the conversation for a later request');
+}
+
+async function verifyUnavailableConversationHasStableCode(): Promise<void> {
+  let factoryOpenCalls = 0;
+  const runtime = new CompanionRuntimeService({
+    resolveProfileKey: async () => 'default',
+    async open() { factoryOpenCalls += 1; throw new Error('must not open unavailable session'); },
+  } as any, { get: () => ({ status: 'unavailable' }) } as any);
+  await assert.rejects(
+    runtime.ask({ conversationId: 'unavailable', requestId: 'request', question: 'hello' }),
+    (error: any) => error.code === 'CONVERSATION_UNAVAILABLE',
+  );
+  assert.strictEqual(factoryOpenCalls, 0);
+  await runtime.onModuleDestroy();
+  console.log('PASS: unavailable conversation is rejected with a stable code');
 }

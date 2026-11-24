@@ -205,6 +205,15 @@ export const defineHandlers = {
     consumePendingHearingConfirmed: {
       desc: '消费待投递的确认问题'
     },
+    getCurrentCompanionConversation: {
+      desc: '读取最后打开的陪伴会话'
+    },
+    createCompanionConversation: {
+      desc: '创建新的陪伴会话'
+    },
+    getCompanionTranscript: {
+      desc: '读取陪伴会话当前分支的完整历史'
+    },
     submitCompanionQuestion: {
       desc: '会话窗口提交问题到通用问答入口'
     },

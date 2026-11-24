@@ -3,8 +3,9 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import type { Api, Model } from '@earendil-works/pi-ai';
-import type { LlmService } from '../language-center/llm.service';
-import type { ProviderAuthService } from '../language-center/provider-auth.service';
+// 值导入并在构造函数里显式 @Inject：Pick<> 不能当注入令牌，元数据会退化成 Object，后端启动即失败
+import { LlmService } from '../language-center/llm.service';
+import { ProviderAuthService } from '../language-center/provider-auth.service';
 import { ConversationIndexStore } from './conversation-index.store';
 import { CompanionTurnContext, createCompanionExtension } from './companion-extension';
 
@@ -48,8 +49,8 @@ export class PiConversationFactory {
 
   constructor(
     private readonly index: ConversationIndexStore,
-    private readonly llm: Pick<LlmService, 'resolveModel' | 'getModels'>,
-    private readonly auth: Pick<ProviderAuthService, 'resolveApiKey'>,
+    @Inject(LlmService) private readonly llm: Pick<LlmService, 'resolveModel' | 'getModels'>,
+    @Inject(ProviderAuthService) private readonly auth: Pick<ProviderAuthService, 'resolveApiKey'>,
     @Optional() @Inject(PI_CONVERSATION_OPTIONS) options?: PiConversationFactoryOptions,
   ) {
     this.root = options?.root

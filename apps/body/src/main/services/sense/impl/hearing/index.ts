@@ -14,18 +14,25 @@ import { neuralTrigger } from '@main/services/neural/impl/neural-http'
 import { getHearingSettings } from '@main/services/config'
 import { WindowManager } from '@main/windowManager'
 import {
+  buildCompanionQuestionPayload,
+  readCompanionTranscript,
+  readConversation,
+  readCurrentConversation
+} from '@shared/companion-conversation'
+import {
   subscribeNeuralTopics,
-  unsubscribeNeural,
   onNeuralMessage,
   offNeuralMessage,
-  getNeuralState
+  getNeuralState,
+  onNeuralStateChange,
+  NeuralConnectionState
 } from '../../../neural/index'
 
 // ──────────────────────────────────────────────
 // 状态
 // ──────────────────────────────────────────────
 
-let subscriptionId: string | null = null
+let neuralEventsSubscribed = false
 let isListening = false
 let autoPasteToFocusedAppEnabled = false
 const pastedSegmentIds = new Set<string>()
@@ -39,6 +46,27 @@ const pendingConfirmedQuestions: Array<{
 }> = []
 
 const MOTOR_INPUT_TEXT_TOPIC = 'motor.animation.focused_app.input_text'
+
+const ensureNeuralEventSubscription = (): boolean => {
+  if (neuralEventsSubscribed) return true
+  const result = subscribeNeuralTopics(
+    [
+      SUB.SENSORY_HEARING_ALL,
+      TOPIC.BRAIN_CORTEX_REWRITE_COMPLETED,
+      TOPIC.BRAIN_CORTEX_ANSWER_STREAM_THINK,
+      TOPIC.BRAIN_CORTEX_ANSWER_STREAM_CHUNK,
+      TOPIC.BRAIN_CORTEX_ANSWER_COMPLETED,
+      TOPIC.BRAIN_CORTEX_ANSWER_FAILED
+    ],
+    ['event']
+  )
+  neuralEventsSubscribed = result.success
+  return neuralEventsSubscribed
+}
+
+onNeuralStateChange((state) => {
+  if (state !== NeuralConnectionState.REGISTERED) neuralEventsSubscribed = false
+})
 
 // ──────────────────────────────────────────────
 // Neural 消息处理
@@ -129,21 +157,8 @@ export const startHearing = async (params?: {
     const hearingSettings = await getHearingSettings()
 
     // 订阅字幕事件（如果尚未订阅）
-    if (!subscriptionId) {
-      const subResult = subscribeNeuralTopics(
-        [
-          SUB.SENSORY_HEARING_ALL,
-          TOPIC.BRAIN_CORTEX_REWRITE_COMPLETED,
-          TOPIC.BRAIN_CORTEX_ANSWER_STREAM_THINK,
-          TOPIC.BRAIN_CORTEX_ANSWER_STREAM_CHUNK,
-          TOPIC.BRAIN_CORTEX_ANSWER_COMPLETED,
-          TOPIC.BRAIN_CORTEX_ANSWER_FAILED,
-        ],
-        ['event'],
-      )
-      if (subResult.success) {
-        console.log('[Sense] 已订阅 caption_stream 事件')
-      }
+    if (ensureNeuralEventSubscription()) {
+      console.log('[Sense] 已订阅 hearing/cortex 事件')
     }
 
     // 通过 HTTP trigger 触发 Python 开始录音
@@ -200,12 +215,6 @@ export const stopHearing = async (): Promise<BaseResponse> => {
 
     isListening = false
     pastedSegmentIds.clear()
-
-    // 取消订阅
-    if (subscriptionId) {
-      unsubscribeNeural(subscriptionId)
-      subscriptionId = null
-    }
 
     console.log('[Sense] 监听已停止')
     return { success: true, data: { sentTo: result.sentTo } }
@@ -375,6 +384,7 @@ export const closeHearingPanel = async (): Promise<BaseResponse> => {
 }
 
 export const openChatPanel = async (): Promise<BaseResponse> => {
+  ensureNeuralEventSubscription()
   const wm = WindowManager.getInstance()
   return wm.createChatPanelWindow()
 }
@@ -395,21 +405,12 @@ export const consumePendingHearingConfirmed = async (): Promise<BaseResponse> =>
 export const submitCompanionQuestion = async (params: {
   question: string
   requestId?: string
-  sessionId?: string
+  conversationId: string
   speechSummaryEnabled?: boolean
 }): Promise<BaseResponse> => {
-  const question = params.question.trim()
-  if (!question) return { success: false, msg: '问题为空，无法提交' }
-  const payload = {
-    type: 'confirmed',
-    requestId: params.requestId || crypto.randomUUID(),
-    sessionId: params.sessionId || '',
-    confirmedQuestion: question,
-    speechSummaryEnabled: params.speechSummaryEnabled === true,
-    source: 'body.chat-panel',
-    createdAt: Date.now(),
-  }
   try {
+    const payload = buildCompanionQuestionPayload(params)
+    ensureNeuralEventSubscription()
     const result = await neuralTrigger({
       kind: 'command',
       topic: 'brain.cortex.ask.requested',
@@ -419,6 +420,45 @@ export const submitCompanionQuestion = async (params: {
       return { success: false, msg: result?.msg || result?.messageId || '会话提问失败' }
     }
     return { success: true, data: result }
+  } catch (error) {
+    return { success: false, msg: (error as Error).message }
+  }
+}
+
+export const getCurrentCompanionConversation = async (): Promise<BaseResponse> => {
+  try {
+    const result = await neuralTrigger({
+      kind: 'query',
+      topic: TOPIC.BRAIN_CONVERSATION_CURRENT_GET,
+      payload: {}
+    })
+    return { success: true, data: { conversation: readCurrentConversation(result) } }
+  } catch (error) {
+    return { success: false, msg: (error as Error).message }
+  }
+}
+
+export const createCompanionConversation = async (): Promise<BaseResponse> => {
+  try {
+    const result = await neuralTrigger({
+      kind: 'command',
+      topic: TOPIC.BRAIN_CONVERSATION_CREATE,
+      payload: { conversationType: 'companion' }
+    })
+    return { success: true, data: { conversation: readConversation(result) } }
+  } catch (error) {
+    return { success: false, msg: (error as Error).message }
+  }
+}
+
+export const getCompanionTranscript = async (conversationId: string): Promise<BaseResponse> => {
+  try {
+    const result = await neuralTrigger({
+      kind: 'query',
+      topic: TOPIC.BRAIN_CONVERSATION_TRANSCRIPT_GET,
+      payload: { conversationId }
+    })
+    return { success: true, data: { conversationId, messages: readCompanionTranscript(result, conversationId) } }
   } catch (error) {
     return { success: false, msg: (error as Error).message }
   }

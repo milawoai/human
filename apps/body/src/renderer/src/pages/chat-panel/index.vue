@@ -5,6 +5,12 @@ import type { IpcProxy } from '@renderer/plugin/ipc'
 import Button from 'primevue/button'
 import { computed, inject, onMounted, onUnmounted, ref, nextTick } from 'vue'
 import { readSpeechPreference, saveSpeechPreference, playSessionSpeech } from '@shared/session-speech'
+import {
+  createFreshCompanionConversation,
+  getConfirmedQuestionAction,
+  loadCompanionConversation,
+  type CompanionTranscriptMessage
+} from '@shared/companion-conversation'
 
 const ipc = inject<IpcProxy>('ipc')!
 
@@ -31,39 +37,93 @@ const statusLabel = ref('等待提问')
 const chatInput = ref('')
 const errorMessage = ref('')
 const isAILoading = ref(false)
+const isConversationLoading = ref(true)
 const voiceState = ref<'idle' | 'recording' | 'rewriting' | 'error'>('idle')
 const voiceDraft = ref('')
 const voiceError = ref('')
 const currentVoiceSessionId = ref('')
 const currentRewriteRequestId = ref('')
-const chatSessionKey = 'human:chat-panel:session-id'
-const chatSessionId = ref(localStorage.getItem(chatSessionKey) || crypto.randomUUID())
-localStorage.setItem(chatSessionKey, chatSessionId.value)
-const speechEnabled = ref(readSpeechPreference(localStorage, chatSessionId.value))
+const chatSessionId = ref('')
+const speechEnabled = ref(false)
 const speechNotice = ref('')
 let speechEpoch = 0
 let latestRequestId = ''
 let disposed = false
+const queuedConfirmedPayloads: any[] = []
 const updatePlayback = (token = '') => { void ipc.live2d.setSpeechPlaybackState({ scope: 'chat-panel', token }).catch(() => {}) }
 const beforeUnloadSpeech = () => { ++speechEpoch; updatePlayback() }
 const changeSpeech = () => {
   ++speechEpoch
   updatePlayback()
   speechNotice.value = ''
-  try { saveSpeechPreference(localStorage, chatSessionId.value, speechEnabled.value) }
+  try {
+    if (!chatSessionId.value) throw new Error('会话尚未就绪')
+    saveSpeechPreference(localStorage, chatSessionId.value, speechEnabled.value)
+  }
   catch { speechEnabled.value = false; speechNotice.value = '无法保存播报设置，已保持关闭' }
 }
-const newChatSession = () => {
-  if (isAILoading.value) return
-  ++speechEpoch
-  latestRequestId = ''
-  updatePlayback()
-  chatSessionId.value = crypto.randomUUID()
-  localStorage.setItem(chatSessionKey, chatSessionId.value)
-  speechEnabled.value = false
-  speechNotice.value = ''
-  messageList.value = []
-  statusLabel.value = '等待提问'
+
+const scrollToLatest = async () => {
+  await nextTick()
+  const list = document.querySelector<HTMLElement>('.custom-chat .t-chat__list')
+  if (list) list.scrollTop = list.scrollHeight
+}
+
+const transcriptMessage = (message: CompanionTranscriptMessage): ChatMessage => ({
+  id: message.id,
+  role: message.role,
+  content: message.content,
+  datetime: message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : undefined,
+  status: 'success'
+})
+
+const initializeConversation = async () => {
+  isConversationLoading.value = true
+  statusLabel.value = '恢复会话中'
+  errorMessage.value = ''
+  try {
+    const restored = await loadCompanionConversation({
+      current: () => ipc.sense.getCurrentCompanionConversation(),
+      create: () => ipc.sense.createCompanionConversation(),
+      transcript: conversationId => ipc.sense.getCompanionTranscript(conversationId)
+    })
+    chatSessionId.value = restored.conversation.conversationId
+    messageList.value = restored.messages.map(transcriptMessage)
+    speechEnabled.value = readSpeechPreference(localStorage, chatSessionId.value)
+    statusLabel.value = messageList.value.length ? '会话已恢复' : '等待提问'
+    await scrollToLatest()
+    for (const payload of queuedConfirmedPayloads.splice(0)) handleConfirmed(null, payload)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '恢复会话失败'
+    statusLabel.value = '会话恢复失败'
+  } finally {
+    isConversationLoading.value = false
+  }
+}
+
+const newChatSession = async () => {
+  if (isAILoading.value || isConversationLoading.value) return
+  isConversationLoading.value = true
+  errorMessage.value = ''
+  statusLabel.value = '创建会话中'
+  try {
+    const conversation = await createFreshCompanionConversation(
+      () => ipc.sense.createCompanionConversation()
+    )
+    ++speechEpoch
+    latestRequestId = ''
+    updatePlayback()
+    chatSessionId.value = conversation.conversationId
+    speechEnabled.value = readSpeechPreference(localStorage, chatSessionId.value)
+    speechNotice.value = ''
+    messageList.value = []
+    statusLabel.value = '等待提问'
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '创建新会话失败'
+    statusLabel.value = '新会话失败'
+  } finally {
+    isConversationLoading.value = false
+  }
 }
 
 // ──────────────────────────────────────────────
@@ -119,7 +179,7 @@ const buildReasoning = (content: string, status: 'thinking' | 'success'): ChatRe
 
 const sendQuestion = async (text?: string) => {
   const question = text || chatInput.value.trim()
-  if (!question) return
+  if (!question || !chatSessionId.value || isConversationLoading.value) return
 
   const requestId = crypto.randomUUID()
   latestRequestId = requestId
@@ -157,13 +217,12 @@ const sendQuestion = async (text?: string) => {
 
   chatInput.value = ''
   
-  // 滚动到底部
-  await nextTick()
+  await scrollToLatest()
 
   const result = await ipc.sense.submitCompanionQuestion({
     question,
     requestId,
-    sessionId,
+    conversationId: sessionId,
     speechSummaryEnabled: narrate
   })
   if (disposed || latestRequestId !== requestId) return
@@ -289,8 +348,24 @@ const handleConfirmed = (_event: any, payload: any) => {
   
   if (!question) return
   if (findMessageById(requestId)) return
+  const action = getConfirmedQuestionAction({
+    hasConversation: Boolean(chatSessionId.value),
+    restoring: isConversationLoading.value,
+    busy: isAILoading.value
+  })
+  if (action === 'queue') {
+    queuedConfirmedPayloads.push(payload)
+    return
+  }
+  if (action === 'draft') {
+    chatInput.value = question
+    voiceDraft.value = question
+    voiceState.value = 'idle'
+    voiceError.value = '当前回答进行中，语音内容已放入输入框'
+    return
+  }
 
-  sendQuestion(question)
+  void sendQuestion(question)
 }
 
 const startVoiceInput = async () => {
@@ -435,17 +510,19 @@ const doSwitchModel = async (profile: string, model: string) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('beforeunload', beforeUnloadSpeech)
   void loadModels()
-  ipc.sense.consumePendingHearingConfirmed().then((result) => {
+  window.electron.ipcRenderer.on('sense:hearing-event', handleHearingEvent)
+  window.electron.ipcRenderer.on('sense:hearing-confirmed', handleConfirmed)
+  await initializeConversation()
+  if (!chatSessionId.value || disposed) return
+  await ipc.sense.consumePendingHearingConfirmed().then((result) => {
     const items = Array.isArray(result?.data) ? result.data : []
     for (const item of items) {
       handleConfirmed(null, item)
     }
   })
-  window.electron.ipcRenderer.on('sense:hearing-event', handleHearingEvent)
-  window.electron.ipcRenderer.on('sense:hearing-confirmed', handleConfirmed)
 })
 
 onUnmounted(() => {
@@ -503,8 +580,8 @@ onUnmounted(() => {
             <div v-if="modelToast" class="model-toast">{{ modelToast }}</div>
           </Transition>
         </div>
-        <label><input v-model="speechEnabled" type="checkbox" @change="changeSpeech" />总结播报</label>
-        <Button size="small" text :disabled="isAILoading" @click="newChatSession">新会话</Button>
+        <label><input v-model="speechEnabled" type="checkbox" :disabled="isConversationLoading || !chatSessionId" @change="changeSpeech" />总结播报</label>
+        <Button size="small" text :disabled="isAILoading || isConversationLoading" :loading="isConversationLoading" @click="newChatSession">新会话</Button>
         <span class="status-pill">{{ statusLabel }}</span>
         <Button icon="pi pi-times" size="small" text class="close-btn" @click="closePanel" />
       </div>
@@ -520,6 +597,7 @@ onUnmounted(() => {
       />
 
       <div class="input-area">
+        <p v-if="errorMessage" class="error-msg" role="alert">{{ errorMessage }}</p>
         <p v-if="speechNotice" role="status">{{ speechNotice }}</p>
         <section v-if="isVoiceActive || voiceDraft || voiceError" class="voice-panel">
           <div class="voice-panel-header">
@@ -573,7 +651,7 @@ onUnmounted(() => {
             class="voice-btn"
             size="small"
             text
-            :disabled="isAILoading || voiceState === 'recording' || voiceState === 'rewriting'" 
+            :disabled="isAILoading || isConversationLoading || !chatSessionId || voiceState === 'recording' || voiceState === 'rewriting'"
             @click="startVoiceInput"
           >
             <i class="pi pi-microphone" />
@@ -582,7 +660,7 @@ onUnmounted(() => {
             class="send-btn"
             severity="success" 
             size="small" 
-            :disabled="!chatInput.trim() || isAILoading" 
+            :disabled="!chatInput.trim() || isAILoading || isConversationLoading || !chatSessionId"
             @click="sendQuestion()"
           >
             <i class="pi pi-send" />

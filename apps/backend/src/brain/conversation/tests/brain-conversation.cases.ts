@@ -44,6 +44,7 @@ export async function runBrainConversationCases(): Promise<void> {
     fs.mkdirSync(sessionDir, { recursive: true });
     const manager = pi.SessionManager.create(cwd, sessionDir, { id: conversationId });
     manager.appendMessage({ role: 'user', content: '你好', timestamp: 1 } as any);
+    manager.appendMessage({ role: 'assistant', content: [], stopReason: 'error', timestamp: 1.5 } as any);
     manager.appendMessage({ role: 'assistant', content: [{ type: 'text', text: '你好呀' }], timestamp: 2 } as any);
     store.markAvailable(conversationId, manager.getSessionFile()!);
 
@@ -55,6 +56,18 @@ export async function runBrainConversationCases(): Promise<void> {
       [['user', '你好'], ['assistant', '你好呀']],
     );
     assert.strictEqual(JSON.stringify(transcript.data).includes('piSessionPath'), false);
+
+    store.markUnavailable(conversationId);
+    const unavailable = await service.handleCommand(message(
+      'brain.conversation.transcript.get', 'query', { conversationId },
+    ));
+    assert.strictEqual(unavailable.success, false);
+    assert.strictEqual(unavailable.code, 'CONVERSATION_UNAVAILABLE');
+    const missing = await service.handleCommand(message(
+      'brain.conversation.transcript.get', 'query', { conversationId: crypto.randomUUID() },
+    ));
+    assert.strictEqual(missing.success, false);
+    assert.strictEqual(missing.code, 'CONVERSATION_NOT_FOUND');
     console.log('PASS: conversation capabilities, validation, current and current-branch transcript');
   } finally {
     store.close();
