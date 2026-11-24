@@ -18,10 +18,10 @@ export const defineHandlers = {
     openSettings: { servicesName: 'backend-lifecycle', desc: '打开后端诊断设置' }
   },
   jobWorkspaces: {
-    getSettings: { servicesName: 'job-workspaces', desc: '读取 Job 工作区授权与默认目录' },
-    addDirectory: { servicesName: 'job-workspaces', desc: '选择并授权 Job 工作目录' },
-    setDefault: { servicesName: 'job-workspaces', desc: '设置 Job 默认工作目录' },
-    revoke: { servicesName: 'job-workspaces', desc: '撤销 Job 工作区授权' }
+    getSettings: { servicesName: 'job-workspaces', desc: '读取 Job 授权目录与默认目录' },
+    addDirectory: { servicesName: 'job-workspaces', desc: '选择并授权 Job 目录' },
+    setDefault: { servicesName: 'job-workspaces', desc: '设置 Job 默认目录' },
+    revoke: { servicesName: 'job-workspaces', desc: '撤销 Job 目录授权' }
   },
   agent: {
     openPanel: { desc: '打开 Agent 测试面板' },

@@ -45,7 +45,7 @@ export async function revoke(id: string): Promise<{ catalog: JobWorkspaceCatalog
   const selected = current.workspaces.find(item => item.id === id)
   if (!selected) throw new Error('Job workspace is not authorized')
   const options: MessageBoxOptions = {
-    type: 'warning', title: '撤销 Job 工作区授权',
+    type: 'warning', title: '撤销 Job 目录授权',
     message: `撤销 Job 对“${selected.label}”的访问权限吗？`,
     detail: '已提交的任务如果尚未开始访问文件，也会在下次读写时因授权撤销而失败。',
     buttons: ['撤销授权', '保留授权'], defaultId: 1, cancelId: 1,
@@ -59,15 +59,15 @@ export async function revoke(id: string): Promise<{ catalog: JobWorkspaceCatalog
 }
 
 export async function addDirectory(): Promise<{ catalog: JobWorkspaceCatalog; outcome: 'added' | 'duplicate' | 'cancelled' | 'denied' }> {
-  const pickerOptions: OpenDialogOptions = { title: '选择 Job 工作目录', properties: ['openDirectory', 'createDirectory'] }
+  const pickerOptions: OpenDialogOptions = { title: '选择要授权的 Job 目录', properties: ['openDirectory', 'createDirectory'] }
   const parent = parentWindow()
   const selection = parent ? await dialog.showOpenDialog(parent, pickerOptions) : await dialog.showOpenDialog(pickerOptions)
   if (selection.canceled || !selection.filePaths[0]) return { catalog: readCatalog(), outcome: 'cancelled' }
   const directory = realpathSync(selection.filePaths[0])
-  if (!statSync(directory).isDirectory()) throw new Error('Job 工作区必须是一个文件夹')
+  if (!statSync(directory).isDirectory()) throw new Error('Job 授权目录必须是一个文件夹')
   const current = readCatalog()
   if (current.workspaces.some(item => item.path === directory)) return { catalog: current, outcome: 'duplicate' }
-  if (current.workspaces.length >= 100) throw new Error('最多只能授权 100 个 Job 工作区')
+  if (current.workspaces.length >= 100) throw new Error('最多只能授权 100 个 Job 目录')
   const consentOptions: MessageBoxOptions = {
     type: 'warning', title: '授权 Job 访问文件夹',
     message: `允许后台 Job 在此目录中读取和创建/更新文件吗？\n\n${directory}`,
@@ -92,6 +92,6 @@ export function grantApprovedDirectory(directory: string): void {
   }
   const current = readCatalog()
   if (current.workspaces.some(item => item.path === directory)) return
-  if (current.workspaces.length >= 100) throw Error('最多只能授权 100 个 Job 工作区')
+  if (current.workspaces.length >= 100) throw Error('最多只能授权 100 个 Job 目录')
   writeCatalog(addWorkspace(current, { id: randomUUID(), path: directory, label: basename(directory) || directory }))
 }

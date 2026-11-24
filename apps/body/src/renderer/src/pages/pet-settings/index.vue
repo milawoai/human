@@ -235,7 +235,7 @@ const loadJobWorkspaces = async () => {
   try {
     const result = await ipc.jobWorkspaces.getSettings()
     if (result.success && result.data) jobWorkspaceCatalog.value = result.data as JobWorkspaceCatalog
-    else statusText.value = result.msg || '读取 Job 工作区失败'
+    else statusText.value = result.msg || '读取授权目录失败'
   } finally { workspaceLoading.value = false }
 }
 
@@ -245,12 +245,12 @@ const addJobWorkspace = async () => {
   try {
     const result = await ipc.jobWorkspaces.addDirectory()
     if (!result.success || !result.data) {
-      statusText.value = result.msg || '添加工作区失败'
+      statusText.value = result.msg || '添加授权目录失败'
       return
     }
     const data = result.data as { catalog: JobWorkspaceCatalog; outcome: 'added' | 'duplicate' | 'cancelled' | 'denied' }
     jobWorkspaceCatalog.value = data.catalog
-    statusText.value = ({ added: '工作区已授权并添加', duplicate: '该目录已在授权列表中',
+    statusText.value = ({ added: '目录已授权并添加', duplicate: '该目录已在授权列表中',
       cancelled: '已取消选择', denied: '未授予目录访问权限' })[data.outcome]
   } finally { workspaceBusy.value = false }
 }
@@ -262,8 +262,8 @@ const setJobWorkspaceDefault = async (id: string) => {
     const result = await ipc.jobWorkspaces.setDefault(id)
     if (result.success && result.data) {
       jobWorkspaceCatalog.value = result.data as JobWorkspaceCatalog
-      statusText.value = '默认工作区已更新'
-    } else statusText.value = result.msg || '更新默认工作区失败'
+      statusText.value = '默认目录已更新'
+    } else statusText.value = result.msg || '更新默认目录失败'
   } finally { workspaceBusy.value = false }
 }
 
@@ -275,8 +275,8 @@ const revokeJobWorkspace = async (id: string) => {
     if (result.success && result.data) {
       const data = result.data as { catalog: JobWorkspaceCatalog; revoked: boolean }
       jobWorkspaceCatalog.value = data.catalog
-      statusText.value = data.revoked ? '工作区授权已撤销' : '已保留工作区授权'
-    } else statusText.value = result.msg || '撤销工作区授权失败'
+      statusText.value = data.revoked ? '目录授权已撤销' : '已保留目录授权'
+    } else statusText.value = result.msg || '撤销目录授权失败'
   } finally { workspaceBusy.value = false }
 }
 
@@ -400,7 +400,7 @@ watch(activeTab, (tab) => {
         type="button"
         @click="activeTab = 'workspaces'"
       >
-        Job 工作区
+        Job 授权目录
       </button>
     </nav>
 
@@ -559,17 +559,17 @@ watch(activeTab, (tab) => {
     <section v-else-if="activeTab === 'workspaces'" class="settings-section">
       <div class="workspace-heading">
         <div class="section-title">
-          <h2>Job 工作区</h2>
+          <h2>Job 授权目录</h2>
           <p>选择后台任务默认使用的目录。每个目录都要单独授权；Job 只能在授权目录内读取和创建或更新文件。</p>
         </div>
-        <Button label="添加工作区" icon="pi pi-folder-open" :disabled="workspaceBusy" @click="addJobWorkspace" />
+        <Button label="添加授权目录" icon="pi pi-folder-open" :disabled="workspaceBusy" @click="addJobWorkspace" />
       </div>
 
       <p v-if="workspaceLoading" class="workspace-empty" role="status">正在读取已授权目录…</p>
       <p v-else-if="jobWorkspaceCatalog.workspaces.length === 0" class="workspace-empty" role="status">
         还没有授权目录。添加一个常用文件夹后，新 Job 会默认在其中工作。
       </p>
-      <div v-else class="workspace-list" aria-label="已授权 Job 工作区">
+      <div v-else class="workspace-list" aria-label="已授权的 Job 目录">
         <div v-for="workspace in jobWorkspaceCatalog.workspaces" :key="workspace.id" class="workspace-row">
           <div class="workspace-details">
             <div class="workspace-name">

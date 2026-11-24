@@ -50,6 +50,6 @@ export const desktopJobApprovals: DesktopApprovalHooks = {
       if (confirmedDirectories.get(request) !== directoryIdentity(root)) throw Error('Job 授权目录已更改')
       grantApprovedDirectory(root)
     }
-    catch { void dialog.showMessageBox({ type: 'warning', message: 'Job 目录长期授权未保存', detail: '本次操作已批准。请在 Job 工作区设置中检查目录册。' }) }
+    catch { void dialog.showMessageBox({ type: 'warning', message: 'Job 目录长期授权未保存', detail: '本次操作已批准。请在设置的“Job 授权目录”中检查目录册。' }) }
   },
 }
