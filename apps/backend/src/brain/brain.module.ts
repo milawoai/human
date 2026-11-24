@@ -24,6 +24,10 @@ import { ToolRoutingLogStore } from './basal-ganglia/tool-routing-log.store';
 import { ToolRouterService } from './basal-ganglia/tool-router.service';
 import { JobsModule } from '../motor/jobs/jobs.module';
 import { PiWorkspaceWorkerService } from './agent/worker/pi-workspace-worker.service';
+import { ConversationIndexStore } from './conversation/conversation-index.store';
+import { PiConversationFactory } from './conversation/pi-conversation.factory';
+import { CompanionRuntimeService } from './conversation/companion-runtime.service';
+import { BrainConversationService } from './conversation/brain-conversation.service';
 
 
 @Global()
@@ -31,9 +35,14 @@ import { PiWorkspaceWorkerService } from './agent/worker/pi-workspace-worker.ser
   imports: [NeuralModule, BrainLanguageCenterModule, MemoryModule, MotorToolRunnerModule, JobsModule],
   providers: [
     PiWorkspaceWorkerService,
+    ConversationIndexStore,
+    PiConversationFactory,
+    CompanionRuntimeService,
+    BrainConversationService,
     BrainInitService,
     BrainCortexService,
     BrainAgentService,
+    CompanionRuntimeService,
     AgentSessionStore,
     ToolConfigService,
     BrainSpeechService,

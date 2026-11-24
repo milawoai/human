@@ -1,5 +1,5 @@
 import type { InlineExtension } from '@earendil-works/pi-coding-agent';
-import { speechDisplayMessage, splitSpeechSummary } from '../speech/speech-summary';
+import { speechDisplayMessage, speechSystemPrompt, splitSpeechSummary } from '../speech/speech-summary';
 
 export interface CompanionTurnContext {
   memoryText?: string;
@@ -22,21 +22,23 @@ export function createCompanionExtension(turn: CompanionTurnContext): InlineExte
     factory: (api) => {
       api.on('context', (event) => {
         const memoryText = turn.memoryText?.trim();
-        if (!memoryText) return;
+        const speechPrompt = turn.speechSummaryEnabled === true
+          ? speechSystemPrompt('', true).trim()
+          : undefined;
+        if (!memoryText && !speechPrompt) return;
         const messages = [...event.messages];
         const lastUser = messages.findLastIndex((message) => message.role === 'user');
-        messages.splice(Math.max(0, lastUser), 0, {
-          role: 'user',
-          content: memoryText,
-          timestamp: Date.now(),
-        });
+        const inserts: any[] = [];
+        if (speechPrompt) inserts.push({ role: 'system', content: speechPrompt, timestamp: Date.now() });
+        if (memoryText) inserts.push({ role: 'user', content: memoryText, timestamp: Date.now() });
+        messages.splice(Math.max(0, lastUser), 0, ...inserts);
         return { messages };
       });
       api.on('message_end', (event) => {
         if (event.message.role !== 'assistant') return;
         const parsed = splitSpeechSummary(
           assistantText(event.message),
-          turn.speechSummaryEnabled !== false,
+          turn.speechSummaryEnabled === true,
         );
         turn.onSpeechSummary?.(parsed.summary);
         return { message: speechDisplayMessage(event.message) };

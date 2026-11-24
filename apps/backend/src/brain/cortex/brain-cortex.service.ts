@@ -11,6 +11,16 @@ import { ProviderAuthService } from '../language-center/provider-auth.service';
 import { MemoryService } from '../hippocampus/memory.service';
 import { BrainSpeechService } from '../speech/brain-speech.service';
 import { speechSystemPrompt, splitSpeechSummary, visibleSpeechAnswer } from '../speech/speech-summary';
+import { CompanionRuntimeService } from '../conversation/companion-runtime.service';
+
+export type CompanionRuntimeMode = 'legacy' | 'pi';
+
+export function parseCompanionRuntimeMode(value: string | undefined): CompanionRuntimeMode {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized || normalized === 'legacy') return 'legacy';
+  if (normalized === 'pi') return 'pi';
+  throw new Error('HUMAN_COMPANION_RUNTIME must be legacy or pi');
+}
 
 /** 带超时的 JSON GET（模型配置可视化用：通道 /models、Ollama /api/tags） */
 async function fetchJsonWithTimeout(
@@ -182,9 +192,11 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
     private readonly providerAuthService: ProviderAuthService,
     private readonly memoryService: MemoryService,
     private readonly speechService: BrainSpeechService,
+    private readonly companionRuntime: CompanionRuntimeService,
   ) {}
 
   onModuleInit() {
+    parseCompanionRuntimeMode(process.env.HUMAN_COMPANION_RUNTIME);
     this.coreService.registerInternalActor(BRAIN_CORTEX_ACTOR);
     this.coreService.registerCapabilities(CORTEX_CAPABILITIES);
     this.httpService.registerCommandHandler(this);
@@ -350,6 +362,66 @@ export class BrainCortexService implements OnModuleInit, InternalCommandHandler 
   }
 
   private async handleAskRequested(message: BusMessage) {
+    return parseCompanionRuntimeMode(process.env.HUMAN_COMPANION_RUNTIME) === 'pi'
+      ? this.handlePiAsk(message)
+      : this.handleLegacyAsk(message);
+  }
+
+  private async handlePiAsk(message: BusMessage) {
+    const payload = this.ensureObject(message.payload);
+    const confirmedQuestion = this.readString(payload.confirmedQuestion) ?? this.readString(payload.text) ?? '';
+    if (!confirmedQuestion) return { success: false, msg: 'payload.confirmedQuestion is required' };
+    const conversationId = this.readString(payload.conversationId);
+    if (!conversationId) return { success: false, msg: 'payload.conversationId is required for Pi companion runtime' };
+    const requestId = this.readString(payload.requestId) ?? this.readString(payload.sessionId) ?? message.id;
+    const source = payload.source ?? 'brain.cortex';
+    try {
+      const memoryContext = await this.attachMemoryContext({
+        messages: [{ role: 'user', content: confirmedQuestion, timestamp: Date.now() }],
+      }, { ...payload, useMemory: payload.useMemory ?? true, userText: confirmedQuestion });
+      const memoryText = memoryContext.messages.slice(0, -1)
+        .map(item => typeof item.content === 'string'
+          ? item.content
+          : item.content.filter(part => part.type === 'text').map(part => part.text).join(''))
+        .filter(Boolean)
+        .join('\n\n');
+      const result = await this.companionRuntime.ask({
+        conversationId,
+        requestId,
+        question: confirmedQuestion,
+        profileName: this.readString(payload.profileName),
+        memoryText: memoryText || undefined,
+        speechSummaryEnabled: payload.speechSummaryEnabled === true,
+        timeoutMs: this.readNumber(payload.timeoutMs),
+      }, event => this.publishEvent(
+        event.type === 'think'
+          ? TOPIC.BRAIN_CORTEX_ANSWER_STREAM_THINK
+          : TOPIC.BRAIN_CORTEX_ANSWER_STREAM_CHUNK,
+        { requestId, content: event.content, source },
+      ));
+      this.publishEvent(TOPIC.BRAIN_CORTEX_ANSWER_COMPLETED, {
+        requestId,
+        confirmedQuestion,
+        answer: result.answer,
+        source,
+      });
+      const speech = result.summary && result.stopReason === 'stop' && !result.errorMessage
+        ? await this.speechService.synthesize(result.summary, this.readString(payload.sessionId) ?? requestId)
+        : undefined;
+      return { success: true, data: { ...result, speech } };
+    } catch (error) {
+      const code = typeof error === 'object' && error !== null && 'code' in error
+        ? String((error as { code: unknown }).code)
+        : 'CONVERSATION_FAILED';
+      this.logger.error(`Pi companion failed requestId=${requestId}`, error);
+      this.publishEvent(TOPIC.BRAIN_CORTEX_ANSWER_FAILED, {
+        requestId, confirmedQuestion, code, error: 'Conversation request failed', source,
+      });
+      return { success: false, code, msg: 'Conversation request failed' };
+    }
+  }
+
+  private async handleLegacyAsk(message: BusMessage) {
     const payload = this.ensureObject(message.payload);
     const speechEnabled = payload.speechSummaryEnabled === true;
     const confirmedQuestion =

@@ -102,15 +102,21 @@ export class ConversationIndexStore implements OnModuleDestroy {
 
   reconcileAvailableFiles(now = Date.now()): string[] {
     const rows = this.db.prepare(`
-      SELECT * FROM conversation_index WHERE status = 'available'
+      SELECT * FROM conversation_index WHERE status IN ('available', 'unavailable')
     `).all() as ConversationRow[];
-    const missing = rows.filter((row) => !row.pi_session_path || !fs.existsSync(row.pi_session_path));
+    const changed = rows.filter((row) => {
+      const exists = Boolean(row.pi_session_path && fs.existsSync(row.pi_session_path));
+      return exists ? row.status === 'unavailable' : row.status === 'available';
+    });
     const update = this.db.prepare(`
-      UPDATE conversation_index SET status = 'unavailable', updated_at = ?
+      UPDATE conversation_index SET status = ?, updated_at = ?
       WHERE conversation_id = ?
     `);
-    this.db.transaction(() => missing.forEach((row) => update.run(now, row.conversation_id)))();
-    return missing.map((row) => row.conversation_id);
+    this.db.transaction(() => changed.forEach((row) => {
+      const next = row.pi_session_path && fs.existsSync(row.pi_session_path) ? 'available' : 'unavailable';
+      update.run(next, now, row.conversation_id);
+    }))();
+    return changed.map((row) => row.conversation_id);
   }
 
   close(): void {

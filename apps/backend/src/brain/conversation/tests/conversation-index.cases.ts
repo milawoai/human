@@ -31,6 +31,9 @@ export async function runConversationIndexCases(): Promise<void> {
     fs.rmSync(sessionFile);
     assert.deepStrictEqual(reopened.reconcileAvailableFiles(), [first.conversationId]);
     assert.strictEqual(reopened.get(first.conversationId)?.status, 'unavailable');
+    fs.writeFileSync(sessionFile, '{"type":"session"}\n');
+    assert.deepStrictEqual(reopened.reconcileAvailableFiles(), [first.conversationId]);
+    assert.strictEqual(reopened.get(first.conversationId)?.status, 'available');
 
     const columns = new Database(dbPath, { readonly: true })
       .prepare('PRAGMA table_info(conversation_index)')

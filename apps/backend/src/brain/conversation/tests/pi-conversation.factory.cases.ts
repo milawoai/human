@@ -5,6 +5,7 @@ import * as path from 'node:path';
 import type { Api, Model } from '@earendil-works/pi-ai';
 import { ConversationIndexStore } from '../conversation-index.store';
 import { PiConversationFactory } from '../pi-conversation.factory';
+import type { CompanionTurnContext } from '../companion-extension';
 
 const loadAi = (): Promise<typeof import('@earendil-works/pi-ai')> =>
   new Function('return import("@earendil-works/pi-ai")')();
@@ -51,18 +52,22 @@ export async function runPiConversationFactoryCases(): Promise<void> {
 
   try {
     const factory = new PiConversationFactory(store, llm as any, auth as any, { root });
+    const activeTurn: CompanionTurnContext = { memoryText: 'REQUEST_ONLY_MEMORY', onSpeechSummary: (value: string | undefined) => { speechSummary = value ?? ''; } };
     const opened = await factory.open({
       conversationId: conversation.conversationId,
       profileName: 'old-model',
-      turnContext: { memoryText: 'REQUEST_ONLY_MEMORY', onSpeechSummary: value => { speechSummary = value ?? ''; } },
+      turnContext: activeTurn,
     });
     assert.strictEqual(opened.profileKey, 'old-model');
     assert.strictEqual(opened.session.sessionManager.getSessionId(), conversation.conversationId);
     assert.deepStrictEqual(opened.session.getActiveToolNames(), []);
     await opened.session.prompt('你好');
     assert.ok(JSON.stringify(contexts[0]).includes('REQUEST_ONLY_MEMORY'));
-    assert.strictEqual(speechSummary, '简短播报。');
+    assert.strictEqual(speechSummary, '', 'speech summary must default off');
     assert.strictEqual(JSON.stringify(opened.session.state.messages).includes('human_speech_summary'), false);
+    activeTurn.speechSummaryEnabled = true;
+    await opened.session.prompt('请生成播报摘要');
+    assert.strictEqual(speechSummary, '简短播报。');
     const sessionFile = opened.session.sessionManager.getSessionFile();
     assert.ok(sessionFile && sessionFile.startsWith(root));
     store.markAvailable(conversation.conversationId, sessionFile);

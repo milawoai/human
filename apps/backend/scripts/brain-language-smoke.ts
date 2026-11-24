@@ -141,6 +141,7 @@ async function main() {
     providerAuthService,
     new MemoryStub() as any,
     undefined as any, // Narration is disabled in this language-only smoke.
+    undefined as any, // Companion runtime is outside this language-only smoke.
   );
   assert.equal(cortex.canHandle(TOPIC.BRAIN_CORTEX_CHAT_COMPLETE), true);
   assert.equal(cortex.canHandle(TOPIC.BRAIN_LANGUAGE_MODELS_LIST), true);

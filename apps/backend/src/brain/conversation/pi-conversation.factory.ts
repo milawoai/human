@@ -57,6 +57,10 @@ export class PiConversationFactory {
       ?? path.join(os.homedir(), '.ai_secretary', 'conversations');
   }
 
+  async resolveProfileKey(profileName?: string): Promise<string> {
+    return (await this.llm.resolveModel(profileName)).profileName;
+  }
+
   async open(input: OpenPiConversationInput) {
     const record = this.index.getInternalRecord(input.conversationId);
     if (!record) throw new Error(`Conversation not found: ${input.conversationId}`);

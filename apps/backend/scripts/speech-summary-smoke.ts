@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { speechSystemPrompt, splitSpeechSummary, visibleSpeechAnswer } from '../src/brain/speech/speech-summary';
 import { BrainSpeechService } from '../src/brain/speech/brain-speech.service';
-import { BrainCortexService } from '../src/brain/cortex/brain-cortex.service';
+import { BrainCortexService, parseCompanionRuntimeMode } from '../src/brain/cortex/brain-cortex.service';
 import { BrainAgentService } from '../src/brain/agent/brain-agent.service';
 import { AgentSessionStore } from '../src/brain/agent/agent-session.store';
 import Database from 'better-sqlite3';
@@ -12,6 +12,9 @@ import { join } from 'node:path';
 const block = (text: string) => `<human_speech_summary>${JSON.stringify({ text })}</human_speech_summary>`;
 
 async function main() {
+  assert.equal(parseCompanionRuntimeMode(undefined), 'legacy');
+  assert.equal(parseCompanionRuntimeMode('pi'), 'pi');
+  assert.throws(() => parseCompanionRuntimeMode('typo'), /HUMAN_COMPANION_RUNTIME/);
   assert.equal(speechSystemPrompt('base', false), 'base');
   assert.match(speechSystemPrompt('base', true), /80/);
   assert.deepEqual(splitSpeechSummary(`完整正文\n${block('已完成语音接入。')}`, true), { answer: '完整正文', summary: '已完成语音接入。' });
@@ -59,6 +62,8 @@ async function main() {
   console.log('Speech summary protocol and plugin orchestration: PASS');
 
   const cortex = Object.create(BrainCortexService.prototype) as any;
+  const originalRuntimeMode = process.env.HUMAN_COMPANION_RUNTIME;
+  delete process.env.HUMAN_COMPANION_RUNTIME;
   let prompt = '';
   let synthesisCalls = 0;
   let stopReason = 'stop';
@@ -95,6 +100,30 @@ async function main() {
   }
   assert.equal(synthesisCalls, 1);
   assert.ok(!events.filter(e => e.topic.endsWith('.chunk')).map(e => e.payload.content).join('').includes('<human'));
+  let piCalls = 0;
+  cortex.companionRuntime = { ask: async (input: any, onEvent: any) => {
+    piCalls++;
+    onEvent({ type: 'think', content: 'Pi思考' });
+    onEvent({ type: 'chunk', content: 'Pi回答' });
+    return { requestId: input.requestId, confirmedQuestion: input.question, think: 'Pi思考', answer: 'Pi回答',
+      summary: 'Pi摘要。', stopReason: 'stop' };
+  } };
+  process.env.HUMAN_COMPANION_RUNTIME = 'pi';
+  const piResult = await cortex.handleCommand({ id: 'pi', topic: 'brain.cortex.ask.requested', payload: {
+    text: '你好', conversationId: '11111111-1111-4111-8111-111111111111', speechSummaryEnabled: true,
+  } });
+  assert.equal(piResult.success, true, piResult.msg);
+  assert.equal(piResult.data.answer, 'Pi回答');
+  assert.equal(piCalls, 1);
+  assert.ok(events.some(event => event.topic.endsWith('.chunk') && event.payload.content === 'Pi回答'));
+  cortex.companionRuntime.ask = async () => { piCalls++; throw Object.assign(new Error('Pi failed'), { code: 'CONVERSATION_FAILED' }); };
+  const noFallback = await cortex.handleCommand({ id: 'pi-fail', topic: 'brain.cortex.ask.requested', payload: {
+    text: '不要回退', conversationId: '11111111-1111-4111-8111-111111111111',
+  } });
+  assert.equal(noFallback.success, false);
+  assert.equal(piCalls, 2, 'Pi failure must not call legacy runtime');
+  if (originalRuntimeMode === undefined) delete process.env.HUMAN_COMPANION_RUNTIME;
+  else process.env.HUMAN_COMPANION_RUNTIME = originalRuntimeMode;
   console.log('Cortex default off, single generation, stream isolation and summary: PASS');
 
   const { createAssistantMessageEventStream } = await new Function('return import("@earendil-works/pi-ai")')();
